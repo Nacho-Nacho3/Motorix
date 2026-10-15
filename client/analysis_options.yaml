@@ -1,0 +1,15 @@
+# Análisis estático de Flutter — Motorix
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - windows/**
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_final_locals: true
+    avoid_print: true
+    always_declare_return_types: true
