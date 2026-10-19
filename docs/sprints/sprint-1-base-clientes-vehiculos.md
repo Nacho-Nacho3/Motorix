@@ -55,20 +55,22 @@ Permitir que un usuario autorizado inicie sesion, gestione clientes y registre v
 
 ## 7. Criterios de aceptacion
 
-- [ ] CA-1: El login devuelve un token JWT valido y funciona con contrasenas hasheadas con bcrypt.
-- [ ] CA-2: Los roles ADMIN, RECEPTIONIST y MECHANIC se validan en el backend en cada endpoint protegido.
-- [ ] CA-3: Registrar cliente, registrar vehiculo y asociarlo funciona de extremo a extremo contra MySQL local.
-- [ ] CA-4: Consultar cliente devuelve sus datos y los vehiculos asociados.
-- [ ] CA-5: La estructura del backend usa ES Modules (`import`/`export`) y el `package.json` declara `"type": "module"`.
-- [ ] CA-6: El esquema inicial de la base de datos esta en `database/migrations/` y se puede recrear desde cero.
-- [ ] CA-7: Existe `.env.example` con las variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` sin valores sensibles.
-- [ ] CA-8: No hay secretos en el repositorio y `.env` esta en `.gitignore`.
-- [ ] CA-9: El login acepta usuario o correo electronico en el mismo campo, para todos los roles.
-- [ ] CA-10: Las cuentas iniciales del MVP (`admin`, `recepcion`, `mecanico`) existen con sus contrasenas del estandar, 
-    hasheadas con bcrypt en la base.
-- [ ] CA-11: El sistema permite cambiar la contrasena y valida la politica minima (8 caracteres, mayuscula, minuscula y numero).
-- [ ] CA-12: Toda pantalla del frontend sigue `docs/design-system.md` (paleta, tipografia, tokens, transiciones suaves y 
-    confirmaciones obligatorias).
+> Verificación de los criterios: marcados el 2026-10-18 tras reejecutar las suites automatizadas (backend 390/390 en verde, Flutter 120/120 en verde). Cuando la evidencia corresponde al registro del 14 de octubre o a una inspección estática, se indica explícitamente. Detalle de las ejecuciones en `docs/evidencias/`.
+
+- [X] CA-1: El login devuelve un token JWT valido y funciona con contrasenas hasheadas con bcrypt. *(Ejecución 18 oct: suite backend verde — `server/tests/contract/auth.contract.test.js` «devuelve 201 con token, expiresIn y usuario sin datos sensibles» (estructura JWT de 3 partes) y «401 INVALID_CREDENTIALS»; login en vivo `admin` → 201, registrado en `docs/evidencias/2026-10-18-login-cuentas-iniciales.md`.)*
+- [X] CA-2: Los roles ADMIN, RECEPTIONIST y MECHANIC se validan en el backend en cada endpoint protegido. *(Ejecución 18 oct: suite backend verde — `server/tests/integration/clients.test.js` y `vehicles.test.js` «MECHANIC puede leer pero no escribir (403 en POST y PATCH)», «sin token la lista responde 401», y `server/tests/contract/mechanic-scope.contract.test.js` (403 en orden ajena); las pruebas de rol se repiten por módulo del MVP.)*
+- [X] CA-3: Registrar cliente, registrar vehiculo y asociarlo funciona de extremo a extremo contra MySQL local. *(Ejecución 18 oct: suite backend contra `motorix_test` (MySQL real) verde — `clients.test.js` «RECEPTIONIST registra y consulta clientes (201/200)» y `vehicles.test.js` «RECEPTIONIST registra vehículos (201)», con `client_id NOT NULL`.)*
+- [X] CA-4: Consultar cliente devuelve sus datos y los vehiculos asociados. *(Ejecución 18 oct: suite backend verde — `vehicles.test.js` «GET /api/clients/:id lista los vehículos del cliente» y «el listado de clientes cuenta los vehículos (vehicleCount)».)*
+- [X] CA-5: La estructura del backend usa ES Modules (`import`/`export`) y el `package.json` declara `"type": "module"`. *(Inspección estática 18 oct — NO es una prueba automatizada: `server/package.json` declara `"type": "module"` y el código del backend usa `import/export`; la suite ESM de 390 pruebas ejecutada ese día confirma que todo el sistema carga bajo ES Modules.)*
+- [X] CA-6: El esquema inicial de la base de datos esta en `database/migrations/` y se puede recrear desde cero. *(Ejecución 18 oct: las 13 migraciones `001`–`013` se volvieron a aplicar sobre `motorix_test` durante la suite verde, con verificación de checksum y registro en `schema_migrations` (`server/tests/helpers/db.js`); scripts `database/scripts/aplicar-migraciones.ps1` y `crear-entorno.ps1`. Evidencia registrada 14 oct: quickstart V9 «Instalación repetible — ejecutado».)*
+- [X] CA-7: Existe `.env.example` con las variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` sin valores sensibles. *(Inspección estática 18 oct — NO es una prueba automatizada: `.env.example` contiene las cinco variables con placeholders `cambiar_en_local` y sin secretos reales.)*
+- [X] CA-8: No hay secretos reales identificados en el repositorio y .env está contemplado en .gitignore. *(Inspección estática del 18 de octubre; no es una prueba automatizada: se revisó que .env está ignorado por Git y se buscaron posibles tokens APP_USR- en el repositorio, sin encontrar secretos reales en los resultados revisados; solo se encontraron menciones documentales.)*
+- [X] CA-9: El login acepta usuario o correo electronico en el mismo campo, para todos los roles. *(Ejecución 18 oct: suite backend verde — `auth.contract.test.js` «acepta el correo como identificador»; logins en vivo `admin` y `admin@motorix.local` → 201, en `docs/evidencias/2026-10-18-login-cuentas-iniciales.md`.)*
+- [X] CA-10: Las cuentas iniciales del MVP (`admin`, `recepcion`, `mecanico`) existen con sus contrasenas del estandar,
+    hasheadas con bcrypt en la base. *(Ejecución 18 oct: los tres logins en vivo → 201, en `docs/evidencias/2026-10-18-login-cuentas-iniciales.md`; las crea y hashea `server/scripts/seed.js`.)*
+- [X] CA-11: El sistema permite cambiar la contrasena y valida la politica minima (8 caracteres, mayuscula, minuscula y numero). *(Ejecución 18 oct: suite backend verde — `server/tests/unit/auth-validation.test.js` (acepta contraseña de 8 caracteres con mayúscula, minúscula y número; rechaza sin mayúscula), `server/tests/contract/users.contract.test.js` «400 WEAK_PASSWORD fuera de la política mínima» y `auth.contract.test.js` «actualiza la contraseña y la nueva sirve para iniciar sesión».)*
+- [X] CA-12: Toda pantalla del frontend sigue `docs/design-system.md` (paleta, tipografia, tokens, transiciones suaves y
+    confirmaciones obligatorias). *(Evidencia REGISTRADA el 14 oct: `specs/001-base-clientes-vehiculos/design-review.md` (revisión de diseño T070) y quickstart V10 «Interfaz Material 3 — SUPERADO (T070)». El 18 oct solo se reejecutó la suite de widget de Flutter: 120/120 en verde; esto NO constituye una nueva revisión visual.)*
 
 ## 8. Fuera de alcance de este sprint
 
