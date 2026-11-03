@@ -1,0 +1,343 @@
+# Aseguramiento de la calidad - Sprint 5: Precios de refacciones y cobro completo
+
+Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
+
+**Estado: en elaboración (versión previa a la implementación).** El Sprint 5 aún no ha comenzado. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se crea y se llena **antes y durante** del sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+
+## 0. Datos del documento
+
+| Campo | Valor |
+|---|---|
+| Sprint | 5 - Precios de refacciones y cobro completo |
+| Insumo | `docs/sprints/sprint-5-precios-refacciones-cobro.md` |
+| Rama (planeada) | `005-precios-refacciones-cobro` desde `main` (aún no creada) |
+| Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
+| Fecha de inicio | 2026-11-02 |
+| Fecha de cierre | Se llena al cerrar el sprint |
+| Estado general | En elaboración - el sprint no se ha implementado |
+
+## 1. Objetivo y alcance
+
+**Objetivo.** Asegurar que el Sprint 5 salga con calidad: que los requisitos estén completos, sean medibles y no se contradigan, que las pruebas estén planeadas antes del código y que el cambio no rompa lo construido en los sprints 1 a 4.
+
+**Dentro del alcance:** categoría, marca y precios de las refacciones; guardado del precio vigente en la línea de la orden (instantánea); total de la orden con refacciones; pago y ticket con el nuevo total; conservación de pagos y tickets ya emitidos; visibilidad del precio de compra por rol.
+
+**Fuera del alcance:** lo que la sección 8 del insumo lista (costeo, impuestos, descuentos, reembolsos, catálogo de proveedores, notificaciones, reportes, WhatsApp y puesta en producción).
+
+## 2. Criterios de entrada y de salida
+
+Estado real al 2026-11-02. Los criterios se completan a lo largo del sprint; `[x]` solo cuando de verdad se cumplió.
+
+**Criterios de entrada (para comenzar la implementación):**
+
+- [ ] Las 8 puertas de la sección 3 están Aprobadas o Aprobadas con observación (solo G-01 y G-08 avanzaron).
+- [ ] Si el sprint contradice un principio de la constitución, la enmienda está aprobada y registrada (hallazgo H-01): la constitución limita el proyecto a **cuatro sprints** (`.specify/memory/constitution.md`, líneas 36, 48 y 84) y el Sprint 5 es posterior al MVP.
+- [ ] Las 10 decisiones de la sección 4 están resueltas y registradas.
+- [ ] No hay hallazgos críticos ni altos abiertos en el análisis de consistencia (G-07 sin ejecutar).
+- [x] Cada criterio de aceptación tuvo al menos una prueba planeada (sección 6).
+- [x] La línea base de regresión está registrada (sección 8).
+- [x] La documentación desfasada de los sprints anteriores está identificada (G-01: hallazgo H-08).
+
+**Criterios de salida (para cerrar el sprint):**
+
+- [ ] Los 14 criterios de aceptación están Aprobados.
+- [ ] Todas las pruebas de los sprints 1 a 4 siguen pasando.
+- [ ] No hay defectos críticos ni altos abiertos (sección 7).
+- [ ] La matriz de calidad final (sección 9) está completa, con evidencia.
+- [ ] Reporte, análisis y matriz no se contradicen.
+
+## 3. Puertas de calidad
+
+Las puertas G-02 a G-07 corresponden a etapas de Spec Kit que aún no se ejecutan; G-01 se hizo el 2026-11-02 revisando el insumo contra el código real.
+
+| ID | Puerta | Estado | Evidencia |
+|:--:|---|---|---|
+| G-01 | Insumo del sprint revisado contra el código | Aprobado con observación | Revisión del 2026-11-02 contra `order-total.service.js`, migraciones `009`/`011`, `validators/parts.js`, `payments.service.js`, `tickets.service.js` y `parts.routes.js`: 9 hallazgos H-01 a H-09 (sección 7); el insumo debe corregirse en `/speckit.specify` |
+| G-02 | Especificación (`/speckit.specify`) | No iniciada | `specs/005-precios-refacciones-cobro/` no existe; al crearla debe corregir H-02 a H-05 |
+| G-03 | Aclaraciones (`/speckit.clarify`) | No iniciada | 10 decisiones abiertas (sección 4) |
+| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | No iniciada | Checklist por crear junto con la especificación |
+| G-05 | Plan (`/speckit.plan`) | No iniciada | `plan.md`, `data-model.md` y `contracts/` por crear; la migración nueva debe ser `014_...` (H-05) |
+| G-06 | Tareas (`/speckit.tasks`) | No iniciada | `tasks.md` por crear; las pruebas van antes del código en cada historia |
+| G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
+| G-08 | Pruebas planeadas y línea base | Aprobado con observación | Línea base medida el 2026-11-02 (sección 8); las pruebas están planeadas por CA en la sección 6, todavía sin crear |
+
+## 4. Decisiones de aclaración
+
+Las 10 decisiones abiertas del insumo (sección 9, líneas 93 a 102) están **abiertas** y se resolverán en `/speckit.clarify` con preguntas cerradas y recomendación; no se asumen respuestas.
+
+| ID | Decisión (resumen del insumo) | Estado |
+|:--:|---|---|
+| D-01 | Refacciones existentes o líneas sin precio: asignar 0, exigir precio o bloquearlas | Abierta |
+| D-02 | Orden con solo refacciones: si es cobrable (el insumo la llama `NOTHING_TO_CHARGE`; ver H-04) | Abierta |
+| D-03 | Órdenes abiertas al desplegar: precio vigente al migrar o 0 | Abierta |
+| D-04 | Pago de Mercado Pago pendiente cuando cambia el total: cancelar, actualizar o marcar desfasado | Abierta |
+| D-05 | Corrección del precio de una línea en una orden abierta: si se permite y con qué motivo o permiso | Abierta |
+| D-06 | Categoría: lista cerrada administrable o texto libre; marca: texto libre | Abierta |
+| D-07 | Precio de venta menor al de compra: permitir, advertir o rechazar | Abierta |
+| D-08 | Redondeo del importe de una línea y límites máximos de precio y de total | Abierta |
+| D-09 | Cómo conviven los tickets anteriores (sin precios) con los nuevos | Abierta |
+| D-10 | Visibilidad del precio de venta para el mecánico | Abierta |
+
+## 5. Riesgos y mitigaciones
+
+Riesgos identificados antes de implementar, con la prueba que los cubrirá. Los estados se pasarán a **Mitigado** cuando la prueba exista y pase; hoy todos están **Abierto** con su mitigación planeada.
+
+| ID | Riesgo | Impacto | Mitigación | Prueba que lo cubre | Estado |
+|:--:|---|---|---|---|---|
+| R-01 | Al pasar a precio guardado, el cambio altera órdenes abiertas o documentos ya emitidos | Alto: importes incorrectos en el historial | Guardar el precio en `order_parts` (migración aditiva `014_...`); no tocar `payments` ni `tickets.content` existentes | Por crear: instantánea y compatibilidad (CA-3, CA-6) | Abierto |
+| R-02 | Las líneas ya registradas no tienen precio y al migrar quedan en 0 o desfases | Medio: totales incorrectos en órdenes existentes | Resolver D-01 y D-03 antes de migrar datos | Por crear (CA-3) | Abierto |
+| R-03 | Se rompe el pago único vigente (VN-04/VN-05) al tocar total y cobro | Alto: doble cobro | Mantener la transacción con `SELECT ... FOR UPDATE` de `payments.service.js` | Existente: `integration/payments.test.js` (segundo pago 400 y importe distinto 400); simultaneidad por crear (H-09) | Abierto |
+| R-04 | Un pago pendiente de Mercado Pago queda con importe distinto al total | Medio | Resolver D-04 y señalar el importe desfasado | Existente parcial: `integration/payments-mp.test.js`; desfasado por crear (CA-9) | Abierto |
+| R-05 | El precio de compra llega a recepción o al mecánico al agregar importes a las vistas | Alto: fuga de información financiera | Mantener el catálogo solo ADMIN (`parts.routes.js`, líneas 13 a 18) y proyecciones por rol al agregar campos | Existente parcial: `integration/parts-catalog.test.js` (403 de otros roles); prueba de fuga por crear (CA-10) | Abierto |
+| R-06 | Precios sin límite máximo y errores de redondeo en el importe de una línea | Medio | Definir límites en el validador (D-08) y conservar el cálculo en centavos | Existente: `unit/order-total.test.js`; límites por crear (CA-2) | Abierto |
+| R-07 | El panel de control o los listados fallan con el nuevo total | Medio | Regresión de dashboard y listados al cierre | Existente: `integration/dashboard.test.js` y contratos; regresión al cierre (CA-11) | Abierto |
+| R-08 | La documentación vuelve a quedar desfasada (como `active` en la entidad Part) | Bajo: contradicciones | Actualizar `project-context.md` y `design-system.md` dentro del sprint (CA-14), empezando por H-08 | Revisión documental (sin prueba automática) | Abierto |
+| R-09 | La CA-8 da por hechas pruebas de concurrencia que hoy no existen | Medio: falsa sensación de cobertura | Crear la prueba de cobros simultáneos desde el inicio (H-09) | Por crear (CA-8) | Abierto |
+
+## 6. Trazabilidad
+
+Cada criterio de aceptación (CA) se enlaza con su requisito, su tarea y su prueba. Los FR y las tareas se definen en `/speckit.specify` y `/speckit.tasks` (aún no ejecutados); «existente» señala una prueba que ya pasó en la línea base de la sección 8.
+
+| CA | Criterio de aceptación (resumen) | Requisito (FR) | Tarea | Prueba | Resultado | Evidencia |
+|:--:|---|---|---|---|---|---|
+| CA-1 | Refacción con categoría, marca y precios persistida | US1 (FR por definir) | Por asignar | Existente: `parts-catalog.test.js` (alta 201 y PATCH) | Sin ejecutar | G-01/H-03: ya se cumple en lo esencial desde el Sprint 3 |
+| CA-2 | Precios rechazan negativos, no numéricos y más de 2 decimales; con límites máximos | US1 (FR por definir) | Por asignar | Existente parcial: `parts-catalog.test.js` (negativos y 3 decimales); tope máximo por crear | Sin ejecutar | G-01/H-03: falta definir el límite máximo (D-08) |
+| CA-3 | El precio vigente se guarda al agregar la refacción a la orden | US4 (FR por definir) | Por asignar | Por crear: instantánea de precio en `order_parts` | Sin ejecutar | Hueco real confirmado en G-01: migración `011` no tiene columna de precio |
+| CA-4 | Total = servicios + mano de obra + refacciones, en centavos | US2 (FR por definir) | Por asignar | Existente: `unit/order-total.test.js` (suma y redondeo); se amplía al precio guardado | Sin ejecutar | G-01/H-02: la suma de refacciones ya existe; falta usar el precio guardado |
+| CA-5 | El pago se registra por el total con refacciones; importe distinto se rechaza | US3 (FR por definir) | Por asignar | Existente: `payments.test.js` (importe exacto, mismatch 400) | Sin ejecutar | La fórmula del total ya incluye refacciones (G-01/H-02) |
+| CA-6 | Pagos y tickets anteriores conservan importe y contenido | US4 (FR por definir) | Por asignar | Por crear: compatibilidad con datos emitidos | Sin ejecutar | R-01/R-02 |
+| CA-7 | El ticket nuevo detalla refacciones con cantidad, precio e importe | US3 (FR por definir) | Por asignar | Existente parcial: `tickets.test.js` (contenido completo); se adapta al precio guardado | Sin ejecutar | G-01/H-06: el ticket ya incluye refacciones con precio vivo |
+| CA-8 | Un solo pago vigente, también con solicitudes simultáneas; sin datos de tarjeta | US3 (FR por definir) | Por asignar | Existente: `payments.test.js` (segundo pago); simultaneidad por crear | Sin ejecutar | G-01/H-09: no existe ninguna prueba simultánea hoy |
+| CA-9 | Mercado Pago recibe el importe correcto; pago pendiente desfasado se resuelve | US3 (FR por definir) | Por asignar | Existente parcial: `payments-mp.test.js`; desfasado por crear | Sin ejecutar | Depende de D-04 |
+| CA-10 | El precio de compra solo lo ve el administrador | US5 (FR por definir) | Por asignar | Existente: `parts-catalog.test.js` e `inventory.contract.test.js` (403); proyecciones por crear | Sin ejecutar | G-01/H-07: hoy el catálogo es solo ADMIN |
+| CA-11 | Dashboard y listados funcionan con el nuevo total | US2/US3 (FR por definir) | Por asignar | Existente: `dashboard.test.js` y contratos; regresión al cierre | Sin ejecutar | R-07 |
+| CA-12 | Seeds con precios y una orden cobrable con refacciones, idempotentes | Seeds (restricción heredada) | Por asignar | Existente parcial: `seed.js` ya crea refacciones con precios; prueba de idempotencia por crear | Sin ejecutar | G-01: el seed ya incluye precios; verificar orden cobrable con refacciones |
+| CA-13 | Pruebas de total, instantáneas, redondeo, permisos, concurrencia y compatibilidad | Todas (FR por definir) | Por asignar | Todas las anteriores | Sin ejecutar | CA-1 a CA-12 |
+| CA-14 | `project-context.md`, `design-system.md` y comentarios desactualizados se actualizan | Documentación | Por asignar | Revisión documental (sin prueba automática) | Sin ejecutar | G-01/H-08: `project-context.md` documenta `active`, que no existe en la tabla |
+
+## 7. Hallazgos y defectos
+
+Se registra todo lo que se encuentre, sea en los documentos, en el análisis o en las pruebas. Hoy todos provienen de la G-01 (revisión del insumo contra el código) y de la constitución; no hay defectos de implementación porque el sprint no ha comenzado.
+
+| ID | Descripción | Severidad | Origen | Estado | Resolución | Evidencia |
+|:--:|---|---|---|---|---|---|
+| H-01 | La constitución limita el proyecto a cuatro sprints y el Sprint 5 es posterior al MVP: se necesita enmienda aprobada antes de implementar | Media | G-01 (constitución) | Abierto | Registrar enmienda con la autoridad del proyecto y aprobarla como criterio de entrada | `.specify/memory/constitution.md`, líneas 36, 48 y 84 |
+| H-02 | El insumo afirma «hoy el total es solo servicios más mano de obra y las refacciones no suman»: es falso, ya suman | Media | G-01 | Abierto | Corregir el insumo y el spec: la deuda real es la instantánea de precio, no la suma | `server/services/order-total.service.js`, líneas 45 a 57 y 86 a 92; `unit/order-total.test.js`, línea 8 |
+| H-03 | El insumo afirma que el Sprint 3 difirió categoría, marca y precios: ya existen | Media | G-01 | Abierto | Corregir el insumo y el spec; lo que falta de CA-2 es el límite máximo | Migración `009`, líneas 10 a 23; `validators/parts.js`, líneas 7 y 52 a 69; `seed.js`, líneas 124 a 178; `project-context.md`, líneas 666 a 681 |
+| H-04 | El insumo menciona el código `NOTHING_TO_CHARGE`, que no existe; el rechazo real es un `VALIDATION_ERROR` con otro mensaje | Baja | G-01 | Abierto | Alinear la decisión D-02 con el comportamiento real al escribir el spec | `server/services/payments.service.js`, líneas 81 a 87 |
+| H-05 | El insumo pide la migración `005_...sql` y «crear» seeds: el repositorio ya tiene migraciones `001` a `013` y `server/scripts/seed.js` existe | Media | G-01 | Abierto | Usar migración `014_...` aditiva y ampliar el seed existente | `database/migrations/` (13 archivos); `server/scripts/seed.js` |
+| H-06 | La CA-7 (ticket con refacciones, precio e importe) ya se cumple hoy | Baja | G-01 | Abierto | Ajustar el spec al trabajo real: precio guardado y convivencia con tickets anteriores | `server/services/tickets.service.js`, líneas 103 a 110 y 154 |
+| H-07 | La CA-10 ya se cumple hoy en lo esencial: el catálogo es solo ADMIN y el detalle de orden no trae precios | Baja | G-01 | Abierto | Mantener las proyecciones al agregar importes a las vistas (R-05) | `server/routes/parts.routes.js`, líneas 13 a 18; `server/models/order_part.model.js`, líneas 9 a 12 |
+| H-08 | `docs/project-context.md` documenta un campo `active` en la entidad Part que no existe en la tabla (y el spec prohíbe el borrado lógico) | Baja | G-01 | Abierto | Corregirlo en CA-14 dentro del sprint | `docs/project-context.md`, línea 678; migración `009` sin esa columna |
+| H-09 | La CA-8 asume que el Sprint 4 ya cubre «solicitudes simultáneas», pero no existe ninguna prueba de concurrencia en `server/tests/` | Media | G-01 | Abierto | Crear la prueba de cobros simultáneos desde el inicio del sprint (R-09) | Búsqueda de `Promise.all`, `concurrenc` y `concurrent` sin resultados en `server/tests/` |
+
+## 8. Línea base de regresión
+
+Se ejecuta la suite completa **antes** de tocar el código y de nuevo **al cierre**. Ninguna prueba de los sprints 1 a 4 debe pasar de verde a rojo.
+
+| Suite | Comando | Antes del sprint 5 | Después del sprint 5 | Diferencia | Evidencia |
+|---|---|---|---|---|---|
+| Backend (Jest) | `npm.cmd test` en `server/` | 49 suites y 390 pruebas aprobadas, 0 fallidas (46.8 s) | Se llena al cierre | Se llena al cierre | Captura C-01 |
+| Frontend (Flutter) | `flutter test` en `client/` | 120 pruebas aprobadas ("All tests passed!"), 0 fallidas | Se llena al cierre | Se llena al cierre | Captura C-02 |
+| Análisis estático | `flutter analyze lib` en `client/` | "No issues found!" | Se llena al cierre | Se llena al cierre | Captura C-03 |
+
+**Fecha de la línea base:** 2026-11-02, sobre el commit `fe587b5` de la rama `main`, antes de crear la rama `005-precios-refacciones-cobro`. Las suites corren contra la base `motorix_test` (configuración de pruebas); los datos de demostración de `motorix` no se tocaron.
+
+**Capturas de la línea base (2026-11-02), en `docs/evidencias/sprint-5/`:**
+
+- `captura-linea-base-backend.png` (C-01): terminal con `Test Suites: 49 passed` y `Tests: 390 passed`.
+- `captura-linea-base-frontend.png` (C-02): terminal con `+120: All tests passed!`.
+- `captura-linea-base-analyze.png` (C-03): terminal con `No issues found!`.
+
+Al cierre se agregan `captura-regresion-backend.png` (C-09) y `captura-regresion-frontend.png` (C-10), y se completan las columnas «Después» y «Diferencia».
+
+**Fecha del cierre:** se llena al cerrar el sprint, sobre la rama `005-precios-refacciones-cobro`. Se anotarán aquí las pruebas que deban actualizarse por cambios de contrato declarados, con su hallazgo.
+
+## 9. Control de calidad final
+
+Cinco requisitos funcionales del Sprint 5, elegidos entre los que más pueden fallar (instantánea de precio, compatibilidad con lo ya emitido, permisos por rol, concurrencia del pago y redondeo con límites), con el mismo formato de la matriz de calidad del MVP. Se ejecutarán al cierre; hoy queda el estado real.
+
+| ID | Requisito | Criterio de Aceptación | Prueba ejecutada | Resultado | Evidencia / defecto |
+|:--:|---|---|---|---|---|
+| RF-01 | Insumo CA-3 y CA-4 (líneas 68 y 69): al agregar una refacción a una orden se guarda su precio de venta vigente, los cambios posteriores no modifican la línea y el total usa ese precio guardado en centavos. | Un cambio posterior de precio no altera la línea, su importe ni el total; la suma sigue siendo exacta a 2 decimales. | Backend (Jest + supertest): por crear `orderParts.prices.test.js` (alta, cambio de precio y verificación de línea y total). | Por ejecutar | [Requisito](#e-01-requisito) · [Prueba](#e-01-prueba) · [Resultado](#e-01-resultado). Sin ejecutar todavía. |
+| RF-02 | Insumo CA-6 y CA-7 (líneas 71 y 72): los pagos y tickets anteriores conservan importe y contenido, y el ticket nuevo detalla las refacciones con cantidad, precio unitario e importe. | Un ticket anterior se devuelve idéntico al guardado; uno nuevo trae las refacciones y sus importes; cambiar precios no altera lo ya emitido. | Backend (Jest + supertest): por crear `emitted.compat.test.js`; existe parcial `tickets.test.js`. | Por ejecutar | [Requisito](#e-02-requisito) · [Prueba](#e-02-prueba) · [Resultado](#e-02-resultado). Sin ejecutar todavía. |
+| RF-03 | Insumo CA-10 (línea 75): el precio de compra solo es visible para el administrador; recepción y mecánico no lo reciben en la API. | Recorrido de las rutas de consulta con cada rol buscando la clave y el valor del precio de compra: solo el administrador los recibe. | Backend (Jest + supertest): por crear `prices.leak.test.js`; existe parcial `parts-catalog.test.js` (403 de otros roles). | Por ejecutar | [Requisito](#e-03-requisito) · [Prueba](#e-03-prueba) · [Resultado](#e-03-resultado). Sin ejecutar todavía. |
+| RF-04 | Insumo CA-8 (línea 73): un solo pago vigente por orden, también con solicitudes simultáneas, y ningún dato de tarjeta almacenado. | Varios cobros al mismo tiempo sobre una orden dejan un solo pago PAID y el resto responde error; la tabla no tiene columnas de tarjeta. | Backend (Jest + supertest): existente `payments.test.js` (segundo pago e importe distinto) y por crear la prueba de concurrencia (H-09). | Por ejecutar | [Requisito](#e-04-requisito) · [Prueba](#e-04-prueba) · [Resultado](#e-04-resultado). Sin ejecutar todavía. |
+| RF-05 | Insumo CA-2 y CA-4 (líneas 67 y 69): los precios rechazan valores negativos, no numéricos, con más de 2 decimales y fuera de los límites máximos; el total se calcula en centavos enteros. | Un precio inválido responde 400 con mensaje claro; los importes salen siempre con 2 decimales y las sumas cuadran sin errores de coma flotante. | Backend (Jest): existente `unit/order-total.test.js` (centavos y redondeo) y `parts-catalog.test.js` (negativos y decimales); por crear los casos de límite máximo (D-08). | Por ejecutar | [Requisito](#e-05-requisito) · [Prueba](#e-05-prueba) · [Resultado](#e-05-resultado). Sin ejecutar todavía. |
+
+## 10. Cierre
+
+Se completa al cerrar el sprint.
+
+| Campo | Valor |
+|---|---|
+| Criterios de salida cumplidos | 0 de 5: el sprint no se ha implementado |
+| Defectos abiertos | Sin defectos de implementación. 9 hallazgos de G-01 y la constitución abiertos (H-01 a H-09), de alcance y documentación |
+| Observaciones | Línea base medida el 2026-11-02: 49 suites y 390 pruebas de backend, 120 de frontend y análisis estático limpio, todas en verde. 10 decisiones de aclaración abiertas. La constitución exige una enmienda (H-01) antes de implementar |
+| Aprobado por | Lo aprueba Ignacio Joaquín Trejo al cierre del sprint |
+| Fecha | Se llena al cierre |
+
+# Anexo de evidencias
+
+Cada evidencia tiene tres bloques: **Requisito** (texto del insumo con archivo y línea; se reemplazará por la cita del `spec.md` cuando exista), **Prueba** (descripción de la prueba existente o planeada) y **Resultado** (comando, salida real y captura). Las capturas están en `docs/evidencias/sprint-5/`.
+
+## E-01 Requisito
+
+Archivo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`, líneas 68 y 69.
+
+> **CA-3**: Al agregar una refacción a una orden se guarda su precio de venta vigente; un cambio posterior de precio no modifica esa línea.
+>
+> **CA-4**: El total de la orden es servicios más mano de obra más refacciones (cantidad por precio guardado), calculado en centavos enteros.
+
+## E-01 Prueba
+
+Archivo por crear: `server/tests/integration/orderParts.prices.test.js` (se planeará en `/speckit.tasks`).
+
+La prueba agregará una refacción con precio de venta A a una orden, el administrador cambiará después el precio a B, y verificará que la línea conserve el precio A, que su importe y el total de la orden no cambien y que el total siga saliendo con 2 decimales. Hoy el hueco está confirmado: la migración `011` no guarda precio y el total usa el precio vivo (`order-total.service.js`, líneas 86 a 92).
+
+Fragmento: se escribirá con la prueba y se documentará aquí con su salida real.
+
+## E-01 Resultado
+
+Comando previsto: `npm.cmd test -- tests/integration/orderParts.prices.test.js`
+
+Estado: **Por ejecutar** (el sprint no ha comenzado).
+
+## E-02 Requisito
+
+Archivo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`, líneas 71 y 72.
+
+> **CA-6**: Los pagos y tickets generados antes del sprint conservan su importe y su contenido sin cambios, y siguen consultándose y mostrándose correctamente.
+>
+> **CA-7**: El ticket nuevo incluye cantidad, precio unitario e importe de cada refacción, y el subtotal y el total las suman.
+
+## E-02 Prueba
+
+Archivo por crear: `server/tests/integration/emitted.compat.test.js` (se planeará en `/speckit.tasks`). Existe la prueba parcial `server/tests/integration/tickets.test.js` («devuelve el contenido completo calculado del comprobante», línea 212), que ya pasó en la línea base.
+
+La prueba fotografiará los pagos y tickets existentes, cambiará todos los precios de las refacciones y comprobará que nada de lo emitido cambie; además pedirá un ticket anterior y uno nuevo y verificará que el anterior vuelva idéntico al guardado.
+
+Fragmento: se escribirá con la prueba y se documentará aquí con su salida real.
+
+## E-02 Resultado
+
+Comando previsto: `npm.cmd test -- tests/integration/emitted.compat.test.js`
+
+Estado: **Por ejecutar** (el sprint no ha comenzado).
+
+## E-03 Requisito
+
+Archivo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`, línea 75.
+
+> **CA-10**: El precio de compra solo es visible para el administrador; el mecánico y recepción no lo reciben en la API, validado en backend.
+
+## E-03 Prueba
+
+Archivo por crear: `server/tests/integration/prices.leak.test.js` (se planeará en `/speckit.tasks`). Existen las pruebas parciales `server/tests/integration/parts-catalog.test.js` («MECHANIC y RECEPTIONIST reciben 403 en GET, POST y PATCH», línea 304) y `server/tests/contract/inventory.contract.test.js` (línea 172), que ya pasaron en la línea base.
+
+La prueba recorrerá las rutas de consulta con cada rol, buscando en las respuestas la clave `purchasePrice` y su valor; solo el administrador debe recibirlos. Hoy el catálogo es solo ADMIN, así que la prueba debe extenderse a las nuevas respuestas que agregue el sprint (totales, líneas y tickets).
+
+Fragmento: se escribirá con la prueba y se documentará aquí con su salida real.
+
+## E-03 Resultado
+
+Comando previsto: `npm.cmd test -- tests/integration/prices.leak.test.js`
+
+Estado: **Por ejecutar** (el sprint no ha comenzado).
+
+## E-04 Requisito
+
+Archivo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`, línea 73.
+
+> **CA-8**: Se mantienen las reglas del Sprint 4: un solo pago vigente por orden, también con solicitudes simultáneas, y ningún dato de tarjeta almacenado.
+
+## E-04 Prueba
+
+Archivos: existente `server/tests/integration/payments.test.js` («un segundo pago sobre la misma orden responde 400 ORDER_ALREADY_PAID», línea 249, y «un importe distinto del total responde 400 PAYMENT_AMOUNT_MISMATCH», línea 265) y la prueba de concurrencia **por crear** (H-09): varios `POST /api/service-orders/:id/padres` de cobro enviados al mismo tiempo con `Promise.all` sobre la misma orden, comprobando un solo pago PAID.
+
+También se verifica que la tabla `payments` no tenga columnas de tarjeta (migración `012`, RN-14).
+
+Fragmento: la parte simultánea se escribirá con la prueba y se documentará aquí con su salida real.
+
+## E-04 Resultado
+
+Comando previsto: `npm.cmd test -- tests/integration/payments.test.js` (la parte existente ya pasó en la línea base).
+
+Estado: **Por ejecutar** (falta la prueba de simultaneidad).
+
+## E-05 Requisito
+
+Archivo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`, líneas 67 y 69.
+
+> **CA-2**: Los precios rechazan valores negativos, no numéricos y con más de dos decimales; se definen los límites máximos.
+>
+> **CA-4**: El total de la orden es servicios más mano de obra más refacciones (cantidad por precio guardado), calculado en centavos enteros.
+
+## E-05 Prueba
+
+Archivos existentes: `server/tests/unit/order-total.test.js` y `server/tests/integration/parts-catalog.test.js` («precios, stock o stock mínimo negativos → 400 VALIDATION_ERROR», línea 142, con `-1.00` y `420.999`). Ambos ya pasaron en la línea base. Falta crear la prueba de límite máximo (D-08).
+
+Fragmento clave (ya existente):
+
+```js
+// server/tests/unit/order-total.test.js, líneas 8 a 24
+test("suma servicios, mano de obra y refacciones con precio vigente", () => {
+  const totales = sumarTotales({
+    servicios: [{ unitPrice: "850.00" }, { unitPrice: "150.50" }],
+    manoDeObra: [
+      { hours: "2.00", hourlyRate: "300.00" },
+      { hours: "1.50", hourlyRate: "200.00" },
+    ],
+    refacciones: [
+      { quantity: 2, salePrice: "850.00" },
+      { quantity: 1, salePrice: "120.25" },
+    ],
+  });
+
+  expect(totales.partsSubtotal).toBe("1820.25");
+  expect(totales.total).toBe("3720.75");
+});
+```
+
+## E-05 Resultado
+
+Comando previsto: `npm.cmd test -- tests/unit/order-total.test.js tests/integration/parts-catalog.test.js` (la parte existente ya pasó en la línea base; los casos de límite máximo están por crear).
+
+Estado: **Por ejecutar** (faltan los límites máximos).
+
+## E-06 Recorrido de los escenarios contra la API real
+
+Se ejecutará cuando `/speckit.specify` genere el `quickstart.md` del sprint, contra la API real con la base `motorix_test` (sembrada con los seeds del sprint) para no gastar los datos de demostración de `motorix`, con un guion por HTTP que ejecute cada escenario y su resultado. Aquí se anotará la fecha, el comando y la tabla de escenarios.
+
+Estado: **Por ejecutar**.
+
+# Guía de capturas de pantalla
+
+Capturas en `docs/evidencias/sprint-5/` (crear la carpeta al tomar la primera). Los nombres van en minúsculas y con guiones.
+
+| ID | Archivo | Qué debe verse | Cómo se obtiene | Cuándo |
+|---|---|---|---|---|
+| C-01 | `captura-linea-base-backend.png` | Terminal con `Test Suites: 49 passed, 49 total` y `Tests: 390 passed, 390 total` | PowerShell en `server\`: `npm.cmd test` (≈50 s) | Ahora |
+| C-02 | `captura-linea-base-frontend.png` | Terminal con `+120: All tests passed!` | PowerShell en `client\`: `flutter test` (≈45 s) | Ahora |
+| C-03 | `captura-linea-base-analyze.png` | Terminal con `No issues found!` | PowerShell en `client\`: `flutter analyze lib` | Ahora |
+| C-04 | `captura-rf-01-instantanea-precio.png` | Detalle de una orden con la línea de refacción conservando su precio tras cambiar el precio en el catálogo | App (`client\lib\screens\orders\order_detail_screen.dart`): el admin cambia el precio, recepción reabre la orden | Al cierre (RF-01) |
+| C-05 | `captura-rf-02-ticket-anterior-y-nuevo.png` | Un ticket anterior y uno nuevo en el mismo listado | App (`client\lib\screens\tickets\ticket_screen.dart`) | Al cierre (RF-02) |
+| C-06 | `captura-rf-03-precio-compra-oculto.png` | Terminal de la prueba de fuga de precios o la respuesta de la API al mecánico sin precios | `npm.cmd test -- tests/integration/prices.leak.test.js` | Al cierre (RF-03) |
+| C-07 | `captura-rf-04-pago-unico-concurrencia.png` | Terminal con la prueba de cobros simultáneos: un éxito y el resto rechazado | `npm.cmd test -- tests/integration/payments.concurrency.test.js` (nombre por confirmar en tasks) | Al cierre (RF-04) |
+| C-08 | `captura-rf-05-limites-precio.png` | Terminal con la prueba de límites y redondeo, o la respuesta 400 a un precio fuera de límite | `npm.cmd test -- <prueba de límites>` | Al cierre (RF-05) |
+| C-09 | `captura-regresion-backend.png` | Suite completa al cierre con los conteos nuevos | `npm.cmd test` en `server\` | Al cierre |
+| C-10 | `captura-regresion-frontend.png` | `flutter test` al cierre con los conteos nuevos | `flutter test` en `client\` | Al cierre |
+| C-11 | `captura-escenarios-api.png` | Resultado del recorrido de los escenarios del `quickstart.md` (tabla o terminal) | Guion HTTP contra la API con `motorix_test` | Cuando exista el quickstart (E-06) |
+| C-12 | `captura-tiempos-<nombre-del-criterio>.png` | Cronómetro del criterio de éxito medible que defina el spec, con la pantalla de inicio y la final | Medido por Ignacio en la app con los datos de ejemplo | Al cierre |
+
+Notas para tomar las capturas:
+
+- Para las capturas de la app (C-04, C-05 y C-12) hace falta MySQL (`MySQL96`) y el backend (`npm.cmd start` en `server\`); la app es el ejecutable en `client\build\windows\x64\runner\Debug\motorix_client.exe`.
+- Los datos de demostración se gastan al hacer el recorrido (una orden cobrada no se cobra otra vez): avísame antes y puedo resembrar `motorix` o crear datos nuevos.
+- **Verifica cada captura antes de enlazarla**: ábrela, confirma que muestra lo que dice la tabla y compara los hash (`Get-FileHash`) para detectar imágenes idénticas con nombres distintos.
+- Los tiempos de uso (C-12) son mediciones tuyas con cronómetro; nunca se registran estimaciones como si fueran mediciones.
+- Cuando el documento se cierre, las capturas C-01 a C-03 de la sección 8 se enlazan como imágenes (`![...](evidencias/sprint-5/...png)`).
+
+---
+
+*Documento en elaboración · Sprint 5 de Motorix · Inicio: 2026-11-02 · Línea base sobre el commit `fe587b5`.*
