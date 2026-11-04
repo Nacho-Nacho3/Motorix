@@ -78,15 +78,15 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 
 ### Pruebas para US2 (primero, deben fallar)
 
-- [ ] T013 [P] [US2] Prueba de integración de la instantánea y del total en `server/tests/integration/order-parts.test.js`: al agregar 2 unidades la línea responde `unitPrice` igual al precio vigente; cambiar `salePrice` en el catálogo no altera la línea ni `partsSubtotal`; toda línea existente tiene `unit_price` definido (mayor o igual a 0) tras la 014; orden sin trabajo → total `"0.00"`
-- [ ] T014 [P] [US2] Prueba de contrato de `order-parts` en `server/tests/contract/order-parts.contract.test.js` según `contracts/order-parts.md` (campo `unitPrice` como cadena con exactamente 2 decimales en POST y GET con token de administrador)
-- [ ] T015 [P] [US2] Prueba unitaria de redondeo con refacciones en `server/tests/unit/order-total.test.js`: cantidades enteras por precios con 2 decimales se suman en centavos exactos y el total sale con 2 decimales (SC-005)
+- [x] T013 [P] [US2] Prueba de integración de la instantánea y del total en `server/tests/integration/order-parts.test.js`: al agregar 2 unidades la línea responde `unitPrice` igual al precio vigente; cambiar `salePrice` en el catálogo no altera la línea ni `partsSubtotal`; toda línea existente tiene `unit_price` definido (mayor o igual a 0) tras la 014; orden sin trabajo → total `"0.00"` — **ejecutada**: red primero, verde después
+- [x] T014 [P] [US2] Prueba de contrato de `order-parts` en `server/tests/contract/order-parts.contract.test.js` según `contracts/order-parts.md` (campo `unitPrice` como cadena con exactamente 2 decimales en POST y GET con token de administrador) — **ejecutada**
+- [x] T015 [P] [US2] Prueba unitaria de redondeo con refacciones en `server/tests/unit/order-total.test.js`: cantidades enteras por precios con 2 decimales se suman en centavos exactos y el total sale con 2 decimales (SC-005) — **ejecutada**
 
 ### Implementación de US2
 
-- [ ] T016 [US2] Guardar la instantánea en el alta: leer `sale_price` en la misma conexión en `server/services/inventory.service.js` (`agregarRefaccionOrden`) y persistirlo en `server/models/order_part.model.js` (`CAMPOS` con `op.unit_price AS unitPrice`, `aOrderPart` y `crear()` con `unit_price`)
-- [ ] T017 [US2] Cambiar la fuente del total en `server/services/order-total.service.js`: la consulta de refacciones pasa de `p.sale_price AS salePrice` a `op.unit_price AS salePrice` (fórmula y `sumarTotales()` sin cambios)
-- [ ] T018 [US2] Ejecutar las pruebas de US2 (order-parts, order-total, order-parts.contract) y confirmar que la línea base de `order-total` sigue verde sin cambios de interfaz
+- [x] T016 [US2] Guardar la instantánea en el alta: leer `sale_price` en la misma conexión en `server/services/inventory.service.js` (`agregarRefaccionOrden`) y persistirlo en `server/models/order_part.model.js` (`CAMPOS` con `op.unit_price AS unitPrice`, `aOrderPart` y `crear()` con `unit_price`) — **ejecutada**
+- [x] T017 [US2] Cambiar la fuente del total en `server/services/order-total.service.js`: la consulta de refacciones pasa de `p.sale_price AS salePrice` a `op.unit_price AS salePrice` (fórmula y `sumarTotales()` sin cambios) — **ejecutada**
+- [x] T018 [US2] Ejecutar las pruebas de US2 (order-parts, order-total, order-parts.contract) y confirmar que la línea base de `order-total` sigue verde sin cambios de interfaz — **ejecutada**: 23/23 en las 3 suites y 89/89 en pagos, tickets, órdenes y dashboard
 
 **Checkpoint**: US2 funcional; el total ya no depende del precio vigente del catálogo
 

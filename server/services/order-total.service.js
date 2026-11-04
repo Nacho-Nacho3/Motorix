@@ -3,8 +3,8 @@ import { errores } from "../utils/errors.js";
 
 // T012: total calculado de la orden (US1, R-03, RN-10, CA-4).
 // Fórmula única SIN columna almacenada: total = Σ servicios + Σ (horas ×
-// tarifa) + Σ (cantidad × precio vigente). La reutilizan el cobro (VN-03)
-// y el ticket; nada se copia que pueda desincronizarse.
+// tarifa) + Σ (cantidad × precio guardado en la línea, D-01). La reutilizan
+// el cobro (VN-03) y el ticket; nada se copia que pueda desincronizarse.
 //
 // El dinero se opera en centavos (enteros) y se devuelve como cadena de
 // 2 decimales: sin errores de coma flotante y con el formato del contrato.
@@ -84,9 +84,8 @@ export async function calcularTotalOrden(orderId, conexion = pool) {
     [orderId],
   );
   const [refacciones] = await conexion.query(
-    `SELECT op.quantity, p.sale_price AS salePrice
+    `SELECT op.quantity, op.unit_price AS salePrice
        FROM order_parts op
-       JOIN parts p ON p.id = op.part_id
       WHERE op.order_id = ?`,
     [orderId],
   );

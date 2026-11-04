@@ -58,4 +58,21 @@ describe("cálculo del total de la orden", () => {
     expect(totales.laborSubtotal).toBe("0.00");
     expect(totales.total).toBe("0.00");
   });
+
+  test("los precios de refacciones se suman en centavos exactos con 2 decimales (SC-005)", () => {
+    const totales = sumarTotales({
+      servicios: [{ unitPrice: "10.01" }],
+      manoDeObra: [],
+      refacciones: [
+        { quantity: 3, salePrice: "3.33" }, // 9.99 exactos
+        { quantity: 7, salePrice: "0.07" }, // 0.49 exactos
+      ],
+    });
+
+    expect(totales.partsSubtotal).toBe("10.48");
+    expect(totales.total).toBe("20.49"); // 10.01 + 10.48, sin deriva de redondeo
+    for (const valor of Object.values(totales)) {
+      expect(valor).toMatch(/^\d+\.\d{2}$/);
+    }
+  });
 });

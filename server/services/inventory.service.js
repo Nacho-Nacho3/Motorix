@@ -202,7 +202,9 @@ export async function listarRefaccionesOrden(idOrden, usuario) {
  * 4. la refacción debe existir (404 PART_NOT_FOUND);
  * 5. la cantidad no puede superar el stock (400 STOCK_INSUFFICIENT sin
  *    efecto: ni fila, ni salida, ni descuento — RN-8/CA-6);
- * 6. inserta `order_parts`, escribe el movimiento `OUT` con `orderId`
+ * 6. inserta `order_parts` con el **precio de venta guardado al momento**
+ *    (`unit_price`, instantánea D-01: el total ya no depende del catálogo),
+ *    escribe el movimiento `OUT` con `orderId`
  *    (quantidad positiva: el signo lo aporta el tipo, data-model) y
  *    descuenta el saldo — todo o nada gracias a la transacción.
  */
@@ -225,8 +227,10 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
       if (orden.mechanicId !== usuario.id) throw errores.forbidden();
       if (orden.status === "DELIVERED") throw errores.orderDelivered();
 
+      // El precio se lee en la MISMA conexión (transacción) que inserta la
+      // fila: instantánea consistente del precio vigente (D-01/D-03).
       const [filasParte] = await conexion.query(
-        "SELECT id, stock_current FROM parts WHERE id = ? FOR UPDATE",
+        "SELECT id, stock_current, sale_price AS salePrice FROM parts WHERE id = ? FOR UPDATE",
         [partId],
       );
       if (filasParte.length === 0) throw errores.partNotFound();
@@ -235,7 +239,13 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
       if (quantity > stockActual) throw errores.stockInsufficient();
 
       const idUso = await orderParts.crear(
-        { orderId: idOrden, partId, quantity, createdBy: usuario.id },
+        {
+          orderId: idOrden,
+          partId,
+          quantity,
+          unitPrice: filasParte[0].salePrice,
+          createdBy: usuario.id,
+        },
         conexion,
       );
       await movimientos.crear(

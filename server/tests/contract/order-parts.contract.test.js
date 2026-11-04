@@ -26,6 +26,7 @@ const CAMPOS_ORDER_PART = [
   "partCode",
   "name",
   "quantity",
+  "unitPrice",
   "createdBy",
   "createdAt",
 ].sort();
@@ -128,6 +129,8 @@ describe("Contrato de order-parts.md (US7)", () => {
     const orderPart = creada.body.data.orderPart;
     expect(Object.keys(orderPart).sort()).toEqual(CAMPOS_ORDER_PART);
     expect(orderPart.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+    // Precio guardado en la línea: cadena con exactamente 2 decimales (D-01).
+    expect(orderPart.unitPrice).toMatch(/^\d+\.\d{2}$/);
     // El POST no trae arreglo de usos: solo el objeto creado.
     expect(Object.keys(creada.body.data)).toEqual(["orderPart"]);
   });
@@ -148,6 +151,7 @@ describe("Contrato de order-parts.md (US7)", () => {
     expect(Object.keys(listado.body.data.parts[0]).sort()).toEqual(
       CAMPOS_ORDER_PART,
     );
+    expect(listado.body.data.parts[0].unitPrice).toMatch(/^\d+\.\d{2}$/);
   });
 
   test("códigos PART_REQUIRED, PART_NOT_FOUND, ORDER_DELIVERED y STOCK_INSUFFICIENT", async () => {

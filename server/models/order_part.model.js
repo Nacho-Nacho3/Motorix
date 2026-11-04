@@ -9,6 +9,7 @@ import { pool } from "../config/db.js";
 const CAMPOS =
   "op.id, op.order_id AS orderId, op.part_id AS partId, " +
   "p.part_code AS partCode, p.name, op.quantity, " +
+  "op.unit_price AS unitPrice, " +
   "op.created_by AS createdBy, op.created_at AS createdAt";
 
 /** Normaliza la fila al objeto refacción-de-la-orden del contrato. */
@@ -21,6 +22,8 @@ export function aOrderPart(fila) {
     partCode: fila.partCode,
     name: fila.name,
     quantity: fila.quantity,
+    // Precio guardado al agregar la refacción (D-01, Sprint 5).
+    unitPrice: fila.unitPrice,
     createdBy: fila.createdBy,
     // Contrato: fechas con separador "T" (dateStrings entrega con espacio).
     createdAt: fila.createdAt ? fila.createdAt.replace(" ", "T") : null,
@@ -28,17 +31,18 @@ export function aOrderPart(fila) {
 }
 
 /**
- * Registra un uso de refacción en la orden; acepta una conexión para
+ * Registra un uso de refacción en la orden con su precio de venta al
+ * momento del alta (`unitPrice`, D-01); acepta una conexión para
  * participar en la transacción de la alta (R-05). Devuelve el id de la fila.
  */
 export async function crear(
-  { orderId, partId, quantity, createdBy },
+  { orderId, partId, quantity, unitPrice, createdBy },
   conexion = pool,
 ) {
   const [resultado] = await conexion.query(
-    `INSERT INTO order_parts (order_id, part_id, quantity, created_by)
-     VALUES (?, ?, ?, ?)`,
-    [orderId, partId, quantity, createdBy],
+    `INSERT INTO order_parts (order_id, part_id, quantity, unit_price, created_by)
+     VALUES (?, ?, ?, ?, ?)`,
+    [orderId, partId, quantity, unitPrice ?? 0, createdBy],
   );
   return resultado.insertId;
 }

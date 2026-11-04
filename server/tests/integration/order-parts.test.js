@@ -338,4 +338,88 @@ describe("Refacciones utilizadas en una orden (US7, CA-5)", () => {
     expect(comoMecanico.status).toBe(200);
     expect(comoMecanico.body.data.total).toBe(2);
   });
+
+  test("la línea guarda el precio vigente y el total no cambia si cambia el catálogo (D-01, SC-001, FR-003)", async () => {
+    const orden = await crearOrden({ asignado: idMecanico });
+    const creada = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "BAL-SNAP",
+        name: "Balatas con precio",
+        category: "Frenos",
+        stockCurrent: 10,
+        stockMin: 5,
+        purchasePrice: "420.00",
+        salePrice: "850.00",
+      });
+    expect(creada.status).toBe(201);
+    const parte = creada.body.data.part;
+
+    const respuesta = await agregar(orden.id, { partId: parte.id, quantity: 2 });
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.data.orderPart.unitPrice).toBe("850.00");
+
+    const filas = await filasDeOrden(orden.id);
+    expect(filas).toHaveLength(1);
+    expect(Number(filas[0].unit_price)).toBe(850);
+
+    // Cambiar el precio en el catálogo no toca ni la línea ni el total.
+    const cambio = await request(app)
+      .patch(`/api/parts/${parte.id}`)
+      .set(headersAdmin)
+      .send({ salePrice: "999.99" });
+    expect(cambio.status).toBe(200);
+
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersAdmin);
+    expect(total.status).toBe(200);
+    expect(total.body.data.partsSubtotal).toBe("1700.00");
+    expect(total.body.data.total).toBe("1700.00");
+
+    const listado = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersAdmin);
+    expect(listado.body.data.parts[0].unitPrice).toBe("850.00");
+  });
+
+  test("ninguna línea queda sin precio tras la 014: NOT NULL con default 0.00 (FR-003)", async () => {
+    const orden = await crearOrden({ asignado: idMecanico });
+    const parte = await crearParte(10);
+    expect((await agregar(orden.id, { partId: parte.id, quantity: 1 })).status).toBe(201);
+
+    // Fila insertada directamente en la base (como un registro previo a la app).
+    await poolPrueba.query(
+      "INSERT INTO order_parts (order_id, part_id, quantity, created_by) VALUES (?, ?, 1, ?)",
+      [orden.id, parte.id, idMecanico],
+    );
+
+    const [sinPrecio] = await poolPrueba.query(
+      "SELECT COUNT(*) AS cantidad FROM order_parts WHERE unit_price IS NULL",
+    );
+    expect(sinPrecio[0].cantidad).toBe(0);
+
+    const filas = await filasDeOrden(orden.id);
+    expect(filas).toHaveLength(2);
+    for (const fila of filas) {
+      expect(fila.unit_price).not.toBeNull();
+      expect(Number(fila.unit_price)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  test("orden sin trabajo → total 0.00 en todos los campos (SC-004)", async () => {
+    const orden = await crearOrden({ asignado: idMecanico });
+
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersAdmin);
+    expect(total.status).toBe(200);
+    expect(total.body.data).toMatchObject({
+      servicesSubtotal: "0.00",
+      laborSubtotal: "0.00",
+      partsSubtotal: "0.00",
+      total: "0.00",
+    });
+  });
 });
