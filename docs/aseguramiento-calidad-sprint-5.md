@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
 
-**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02) y la G-02 (`/speckit.specify`, 2026-11-03); faltan clarify, plan, tasks e implement. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`) y la G-03 (`/speckit.clarify`), ambas el 2026-11-03; faltan plan, tasks e implement. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
 
 ## 0. Datos del documento
 
@@ -15,7 +15,7 @@ Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las pue
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-02 |
 | Fecha de cierre | Se llena al cerrar el sprint |
-| Estado general | En elaboración - proceso Spec Kit en curso (G-01 y G-02 completadas) |
+| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02 y G-03 completadas) |
 
 ## 1. Objetivo y alcance
 
@@ -31,9 +31,9 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 **Criterios de entrada (para comenzar la implementación):**
 
-- [ ] Las 8 puertas de la sección 3 están Aprobadas o Aprobadas con observación (solo G-01, G-02 y G-08 avanzaron).
+- [ ] Las 8 puertas de la sección 3 están Aprobadas o Aprobadas con observación (solo G-01, G-02, G-03 y G-08 avanzaron).
 - [ ] Si el sprint contradice un principio de la constitución, la enmienda está aprobada y registrada (hallazgo H-01): la constitución limita el proyecto a **cuatro sprints** (`.specify/memory/constitution.md`, líneas 36, 48 y 84) y el Sprint 5 es posterior al MVP.
-- [ ] Las 10 decisiones de la sección 4 están resueltas y registradas.
+- [ ] Las 10 decisiones de la sección 4 están resueltas y registradas (6 de 10 resueltas en la sesión de clarify del 2026-11-03; faltan D-02, D-06, D-07 y D-09).
 - [ ] No hay hallazgos críticos ni altos abiertos en el análisis de consistencia (G-07 sin ejecutar).
 - [x] Cada criterio de aceptación tuvo al menos una prueba planeada (sección 6).
 - [x] La línea base de regresión está registrada (sección 8).
@@ -49,14 +49,14 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 ## 3. Puertas de calidad
 
-G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real) y G-02 el 2026-11-03 (`/speckit.specify`); las puertas G-03 a G-07 corresponden a etapas de Spec Kit que aún no se ejecutan.
+G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`) y G-03 (`/speckit.clarify`) el 2026-11-03; las puertas G-04 a G-07 corresponden a etapas de Spec Kit que aún no se ejecutan.
 
 | ID | Puerta | Estado | Evidencia |
 |:--:|---|---|---|
 | G-01 | Insumo del sprint revisado contra el código | Aprobado con observación | Revisión del 2026-11-02 contra `order-total.service.js`, migraciones `009`/`011`, `validators/parts.js`, `payments.service.js`, `tickets.service.js` y `parts.routes.js`: 9 hallazgos H-01 a H-09 (sección 7) |
 | G-02 | Especificación (`/speckit.specify`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/spec.md` (5 historias, 14 FR, 8 SC) y `checklists/requirements.md` (17/17 ítems); commit `959268b`; corrige los hallazgos H-02 a H-05 |
-| G-03 | Aclaraciones (`/speckit.clarify`) | No iniciada | 10 decisiones abiertas (sección 4), documentadas en la sección Clarificaciones del `spec.md` |
-| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | No iniciada | Checklist por crear junto con la especificación |
+| G-03 | Aclaraciones (`/speckit.clarify`) | Realizada con observación (2026-11-03) | 5 preguntas → 6 decisiones resueltas (D-01/D-03, D-04, D-05, D-08, D-10) en `spec.md` (`### Session 2026-11-03`), commit `86d29bc`; 4 diferidas por bajo impacto (D-02, D-06, D-07, D-09) con defaults en Supuestos |
+| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | No iniciada | Existe `checklists/requirements.md` (17/17, creada en la G-02); falta ejecutar `/speckit.checklist` para el checklist completo |
 | G-05 | Plan (`/speckit.plan`) | No iniciada | `plan.md`, `data-model.md` y `contracts/` por crear; la migración nueva debe ser la siguiente a la 013 (H-05) |
 | G-06 | Tareas (`/speckit.tasks`) | No iniciada | `tasks.md` por crear; las pruebas van antes del código en cada historia |
 | G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
@@ -64,20 +64,20 @@ G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real) y G
 
 ## 4. Decisiones de aclaración
 
-Las 10 decisiones abiertas del insumo (sección 9, líneas 93 a 102) están **abiertas** y se resolverán en `/speckit.clarify` con preguntas cerradas y recomendación; no se asumen respuestas. Ya están documentadas en la sección Clarificaciones del `specs/005-precios-refacciones-cobro/spec.md`, con defaults temporales en Supuestos.
+Las 10 decisiones del insumo (sección 9, líneas 93 a 102) se trabajaron en la sesión de `/speckit.clarify` del 2026-11-03 (G-03): **6 resueltas** con su respuesta registrada en `### Session 2026-11-03` del `spec.md` (commit `86d29bc`) y **4 diferidas** por bajo impacto (D-02, D-06, D-07, D-09), con defaults documentados en Supuestos. Nada se asume sin registrar.
 
 | ID | Decisión (resumen del insumo) | Estado |
 |:--:|---|---|
-| D-01 | Refacciones existentes o líneas sin precio: asignar 0, exigir precio o bloquearlas | Abierta |
+| D-01 | Refacciones existentes o líneas sin precio: asignar 0, exigir precio o bloquearlas | Resuelta (2026-11-03): precio vigente al migrar |
 | D-02 | Orden con solo refacciones: si es cobrable (el insumo la llama `NOTHING_TO_CHARGE`; ver H-04) | Abierta |
-| D-03 | Órdenes abiertas al desplegar: precio vigente al migrar o 0 | Abierta |
-| D-04 | Pago de Mercado Pago pendiente cuando cambia el total: cancelar, actualizar o marcar desfasado | Abierta |
-| D-05 | Corrección del precio de una línea en una orden abierta: si se permite y con qué motivo o permiso | Abierta |
+| D-03 | Órdenes abiertas al desplegar: precio vigente al migrar o 0 | Resuelta (2026-11-03): precio vigente al migrar (misma que D-01) |
+| D-04 | Pago de Mercado Pago pendiente cuando cambia el total: cancelar, actualizar o marcar desfasado | Resuelta (2026-11-03): cancelar el pendiente y generar uno nuevo |
+| D-05 | Corrección del precio de una línea en una orden abierta: si se permite y con qué motivo o permiso | Resuelta (2026-11-03): solo administrador, con motivo obligatorio |
 | D-06 | Categoría: lista cerrada administrable o texto libre; marca: texto libre | Abierta |
 | D-07 | Precio de venta menor al de compra: permitir, advertir o rechazar | Abierta |
-| D-08 | Redondeo del importe de una línea y límites máximos de precio y de total | Abierta |
+| D-08 | Redondeo del importe de una línea y límites máximos de precio y de total | Resuelta (2026-11-03): precio máximo $99,999.99; redondeo al centavo más cercano |
 | D-09 | Cómo conviven los tickets anteriores (sin precios) con los nuevos | Abierta |
-| D-10 | Visibilidad del precio de venta para el mecánico | Abierta |
+| D-10 | Visibilidad del precio de venta para el mecánico | Resuelta (2026-11-03): el mecánico no ve precios |
 
 ## 5. Riesgos y mitigaciones
 
