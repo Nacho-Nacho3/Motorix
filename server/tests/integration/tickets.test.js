@@ -324,3 +324,37 @@ describe("GET /api/service-orders/{id}/ticket (US3, CA-4)", () => {
     expect(consulta.body.error.code).toBe("FORBIDDEN");
   });
 });
+
+// Sprint 5 (US3, T022): el ticket lee el precio GUARDADO en la línea
+// (op.unit_price, D-01): cambiar el catálogo no altera el comprobante.
+describe("US3 - Ticket con precio guardado (T022, D-01, SC-002)", () => {
+  test("el ticket usa el precio guardado en la línea aunque cambie el catálogo", async () => {
+    const orden = await ordenTerminada();
+    const creada = await generarTicket(orden);
+    expect(creada.status).toBe(201);
+
+    const [usos] = await poolPrueba.query(
+      "SELECT part_id AS partId FROM order_parts WHERE order_id = ?",
+      [orden.id],
+    );
+    const cambio = await request(app)
+      .patch(`/api/parts/${usos[0].partId}`)
+      .set(headersAdmin)
+      .send({ salePrice: "999.99" });
+    expect(cambio.status).toBe(200);
+
+    const consulta = await consultarTicket(orden);
+    expect(consulta.status).toBe(200);
+    const ticket = consulta.body.data.ticket;
+
+    expect(ticket.parts).toHaveLength(1);
+    expect(ticket.parts[0].unitPrice).toBe("850.00");
+    expect(ticket.parts[0].subtotal).toBe("1700.00");
+    expect(ticket.totals).toEqual({
+      servicesSubtotal: "850.00",
+      laborSubtotal: "600.00",
+      partsSubtotal: "1700.00",
+      total: "3150.00",
+    });
+  });
+});

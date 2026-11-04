@@ -24,7 +24,11 @@ function idDeRuta(valor) {
 /** GET /api/service-orders/:id/total — desglose calculado (R-03). */
 export async function getOrderTotal(req, res, next) {
   try {
-    const totales = await calcularTotalOrden(idDeRuta(req.params.id));
+    const orderId = idDeRuta(req.params.id);
+    const totales = await calcularTotalOrden(orderId);
+    // D-04 (FR-009): de paso se cancela el pago PENDING desfasado
+    // (idempotente: repetir la consulta no vuelve a cambiar nada).
+    await servicio.cancelarPendienteDesfasado(orderId, totales.total);
     ok(res, totales);
   } catch (error) {
     next(error);
@@ -35,7 +39,9 @@ export async function getOrderTotal(req, res, next) {
 export async function listPayments(req, res, next) {
   try {
     const orderId = idDeRuta(req.params.id);
-    await calcularTotalOrden(orderId); // verifica 404 si la orden no existe
+    const totales = await calcularTotalOrden(orderId); // verifica 404 si la orden no existe
+    // D-04 (FR-009): también al listar los pagos (idempotente).
+    await servicio.cancelarPendienteDesfasado(orderId, totales.total);
     const listado = await servicio.listarPagos(orderId);
     // Contrato: data.payments y data.total (suma de los PAID).
     ok(res, { payments: listado.payments, total: listado.totalPaid });

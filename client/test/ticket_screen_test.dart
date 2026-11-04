@@ -131,4 +131,36 @@ void main() {
     );
     expect(find.widgetWithText(FilledButton, 'Imprimir'), findsOneWidget);
   });
+
+  testWidgets('las refacciones muestran el precio guardado con dos decimales',
+      (tester) async {
+    // T028 (US3, D-01): el ticket informa el unitPrice capturado en la
+    // línea, con exactamente 2 decimales, y el total lo usa.
+    final ticket = _ticketConPago();
+    final partes = (ticket['parts'] as List).cast<Map<String, dynamic>>();
+    partes.first['unitPrice'] = '99.90';
+    partes.first['subtotal'] = '199.80';
+    final totales = (ticket['totals'] as Map).cast<String, dynamic>();
+    totales['partsSubtotal'] = '199.80';
+    totales['total'] = '1649.80';
+
+    await tester.pumpWidget(_pantalla(_ApiTicketFalsa(ticket: ticket)));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('2 × \$99.90'),
+      findsOneWidget,
+      reason: 'la línea de refacción muestra el precio guardado (unitPrice)',
+    );
+    expect(
+      find.text('\$199.80'),
+      findsWidgets,
+      reason: 'el subtotal de refacciones usa el precio guardado',
+    );
+    expect(
+      find.text('\$1649.80'),
+      findsOneWidget,
+      reason: 'el total del ticket se recalcula con el precio guardado',
+    );
+  });
 }

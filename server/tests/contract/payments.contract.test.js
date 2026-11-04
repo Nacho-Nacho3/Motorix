@@ -257,6 +257,58 @@ describe("Contrato de pagos (US1) — contracts/payments.md", () => {
   });
 });
 
+// Sprint 5 (US3, T023): el GET total cancela el PENDING desfasado (D-04,
+// efecto documentado en contracts/payments.md) y deja intacto uno que sí
+// coincide con el total (VN-05 → 409).
+describe("Contrato del total con pendiente desfasado (US3, T023)", () => {
+  test("desfasado → CANCELLED y coincidente → 409 PENDING_PAYMENT_EXISTS", async () => {
+    const orden = await crearOrdenTerminada();
+
+    // Importe desfasado (el total es 1450.00): el GET total lo cancela.
+    await poolPrueba.query(
+      `INSERT INTO payments (order_id, amount, method, status, created_by)
+       VALUES (?, 1400.00, 'MERCADO_PAGO', 'PENDING', ?)`,
+      [orden.id, idMecanico],
+    );
+
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    expect(total.status).toBe(200);
+    expect(total.body.data.total).toBe("1450.00");
+
+    const listado = await request(app)
+      .get(`/api/service-orders/${orden.id}/payments`)
+      .set(headersRecepcion);
+    expect(listado.status).toBe(200);
+    expect(listado.body.data.payments).toHaveLength(1);
+    expect(listado.body.data.payments[0].status).toBe("CANCELLED");
+
+    // Uno que SÍ coincide con el total no se cancela y bloquea VN-05.
+    await poolPrueba.query(
+      `INSERT INTO payments (order_id, amount, method, status, created_by)
+       VALUES (?, 1450.00, 'MERCADO_PAGO', 'PENDING', ?)`,
+      [orden.id, idMecanico],
+    );
+
+    const intento = await request(app)
+      .post(`/api/service-orders/${orden.id}/payments`)
+      .set(headersRecepcion)
+      .send({ method: "CASH" });
+    expect(intento.status).toBe(409);
+    expect(intento.body.error.code).toBe("PENDING_PAYMENT_EXISTS");
+
+    const [estados] = await poolPrueba.query(
+      "SELECT status FROM payments WHERE order_id = ? ORDER BY id",
+      [orden.id],
+    );
+    expect(estados.map((fila) => fila.status)).toEqual([
+      "CANCELLED",
+      "PENDING",
+    ]);
+  });
+});
+
 // T042: contratos de sync y cancel contra contracts/payments.md (US4, CA-3).
 describe("Contrato de sync y cancel (US4) — contracts/payments.md", () => {
   let tokenOriginal;

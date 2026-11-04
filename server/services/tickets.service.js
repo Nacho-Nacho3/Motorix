@@ -74,9 +74,11 @@ async function seccionesDeTrabajo(orderId) {
     "SELECT id, concept, hours, hourly_rate AS hourlyRate FROM order_labor WHERE order_id = ? ORDER BY id",
     [orderId],
   );
+  // T026 (D-01): el precio de cada línea sale de op.unit_price (instantánea
+  // al agregarla), no del catálogo: el ticket no cambia si cambia el precio.
   const [refacciones] = await pool.query(
     `SELECT op.id, p.part_code AS partCode, p.name, op.quantity,
-            p.sale_price AS salePrice
+            op.unit_price AS salePrice
        FROM order_parts op
        JOIN parts p ON p.id = op.part_id
       WHERE op.order_id = ?

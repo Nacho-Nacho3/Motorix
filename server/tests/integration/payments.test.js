@@ -437,3 +437,158 @@ describe("US2 - Mercado Pago y métodos del negocio (T022)", () => {
     expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
   });
 });
+
+// Sprint 5 (US3, T019/T020): total con refacciones (D-01, FR-005) y
+// cancelación del pago PENDING desfasado antes de crear el nuevo cobro
+// (D-04, FR-009, CA-7, SC-004).
+describe("US3 - Total con refacciones y pendiente desfasado (T019, T020)", () => {
+  /** Inserta un pago PENDING directo en la base (simula un desfase previo). */
+  async function pagoPendiente(orden, monto) {
+    await poolPrueba.query(
+      `INSERT INTO payments (order_id, amount, method, status, created_by)
+       VALUES (?, ?, 'MERCADO_PAGO', 'PENDING', ?)`,
+      [orden.id, monto, idRecepcion],
+    );
+  }
+
+  async function estadosDePagos(orden) {
+    const [filas] = await poolPrueba.query(
+      "SELECT status FROM payments WHERE order_id = ? ORDER BY id",
+      [orden.id],
+    );
+    return filas.map((fila) => fila.status);
+  }
+
+  test("una orden terminada solo con refacciones y total > 0.00 sí es cobrable (D-02, FR-005)", async () => {
+    const orden = await crearOrden();
+    const parte = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: `FIL-${String(contadorOrdenes).padStart(4, "0")}`,
+        name: "Filtro de aceite",
+        category: "Filtros",
+        stockCurrent: 5,
+        stockMin: 1,
+        salePrice: "250.00",
+      });
+    expect(parte.status).toBe(201);
+
+    const uso = await request(app)
+      .post(`/api/service-orders/${orden.id}/parts`)
+      .set(headersMecanico)
+      .send({ partId: parte.body.data.part.id, quantity: 2 });
+    expect(uso.status).toBe(201);
+
+    for (const status of ["DIAGNOSIS", "IN_REPAIR", "FINISHED"]) {
+      const cambio = await request(app)
+        .patch(`/api/service-orders/${orden.id}/status`)
+        .set(headersMecanico)
+        .send({ status });
+      expect(cambio.status).toBe(200);
+    }
+
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    expect(total.status).toBe(200);
+    expect(total.body.data.partsSubtotal).toBe("500.00");
+    expect(total.body.data.total).toBe("500.00");
+
+    const pago = await registrarPago(orden, {
+      method: "CASH",
+      amount: "500.00",
+    });
+    expect(pago.status).toBe(201);
+    expect(pago.body.data.payment.amount).toBe("500.00");
+    expect(pago.body.data.payment.status).toBe("PAID");
+  });
+
+  test("GET total cancela el pendiente desfasado de forma idempotente y el cobro nuevo procede (D-04)", async () => {
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3000.00");
+
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    expect(total.status).toBe(200);
+    expect(total.body.data.total).toBe("3150.00");
+    expect(await estadosDePagos(orden)).toEqual(["CANCELLED"]);
+
+    // Idempotente: repetir la consulta no cambia nada.
+    await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    expect(await estadosDePagos(orden)).toEqual(["CANCELLED"]);
+
+    const pago = await registrarPago(orden, {
+      method: "CASH",
+      amount: "3150.00",
+    });
+    expect(pago.status).toBe(201);
+    expect(await estadosDePagos(orden)).toEqual(["CANCELLED", "PAID"]);
+  });
+
+  test("GET payments también cancela el desfasado y es idempotente (D-04)", async () => {
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3000.00");
+
+    const primera = await request(app)
+      .get(`/api/service-orders/${orden.id}/payments`)
+      .set(headersRecepcion);
+    expect(primera.status).toBe(200);
+    expect(primera.body.data.payments).toHaveLength(1);
+    expect(primera.body.data.payments[0].status).toBe("CANCELLED");
+
+    const segunda = await request(app)
+      .get(`/api/service-orders/${orden.id}/payments`)
+      .set(headersRecepcion);
+    expect(segunda.status).toBe(200);
+    expect(segunda.body.data.payments).toHaveLength(1);
+    expect(segunda.body.data.payments[0].status).toBe("CANCELLED");
+    expect(await estadosDePagos(orden)).toEqual(["CANCELLED"]);
+  });
+
+  test("POST payments cancela el desfasado antes de VN-05 y crea el cobro nuevo (D-04)", async () => {
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3000.00");
+
+    const pago = await registrarPago(orden, {
+      method: "CASH",
+      amount: "3150.00",
+    });
+    expect(pago.status).toBe(201);
+    expect(pago.body.data.payment.status).toBe("PAID");
+    expect(await estadosDePagos(orden)).toEqual(["CANCELLED", "PAID"]);
+  });
+
+  test("un pendiente que SÍ coincide con el total sigue bloqueando con 409 (VN-05)", async () => {
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3150.00");
+
+    const intento = await registrarPago(orden, {
+      method: "CASH",
+      amount: "3150.00",
+    });
+    expect(intento.status).toBe(409);
+    expect(intento.body.error.code).toBe("PENDING_PAYMENT_EXISTS");
+
+    // El GET total no lo cancela: su importe coincide con el total.
+    await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    expect(await estadosDePagos(orden)).toEqual(["PENDING"]);
+  });
+
+  test("los pagos PAID no cambian al cancelar el desfasado (R-04)", async () => {
+    const orden = await ordenTerminada();
+    expect((await registrarPago(orden, { method: "CASH" })).status).toBe(201);
+    await pagoPendiente(orden, "3000.00");
+
+    await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+
+    expect(await estadosDePagos(orden)).toEqual(["PAID", "CANCELLED"]);
+  });
+});

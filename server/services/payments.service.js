@@ -101,6 +101,28 @@ export function verificarReglasAltaPago({ estadoOrden, pagos = [], method, total
 }
 
 /**
+ * Cancela el pago `PENDING` cuyo importe ya no coincide con el total de la
+ * orden (D-04, FR-009): el cobro nuevo nace sin heredar el desfase. Una sola
+ * sentencia atómica e idempotente: solo afecta a filas con `amount <> total`
+ * (las coincidentes siguen bloqueando con VN-05) y nunca toca `PAID`,
+ * `REJECTED` ni `CANCELLED` (máquina R-04).
+ *
+ * @param {number} orderId Orden dueña del pago
+ * @param {string|number} total Total calculado de la orden (2 decimales)
+ * @param {import("mysql2/promise").Pool|object} [conexion] Conexión opcional
+ * @returns {Promise<number>} Filas canceladas (0 si no había desfase)
+ */
+export async function cancelarPendienteDesfasado(orderId, total, conexion = pool) {
+  const [resultado] = await conexion.query(
+    `UPDATE payments
+        SET status = 'CANCELLED'
+      WHERE order_id = ? AND status = 'PENDING' AND amount <> ?`,
+    [orderId, total],
+  );
+  return resultado.affectedRows;
+}
+
+/**
  * Registra un pago de la orden. Toda la validación y la inserción corren en
  * UNA transacción con `SELECT ... FOR UPDATE` sobre la fila de la orden:
  * dos cobros simultáneos se serializan y nunca crean dos pagos `PAID`
@@ -125,14 +147,19 @@ export async function registrarPago(orderId, { method, amount }, usuario) {
       throw errores.serviceOrderNotFound();
     }
 
+    // VN-03: total calculado con la misma fórmula del ticket (R-03), dentro
+    // de la transacción, contra la fila de la orden bloqueada.
+    const totales = await calcularTotalOrden(orderId, conexion);
+
+    // D-04 (FR-009): se cancela el PENDING desfasado ANTES de leer los pagos
+    // y de VN-05: el cobro nuevo nace sin heredar el desfase y los pendientes
+    // que sí coinciden con el total siguen bloqueando.
+    await cancelarPendienteDesfasado(orderId, totales.total, conexion);
+
     const [pagos] = await conexion.query(
       "SELECT id, status, method FROM payments WHERE order_id = ? ORDER BY id DESC",
       [orderId],
     );
-
-    // VN-03: total calculado con la misma fórmula del ticket (R-03), dentro
-    // de la transacción, contra la fila de la orden bloqueada.
-    const totales = await calcularTotalOrden(orderId, conexion);
 
     verificarReglasAltaPago({
       estadoOrden: ordenes[0].status,
