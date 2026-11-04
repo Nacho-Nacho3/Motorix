@@ -344,22 +344,22 @@ Estado: **Aprobado** (2026-11-03). Evidencia: `docs/evidencias/sprint-5/escenari
 
 # Guía de capturas de pantalla
 
-Evidencias en `docs/evidencias/sprint-5/` (carpeta creada el 2026-11-03). Los nombres van en minúsculas y con guiones. Siguiendo el patrón del proyecto (`docs/evidencias/2026-10-18-suite-backend.md`), las corridas quedaron como **transcripciones markdown** en lugar de PNG; la guía reserva a Ignacio las capturas de la app y del cronómetro.
+Evidencias en `docs/evidencias/sprint-5/` (carpeta creada el 2026-11-03). Los nombres van en minúsculas y con guiones. Siguiendo el patrón del proyecto (`docs/evidencias/2026-10-18-suite-backend.md`), las corridas quedaron como **transcripciones markdown** en lugar de PNG; la guía reserva a Ignacio las capturas de la app y del cronómetro, con el detalle operativo en `evidencias/sprint-5/paso-a-paso-capturas.md`.
 
 | ID | Evidencia | Qué debe verse o registra | Cómo se obtiene | Estado |
 |---|---|---|---|---|
 | C-01 | `linea-base-2026-11-02.md` | Transcripción con `Test Suites: 49 passed, 49 total` y `Tests: 390 passed, 390 total` | Línea base del 2026-11-02 sobre `fe587b5` | Hecho (markdown, sin PNG) |
 | C-02 | `linea-base-2026-11-02.md` | `+120: All tests passed!` | `flutter test` del 2026-11-02 | Hecho (markdown, sin PNG) |
 | C-03 | `linea-base-2026-11-02.md` | `No issues found!` | `flutter analyze lib` del 2026-11-02 | Hecho (markdown, sin PNG) |
-| C-04 | `captura-rf-01-instantanea-precio.png` (sin tomar) | Detalle de una orden con la línea de refacción conservando su precio tras cambiar el precio en el catálogo | App (`client\lib\screens\orders\order_detail_screen.dart`): el admin cambia el precio, recepción reabre la orden | **Pendiente del responsable** |
-| C-05 | `captura-rf-02-ticket-anterior-y-nuevo.png` (sin tomar) | Un ticket anterior y uno nuevo en el mismo listado | App (`client\lib\screens\tickets\ticket_screen.dart`) | **Pendiente del responsable** |
+| C-04 | `captura-rf-01-instantanea-precio.png` (sin tomar) | Dos ventanas lado a lado: el catálogo con `BAL-001` a `950.00` y la línea de la orden todavía en `850.00` | App: admin cambia el precio en Inventario y muestra el detalle de la orden (paso a paso en `evidencias/sprint-5/paso-a-paso-capturas.md`) | **Pendiente del responsable** |
+| C-05 | `captura-rf-02-ticket-anterior-y-nuevo.png` (sin tomar) | El ticket anterior (orden GHI9012) y el ticket nuevo (orden ABC1234) uno al lado del otro; la app no tiene listado de tickets y cada uno se abre desde su orden con «Generar / Ver ticket» | App (`client\lib\screens\tickets\ticket_screen.dart`), paso a paso en `evidencias/sprint-5/paso-a-paso-capturas.md` | **Pendiente del responsable** |
 | C-06 | `corrida-focalizada-rf.md` | Prueba de fuga de precios en verde (lookup sin `purchasePrice`) | `npm.cmd test -- ... parts-catalog` (corrida de 11 suites / 114 pruebas) | Hecho (markdown, sin PNG) |
 | C-07 | `corrida-focalizada-rf.md` | Prueba de cobros simultáneos: 1 PAID y ningún 500 | `npm.cmd test -- ... payment-concurrency` (`integration/payment-concurrency.test.js`) | Hecho (markdown, sin PNG) |
 | C-08 | `corrida-focalizada-rf.md` | Prueba de límites (`99,999.99`) y redondeo en centavos | `npm.cmd test -- ... parts-catalog order-total` | Hecho (markdown, sin PNG) |
 | C-09 | `regresion-cierre-2026-11-03.md` | Suite completa al cierre: `Test Suites: 51 passed` y `Tests: 423 passed` | `npm.cmd test` en `server\` (2026-11-03) | Hecho (markdown, sin PNG) |
 | C-10 | `regresion-cierre-2026-11-03.md` | `+128: All tests passed!` al cierre | `flutter test` en `client\` (2026-11-03) | Hecho (markdown, sin PNG) |
 | C-11 | `escenarios-api-e06.md` | Tabla del recorrido de los escenarios: 52 de 52 cumplidos | Guion HTTP contra la API con `motorix_test` (`guion-e06-sprint5.mjs`) | Hecho (markdown, sin PNG) |
-| C-12 | `captura-tiempos-<nombre-del-criterio>.png` (sin tomar) | Cronómetro del criterio de éxito medible que defina el spec, con la pantalla de inicio y la final | Medido por Ignacio en la app con los datos de ejemplo | **Pendiente del responsable** |
+| C-12 | `captura-tiempos-sc-008-flujo-demostrable.png` (sin tomar) | Cronómetro detenido con el flujo SC-008 de extremo a extremo (refacción con precios → uso en orden → total → pago → ticket → cambio de precio sin efectos retroactivos), con la pantalla de inicio y la final | Medido por Ignacio en la app con los datos de ejemplo; paso a paso en `evidencias/sprint-5/paso-a-paso-capturas.md` | **Pendiente del responsable** |
 
 Notas para tomar las capturas que faltan:
 
