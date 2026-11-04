@@ -51,7 +51,7 @@ Misma forma y mismos errores que en el Sprint 3, con una validación agregada
 | Condición | Respuesta |
 |-----------|-----------|
 | Negativo, no numérico o con más de 2 decimales | 400 `VALIDATION_ERROR` (ya existente) |
-| **Mayor a `$99,999.99`** | 400 `VALIDATION_ERROR` con mensaje «El precio … no puede superar los 99,999.99.» |
+| **Mayor a `$99,999.99`** | 400 `VALIDATION_ERROR` con el detalle «El precio … no puede superar los 99,999.99.» en `error.details[]` con el campo afectado (el `message` principal sigue siendo el genérico de validación, como en todo el API) |
 | `salePrice < purchasePrice` | **Permitido** (200/201): el backend no lo rechaza; el formulario muestra una advertencia ámbar no bloqueante (D-07, default documentado) |
 
 Categoría y marca siguen como texto libre de hasta 50 caracteres (D-06, sin

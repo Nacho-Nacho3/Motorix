@@ -1,10 +1,26 @@
 import { z } from "zod";
 
 // T043: validación de refacciones (contrato inventory.md, FR-011, RN-8).
-// precios: ≥ 0 con hasta 2 decimales, como cadena según el contrato.
+// precios: ≥ 0, hasta 2 decimales y tope $99,999.99 (D-08, Sprint 5), como
+// cadena según el contrato.
 // El stock actual y el código no viajan en el PATCH (R-05, inmutabilidad).
 
 const PRECIO = /^\d+(\.\d{1,2})?$/;
+const TOPE_PRECIO = 99999.99;
+
+/** Precio de catálogo: cadena con hasta 2 decimales y tope $99,999.99 (D-08). */
+function precio(campo) {
+  return z
+    .string()
+    .trim()
+    .regex(
+      PRECIO,
+      `El precio de ${campo} debe ser un número mayor o igual a cero con hasta 2 decimales.`,
+    )
+    .refine((valor) => Number(valor) <= TOPE_PRECIO, {
+      message: `El precio de ${campo} no puede superar los 99,999.99.`,
+    });
+}
 
 /** Mensaje en español para las claves extra del cuerpo. */
 function mensajeClavesExtra(problema, contexto) {
@@ -49,24 +65,8 @@ export const partCreateSchema = z
         .number({ required_error: "El stock mínimo es obligatorio." })
         .int("El stock mínimo debe ser un número entero.")
         .min(0, "El stock mínimo no puede ser negativo."),
-      purchasePrice: z
-        .string()
-        .trim()
-        .regex(
-          PRECIO,
-          "El precio de compra debe ser un número mayor o igual a cero con hasta 2 decimales.",
-        )
-        .optional()
-        .nullable(),
-      salePrice: z
-        .string()
-        .trim()
-        .regex(
-          PRECIO,
-          "El precio de venta debe ser un número mayor o igual a cero con hasta 2 decimales.",
-        )
-        .optional()
-        .nullable(),
+      purchasePrice: precio("compra").optional().nullable(),
+      salePrice: precio("venta").optional().nullable(),
     },
     { errorMap: mensajeClavesExtra },
   )
@@ -98,24 +98,8 @@ export const partPatchSchema = z
         .int("El stock mínimo debe ser un número entero.")
         .min(0, "El stock mínimo no puede ser negativo.")
         .optional(),
-      purchasePrice: z
-        .string()
-        .trim()
-        .regex(
-          PRECIO,
-          "El precio de compra debe ser un número mayor o igual a cero con hasta 2 decimales.",
-        )
-        .optional()
-        .nullable(),
-      salePrice: z
-        .string()
-        .trim()
-        .regex(
-          PRECIO,
-          "El precio de venta debe ser un número mayor o igual a cero con hasta 2 decimales.",
-        )
-        .optional()
-        .nullable(),
+      purchasePrice: precio("compra").optional().nullable(),
+      salePrice: precio("venta").optional().nullable(),
     },
     { errorMap: mensajeClavesExtra },
   )

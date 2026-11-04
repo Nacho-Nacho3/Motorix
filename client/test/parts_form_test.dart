@@ -210,6 +210,61 @@ void main() {
     expect(find.text('La marca es obligatoria.'), findsNothing);
   });
 
+  testWidgets('el tope de 99,999.99 se rechaza en cliente con mensaje en español', (tester) async {
+    final api = _ApiRefaccionesFalsa();
+    await tester.pumpWidget(_formulario(api));
+    await tester.pumpAndSettle();
+
+    await _escribir(tester, 0, 'TOPE-1');
+    await _escribir(tester, 1, 'Refacción cara');
+    await _escribir(tester, 2, 'Frenos');
+    await _escribir(tester, 5, '1');
+    await _escribir(tester, 6, '100000.00');
+
+    await tester.ensureVisible(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('El precio de compra no puede superar los 99,999.99.'),
+      findsOneWidget,
+    );
+    expect(api.posteos, 0, reason: 'el tope se valida antes de enviar');
+  });
+
+  testWidgets('venta menor que compra muestra advertencia ámbar que no bloquea el guardado', (tester) async {
+    final api = _ApiRefaccionesFalsa();
+    await tester.pumpWidget(_conNavegacion(api));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ir al formulario'));
+    await tester.pumpAndSettle();
+
+    await _escribir(tester, 0, 'OFERTA-7');
+    await _escribir(tester, 1, 'Refacción en oferta');
+    await _escribir(tester, 2, 'Frenos');
+    await _escribir(tester, 5, '1');
+    await _escribir(tester, 6, '500.00');
+    await _escribir(tester, 7, '450.00');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('El precio de venta es menor que el precio de compra.'),
+      findsOneWidget,
+      reason: 'la advertencia se muestra al escribir los precios',
+    );
+
+    await tester.ensureVisible(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+
+    expect(api.posteos, 1, reason: 'la advertencia no bloquea el guardado');
+    expect(find.text('Refacción registrada'), findsOneWidget);
+    expect(find.text('Ir al formulario'), findsOneWidget);
+  });
+
   testWidgets('pide confirmación al salir con cambios sin guardar (PopScope)', (tester) async {
     await tester.pumpWidget(_conNavegacion(_ApiRefaccionesFalsa()));
     await tester.pumpAndSettle();

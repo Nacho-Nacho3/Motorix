@@ -151,6 +151,9 @@ class _PartFormScreenState extends State<PartFormScreen> {
       return 'El precio de compra debe ser un número mayor o igual a cero '
           'con hasta 2 decimales.';
     }
+    if ((double.tryParse(texto) ?? 0) > 99999.99) {
+      return 'El precio de compra no puede superar los 99,999.99.';
+    }
     return null;
   }
 
@@ -161,7 +164,19 @@ class _PartFormScreenState extends State<PartFormScreen> {
       return 'El precio de venta debe ser un número mayor o igual a cero '
           'con hasta 2 decimales.';
     }
+    if ((double.tryParse(texto) ?? 0) > 99999.99) {
+      return 'El precio de venta no puede superar los 99,999.99.';
+    }
     return null;
+  }
+
+  /// Advertencia no bloqueante (D-07): venta por debajo de la compra.
+  /// El backend permite el precio; solo se avisa en la interfaz.
+  bool get _ventaMenorQueCompra {
+    final compra = double.tryParse(_precioCompra.text.trim());
+    final venta = double.tryParse(_precioVenta.text.trim());
+    if (compra == null || venta == null) return false;
+    return venta < compra;
   }
 
   Future<void> _guardar() async {
@@ -313,6 +328,7 @@ class _PartFormScreenState extends State<PartFormScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
                         labelText: 'Precio de compra',
                         helperText: 'Opcional; pesos con hasta 2 decimales',
@@ -325,12 +341,40 @@ class _PartFormScreenState extends State<PartFormScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
                         labelText: 'Precio de venta',
                         helperText: 'Opcional; pesos con hasta 2 decimales',
                       ),
                       validator: _validarPrecioVenta,
                     ),
+                    if (_ventaMenorQueCompra) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.14),
+                          borderRadius:
+                              BorderRadius.circular(AppRadii.pill),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_outlined,
+                              color: AppColors.warning,
+                              size: 20,
+                            ),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'El precio de venta es menor que el precio de compra.',
+                                style: TextStyle(color: AppColors.warning),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.xl),
                     ElevatedButton(
                       onPressed: _guardando ? null : _guardar,

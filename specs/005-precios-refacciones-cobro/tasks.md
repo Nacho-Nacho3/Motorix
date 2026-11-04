@@ -56,15 +56,15 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 
 ### Pruebas para US1 (primero, deben fallar)
 
-- [ ] T007 [P] [US1] Prueba de integración del tope de precios en `server/tests/integration/parts-catalog.test.js`: `salePrice "100000.00"` → 400 `VALIDATION_ERROR` con mensaje «…no puede superar los 99,999.99.», precio con 3 decimales → 400, y `salePrice < purchasePrice` → 201 (D-07: permitido, la advertencia es de interfaz)
-- [ ] T008 [P] [US1] Prueba de contrato del catálogo con tope en `server/tests/contract/inventory.contract.test.js` según `contracts/parts-catalog.md` (código `VALIDATION_ERROR` y mensaje en español)
-- [ ] T009 [P] [US1] Prueba de formulario con tope y advertencia en `client/test/parts_form_test.dart`: el tope se rechaza en cliente con mensaje en español y `salePrice < purchasePrice` muestra una advertencia ámbar **no bloqueante**
+- [x] T007 [P] [US1] Prueba de integración del tope de precios en `server/tests/integration/parts-catalog.test.js`: `salePrice "100000.00"` → 400 `VALIDATION_ERROR` con mensaje «…no puede superar los 99,999.99.», precio con 3 decimales → 400, y `salePrice < purchasePrice` → 201 (D-07: permitido, la advertencia es de interfaz) — **ejecutada**: red primero, verde después (el mensaje específico viaja en `error.details[]`)
+- [x] T008 [P] [US1] Prueba de contrato del catálogo con tope en `server/tests/contract/inventory.contract.test.js` según `contracts/parts-catalog.md` (código `VALIDATION_ERROR` y mensaje en español) — **ejecutada**
+- [x] T009 [P] [US1] Prueba de formulario con tope y advertencia en `client/test/parts_form_test.dart`: el tope se rechaza en cliente con mensaje en español y `salePrice < purchasePrice` muestra una advertencia ámbar **no bloqueante** — **ejecutada**: 7/7 pruebas del archivo
 
 ### Implementación de US1
 
-- [ ] T010 [US1] Agregar el tope `$99,999.99` (zod `.refine` sobre el valor numérico, mensaje en español) a `purchasePrice` y `salePrice` de create y patch en `server/validators/parts.js`
-- [ ] T011 [US1] Validar el tope en el formulario y mostrar la advertencia ámbar no bloqueante cuando `salePrice < purchasePrice` en `client/lib/screens/inventory/part_form_screen.dart` (solo espejo: la autoridad es el backend)
-- [ ] T012 [US1] Ejecutar las pruebas de US1 (`parts-catalog`, `inventory.contract` y `parts_form`) y confirmar que pasan sin tocar otros módulos
+- [x] T010 [US1] Agregar el tope `$99,999.99` (zod `.refine` sobre el valor numérico, mensaje en español) a `purchasePrice` y `salePrice` de create y patch en `server/validators/parts.js` — **ejecutada**: factor `precio(campo)` compartido
+- [x] T011 [US1] Validar el tope en el formulario y mostrar la advertencia ámbar no bloqueante cuando `salePrice < purchasePrice` en `client/lib/screens/inventory/part_form_screen.dart` (solo espejo: la autoridad es el backend) — **ejecutada**: getter `_ventaMenorQueCompra` con `onChanged` en vivo
+- [x] T012 [US1] Ejecutar las pruebas de US1 (`parts-catalog`, `inventory.contract` y `parts_form`) y confirmar que pasan sin tocar otros módulos — **ejecutada**: backend 19/19, frontend 7/7 y `flutter analyze` sin problemas
 
 **Checkpoint**: US1 funcional y verificable de forma independiente
 

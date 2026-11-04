@@ -169,6 +169,35 @@ describe("Contrato de inventory.md (US6)", () => {
     expect(duplicada.body.error.code).toBe("PART_CODE_DUPLICATED");
   });
 
+  test("POST y PATCH con precio sobre el tope → 400 VALIDATION_ERROR en español (D-08, FR-002)", async () => {
+    const post = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "TOPE-001",
+        name: "Refacción sobre el tope",
+        category: "Frenos",
+        stockMin: 1,
+        salePrice: "100000.00",
+      });
+    expect(post.status).toBe(400);
+    expect(post.body.error.code).toBe("VALIDATION_ERROR");
+    expect(post.body.error.details.map((detalle) => detalle.message).join(" ")).toContain(
+      "99,999.99",
+    );
+
+    const parte = await crearParte();
+    const patch = await request(app)
+      .patch(`/api/parts/${parte.id}`)
+      .set(headersAdmin)
+      .send({ purchasePrice: "100000.00" });
+    expect(patch.status).toBe(400);
+    expect(patch.body.error.code).toBe("VALIDATION_ERROR");
+    expect(patch.body.error.details.map((detalle) => detalle.message).join(" ")).toContain(
+      "99,999.99",
+    );
+  });
+
   test("FORBIDDEN para roles distintos de ADMIN en todo el contrato", async () => {
     const parte = await crearParte();
 

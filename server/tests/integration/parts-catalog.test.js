@@ -162,6 +162,58 @@ describe("Catálogo de refacciones (US5, CA-4)", () => {
     }
   });
 
+  test("el tope $99,999.99 se acepta y el precio mayor se rechaza en alta y en PATCH (D-08, FR-002)", async () => {
+    const enLimite = await crearParte({
+      ...REFACCION,
+      partCode: "LIM-001",
+      purchasePrice: "99999.99",
+      salePrice: "99999.99",
+    });
+    expect(enLimite.status).toBe(201);
+
+    for (const ajuste of [{ purchasePrice: "100000.00" }, { salePrice: "100000.00" }]) {
+      const respuesta = await crearParte({
+        partCode: `TOPE-${Math.random().toString(36).slice(2, 8)}`,
+        name: "Refacción sobre el tope",
+        category: "Pruebas",
+        stockMin: 1,
+        ...ajuste,
+      });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+      expect(
+        respuesta.body.error.details.map((detalle) => detalle.message).join(" "),
+      ).toContain("99,999.99");
+    }
+
+    const creada = await crearParte(REFACCION);
+    const parche = await request(app)
+      .patch(`/api/parts/${creada.body.data.part.id}`)
+      .set(headersAdmin)
+      .send({ salePrice: "100000.00" });
+    expect(parche.status).toBe(400);
+    expect(parche.body.error.code).toBe("VALIDATION_ERROR");
+    expect(
+      parche.body.error.details.map((detalle) => detalle.message).join(" "),
+    ).toContain("99,999.99");
+  });
+
+  test("venta menor que compra se acepta en la API (D-07: la advertencia es de interfaz, FR-001)", async () => {
+    const respuesta = await crearParte({
+      partCode: "OFERTA-7",
+      name: "Refacción en oferta",
+      category: "Pruebas",
+      stockMin: 1,
+      purchasePrice: "500.00",
+      salePrice: "450.00",
+    });
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.data.part.purchasePrice).toBe("500.00");
+    expect(respuesta.body.data.part.salePrice).toBe("450.00");
+  });
+
   test("GET filtra por código, nombre o categoría y calcula lowStock (SC-004, CA-7)", async () => {
     await crearParte({ ...REFACCION, stockCurrent: 4 }); // 4 ≤ 5 → lowStock
     await crearParte({
