@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-03
 
-**Status**: Draft
+**Status**: Approved
 
 **Input**: User description: "Usa la descripcion de @docs/sprints/sprint-5-precios-refacciones-cobro.md (Sprint 5 post-MVP de Motorix: precios de refacciones y cobro completo)"
 
@@ -99,7 +99,7 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 - Líneas de órdenes existentes que se registraron sin precio guardado: qué precio toman al aplicar el sprint (D-01, D-03; resuelto: precio vigente al migrar, ver Clarificaciones).
 - Orden con solo refacciones y total mayor a 0.00: ¿pasa a ser cobrable? (D-02).
 - Pago de Mercado Pago pendiente cuando cambia el total: ¿se cancela, se actualiza o se marca desfasado? (D-04; resuelto: se cancela y se genera uno nuevo, ver Clarificaciones).
-- Corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo? (D-05; resuelto: solo administrador con motivo obligatorio, ver Clarificaciones).
+- Corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo? (D-05; resuelto: solo administrador con motivo obligatorio, ver Clarificaciones). «Orden abierta» queda definida en `contracts/order-parts.md`: la orden no está `DELIVERED` y no tiene un pago `PAID`.
 - Categoría como lista administrable o texto libre; marca como texto libre (D-06).
 - Precio de venta menor al de compra: ¿se permite, se advierte o se rechaza? (D-07).
 - Redondeo del importe de una línea (cantidad por precio) y límites máximos de precio y de total (D-08; resuelto: precio máximo $99,999.99, redondeo al centavo más cercano, ver Clarificaciones).
@@ -121,7 +121,7 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 - **FR-007**: El ticket nuevo DEBE incluir, por cada refacción, cantidad, precio unitario e importe, y subtotales y total que los suman.
 - **FR-008**: El sistema DEBE mantener un solo pago vigente por orden, también cuando lleguen solicitudes de cobro al mismo tiempo, y NO debe almacenar ningún dato de tarjeta (RN-14).
 - **FR-009**: El sistema DEBE detectar un pago pendiente de Mercado Pago cuyo importe ya no coincida con el total de la orden, cancelarlo y permitir generar un pago nuevo con el importe correcto (D-04, Clarificaciones).
-- **FR-010**: El precio de compra solo DEBE estar disponible para el administrador en las consultas del sistema; el mecánico no DEBE recibir precios (ni de compra ni de venta, D-10) y recepción no DEBE recibir el precio de compra; las restricciones DEBEN validarse en el backend (RN-15).
+- **FR-010**: El precio de compra solo DEBE estar disponible para el administrador en las consultas del sistema; el mecánico no DEBE recibir precios (ni de compra ni de venta, D-10) y recepción no DEBE recibir el precio de compra; las restricciones DEBEN validarse en el backend (RN-15). Para que el mecánico pueda agregar refacciones a su orden, DEBE existir un listado de refacciones disponibles que él sí pueda consultar y que no incluya ningún precio (H-10).
 - **FR-011**: El panel de control y los listados de órdenes y pagos DEBEN seguir funcionando correctamente con el total nuevo.
 - **FR-012**: Los datos de ejemplo del sistema DEBEN incluir refacciones con precios y al menos una orden cobrable con refacciones, y DEBEN poder ejecutarse de nuevo sin duplicar registros.
 - **FR-013**: DEBEN existir y pasar pruebas automatizadas de cálculo del total, guardado de precios, redondeo, permisos por rol, cobros simultáneos y compatibilidad con pagos y tickets anteriores.
@@ -130,7 +130,7 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 ### Entidades clave
 
 - **Refacción**: pieza del catálogo del taller. Atributos clave: código, nombre, categoría, marca, existencia, existencia mínima, precio de compra y precio de venta. Sin borrado lógico (restricción heredada del Sprint 3).
-- **Uso de refacción en una orden**: evento inmutable que registra qué refacción se usó, en qué cantidad, por quién y a qué precio de venta se agregó (el precio queda guardado en la línea).
+- **Uso de refacción en una orden**: evento constancia que registra qué refacción se usó, en qué cantidad, por quién y a qué precio de venta se agregó (el precio queda guardado en la línea). Es inmutable en la práctica: sin DELETE (restricción heredada R-06); la única mutación admitida es la corrección administrativa de precio con motivo obligatorio (D-05, ver FR-003).
 - **Orden de servicio**: tiene servicios, mano de obra y refacciones; su total se deriva de esos conceptos, no se almacena.
 - **Pago**: cobro de una orden; importe igual al total de la orden, sin datos de tarjeta, un solo pago vigente por orden.
 - **Ticket**: comprobante de la orden; una vez emitido, su contenido no cambia aunque cambien los precios del catálogo.
@@ -145,7 +145,7 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 - **SC-004**: Ante cobros simultáneos sobre la misma orden queda exactamente 1 pago vigente en 100 % de los intentos.
 - **SC-005**: Todos los totales e importes mostrados tienen exactamente 2 decimales y la suma de sus líneas cuadra con el total (diferencia 0.00).
 - **SC-006**: La regresión completa del proyecto pasa al cierre del sprint: ninguna prueba que estaba en verde en la línea base falla.
-- **SC-007**: Una instalación limpia muestra datos completos al arrancar y ejecutar los datos de ejemplo dos veces no duplica registros.
+- **SC-007**: Una instalación limpia muestra datos de ejemplo de las áreas del sistema (clientes con vehículos, citas y órdenes, inventario con precios y un cobro) al arrancar, y ejecutar los datos de ejemplo dos veces no duplica registros.
 - **SC-008**: El flujo demostrable del sprint (refacción con precios → uso en orden → total → pago → ticket → cambio de precio sin efectos retroactivos) se recorre de extremo a extremo sin errores.
 
 ## Clarificaciones
