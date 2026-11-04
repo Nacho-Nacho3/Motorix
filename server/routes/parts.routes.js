@@ -17,6 +17,15 @@ rutasParts.get(
   controlador.listParts,
 );
 
+// US5 (T040, H-10, FR-010, D-10): lookup ligero del selector del mecánico,
+// sin precios; el catálogo completo sigue siendo de ADMIN (403, SC-008).
+rutasParts.get(
+  "/lookup",
+  authenticate,
+  authorize("MECHANIC"),
+  controlador.listLookup,
+);
+
 rutasParts.post(
   "/",
   authenticate,

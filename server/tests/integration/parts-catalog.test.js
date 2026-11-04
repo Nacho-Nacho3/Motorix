@@ -385,3 +385,90 @@ describe("Catálogo de refacciones (US5, CA-4)", () => {
     expect(respuesta.body.error.code).toBe("UNAUTHORIZED");
   });
 });
+
+// Sprint 5 (US5, T038, FR-010, D-10, H-10): lookup del mecánico sin
+// precios. El 403 de GET /api/parts para MECHANIC/RECEPTIONIST ya vive en
+// el describe de SC-008 (sin cambios, se re-verifica en T044).
+describe("US5 - Lookup del mecánico sin precios (T038, D-10, H-10)", () => {
+  test("mecánico GET /api/parts/lookup → 200 con los 7 campos y sin precios", async () => {
+    const creada = await crearParte(REFACCION);
+    expect(creada.status).toBe(201);
+
+    const lookup = await request(app)
+      .get("/api/parts/lookup")
+      .set(headersMecanico);
+
+    expect(lookup.status).toBe(200);
+    expect(Object.keys(lookup.body.data).sort()).toEqual(["parts"]);
+    expect(lookup.body.data.parts).toHaveLength(1);
+
+    const elemento = lookup.body.data.parts[0];
+    expect(Object.keys(elemento).sort()).toEqual([
+      "brand",
+      "category",
+      "id",
+      "name",
+      "partCode",
+      "stockCurrent",
+      "stockMin",
+    ]);
+    expect(elemento).not.toHaveProperty("purchasePrice");
+    expect(elemento).not.toHaveProperty("salePrice");
+    expect(elemento.partCode).toBe("BAL-001");
+    expect(elemento.name).toBe("Balatas traseras");
+    expect(elemento.brand).toBe("Bosch");
+    expect(elemento.stockCurrent).toBe(10);
+    expect(elemento.stockMin).toBe(5);
+  });
+
+  test("el lookup respeta los mismos filtros q y low del catálogo", async () => {
+    await crearParte(REFACCION); // stock 10 / mínimo 5 → normal
+    await crearParte({
+      ...REFACCION,
+      partCode: "FUS-002",
+      name: "Filtro de combustible",
+      stockCurrent: 1,
+      stockMin: 3,
+    });
+
+    const porNombre = await request(app)
+      .get("/api/parts/lookup")
+      .query({ q: "filtro" })
+      .set(headersMecanico);
+    expect(porNombre.status).toBe(200);
+    expect(porNombre.body.data.parts).toHaveLength(1);
+    expect(porNombre.body.data.parts[0].partCode).toBe("FUS-002");
+
+    const stockBajo = await request(app)
+      .get("/api/parts/lookup")
+      .query({ low: "true" })
+      .set(headersMecanico);
+    expect(stockBajo.status).toBe(200);
+    expect(stockBajo.body.data.parts).toHaveLength(1);
+    expect(stockBajo.body.data.parts[0].partCode).toBe("FUS-002");
+
+    // El mismo rechazo del catálogo para un valor de low inválido.
+    const lowInvalido = await request(app)
+      .get("/api/parts/lookup")
+      .query({ low: "yes" })
+      .set(headersMecanico);
+    expect(lowInvalido.status).toBe(400);
+    expect(lowInvalido.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("recepción y administrador reciben 403 en el lookup (el catálogo completo es de ADMIN)", async () => {
+    for (const headers of [headersRecepcion, headersAdmin]) {
+      const respuesta = await request(app)
+        .get("/api/parts/lookup")
+        .set(headers);
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body.error.code).toBe("FORBIDDEN");
+    }
+  });
+
+  test("sin token el lookup responde 401 UNAUTHORIZED", async () => {
+    const respuesta = await request(app).get("/api/parts/lookup");
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.error.code).toBe("UNAUTHORIZED");
+  });
+});

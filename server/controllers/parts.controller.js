@@ -25,6 +25,19 @@ export async function listParts(req, res, next) {
   }
 }
 
+/** Lookup ligero del mecánico sin precios (US5, T040, H-10, D-10). */
+export async function listLookup(req, res, next) {
+  try {
+    const resultado = await servicio.listLookup({
+      q: req.query.q,
+      low: req.query.low,
+    });
+    ok(res, resultado);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createPart(req, res, next) {
   try {
     const part = await servicio.createPart(req.body, req.user.id);

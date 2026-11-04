@@ -151,16 +151,16 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 
 ### Pruebas para US5 (primero, deben fallar)
 
-- [ ] T038 [P] [US5] Prueba de integración del lookup y la proyección en `server/tests/integration/parts-catalog.test.js`: mecánico `GET /api/parts` → 403 (sin cambios, SC-008); `GET /api/parts/lookup` → 200 **sin** `purchasePrice` ni `salePrice` en ningún elemento; recepción → 403 en ambas rutas; `GET .../service-orders/{id}/parts` con token de mecánico → elementos **sin** `unitPrice` (SC-003)
-- [ ] T039 [P] [US5] Prueba de contrato del lookup en `server/tests/contract/inventory.contract.test.js` según `contracts/parts-catalog.md` (shape `parts[]` con los 7 campos sin precios)
+- [x] T038 [P] [US5] Prueba de integración del lookup y la proyección en `server/tests/integration/parts-catalog.test.js`: mecánico `GET /api/parts` → 403 (sin cambios, SC-008 — ya cubierto en el describe de SC-008 y re-verificado aquí); `GET /api/parts/lookup` → 200 **sin** `purchasePrice` ni `salePrice` en ningún elemento; recepción → 403 en ambas rutas; `GET .../service-orders/{id}/parts` con token de mecánico → elementos **sin** `unitPrice` (SC-003) — **ejecutada**: lookup + filtros + 403/401 en `parts-catalog.test.js`; la proyección de la orden (mecánico/recepción/admin, con y sin corrección) en `order-parts.test.js` donde viven los helpers de orden — red primero, verde después
+- [x] T039 [P] [US5] Prueba de contrato del lookup en `server/tests/contract/inventory.contract.test.js` según `contracts/parts-catalog.md` (shape `parts[]` con los 7 campos sin precios) — **ejecutada**: red primero, verde después
 
 ### Implementación de US5
 
-- [ ] T040 [US5] Crear `GET /api/parts/lookup` en `server/routes/parts.routes.js` (`authenticate`, `authorize("MECHANIC")`), `server/controllers/parts.controller.js` (`listLookup`) y `server/services/inventory.service.js` (`listarLookup` con los mismos filtros que el catálogo), con la proyección sin precios en `server/models/part.model.js`
-- [ ] T041 [US5] Proyección por rol en la lista de refacciones de la orden: omitir `unitPrice` cuando el rol es `MECHANIC` en `server/services/inventory.service.js` / `server/models/order_part.model.js` (FR-010)
-- [ ] T042 [US5] Selector del mecánico en `client/lib/providers/parts_provider.dart` (`cargarLookup()` que usa `/parts/lookup` sin precios) y `client/lib/screens/orders/order_detail_screen.dart` (el diálogo «agregar refacción» usa el lookup; cierra H-10)
-- [ ] T043 [P] [US5] Prueba de interfaz del selector en `client/test/order_detail_test.dart`: con sesión de mecánico el selector trae opciones y no muestra ningún precio
-- [ ] T044 [US5] Ejecutar las pruebas de US5 (parts-catalog, inventory.contract, order_detail) y revisar que `parts-catalog.test.js` de la línea base sigue verde (los 403 de `GET /api/parts` intactos)
+- [x] T040 [US5] Crear `GET /api/parts/lookup` en `server/routes/parts.routes.js` (`authenticate`, `authorize("MECHANIC")`), `server/controllers/parts.controller.js` (`listLookup`) y `server/services/inventory.service.js` (`listarLookup` con los mismos filtros que el catálogo), con la proyección sin precios en `server/models/part.model.js` — **ejecutada**: `listarLookup` comparte `condicionesDeListado` con `listar` y `listLookup` reutiliza la validación de `?low`
+- [x] T041 [US5] Proyección por rol en la lista de refacciones de la orden: omitir `unitPrice` cuando el rol es `MECHANIC` en `server/services/inventory.service.js` / `server/models/order_part.model.js` (FR-010) — **ejecutada**: `proyectarPorRol` (mecánico sin precio, recepción con `unitPrice` sin corrección, admin con ambos + `priceCorrection*` solo si se usaron) aplicado en el GET y en la respuesta del POST
+- [x] T042 [US5] Selector del mecánico en `client/lib/providers/parts_provider.dart` (`cargarLookup()` que usa `/parts/lookup` sin precios) y `client/lib/screens/orders/order_detail_screen.dart` (el diálogo «agregar refacción» usa el lookup; cierra H-10) — **ejecutada**: modelo nuevo `part_lookup.dart` **sin campos de precio**, lista `disponibles` aparte del catálogo y el `initState` solo consulta el lookup con sesión MECHANIC
+- [x] T043 [P] [US5] Prueba de interfaz del selector en `client/test/order_detail_test.dart`: con sesión de mecánico el selector trae opciones y no muestra ningún precio — **ejecutada**: 7/7 en el archivo
+- [x] T044 [US5] Ejecutar las pruebas de US5 (parts-catalog, inventory.contract, order_detail) y revisar que `parts-catalog.test.js` de la línea base sigue verde (los 403 de `GET /api/parts` intactos) — **ejecutada**: backend 5 suites/59 pruebas, `flutter analyze` sin problemas y el describe SC-008 original sigue verde
 
 **Checkpoint**: las 5 historias funcionan de forma independiente
 

@@ -127,10 +127,13 @@ describe("Contrato de order-parts.md (US7)", () => {
 
     expect(creada.status).toBe(201);
     const orderPart = creada.body.data.orderPart;
-    expect(Object.keys(orderPart).sort()).toEqual(CAMPOS_ORDER_PART);
+    // FR-010 (D-10): el POST es del mecánico: proyección sin unitPrice
+    // (para verlo se consulta como ADMIN, contrato order-parts.md).
+    expect(Object.keys(orderPart).sort()).toEqual(
+      CAMPOS_ORDER_PART.filter((campo) => campo !== "unitPrice"),
+    );
     expect(orderPart.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
-    // Precio guardado en la línea: cadena con exactamente 2 decimales (D-01).
-    expect(orderPart.unitPrice).toMatch(/^\d+\.\d{2}$/);
+    expect(orderPart).not.toHaveProperty("unitPrice");
     // El POST no trae arreglo de usos: solo el objeto creado.
     expect(Object.keys(creada.body.data)).toEqual(["orderPart"]);
   });

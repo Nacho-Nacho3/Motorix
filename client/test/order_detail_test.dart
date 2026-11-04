@@ -26,10 +26,30 @@ class _ApiDetalleFalsa extends ApiClient {
   int correcciones = 0;
   String? precioCorregido;
 
+  /// Consultas al lookup del selector (US5, T043).
+  int lookups = 0;
+
   @override
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     if (path.startsWith('/service-orders/mechanics')) {
       return {'mechanics': <Map<String, dynamic>>[]};
+    }
+    if (path == '/parts/lookup') {
+      lookups += 1;
+      // Sin precios: el lookup nunca los trae (FR-010, D-10).
+      return {
+        'parts': [
+          {
+            'id': 4,
+            'partCode': 'BAL-001',
+            'name': 'Balatas traseras',
+            'category': 'Frenos',
+            'brand': 'Bosch',
+            'stockCurrent': 12,
+            'stockMin': 3,
+          },
+        ],
+      };
     }
     if (path == '/service-orders/1/parts') {
       return {
@@ -348,6 +368,40 @@ void main() {
 
     // Deja pasar el temporizador de la barra de aviso.
     await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('el selector del mecánico carga el lookup y no muestra precios (US5, H-10)',
+      (tester) async {
+    final api = _ApiDetalleFalsa()..precioLinea = null;
+    await tester.pumpWidget(_pantalla(api));
+    await tester.pumpAndSettle();
+
+    expect(
+      api.lookups,
+      1,
+      reason: 'el selector usa /parts/lookup, no el catálogo de ADMIN',
+    );
+
+    final selector = find.byType(DropdownButtonFormField<int>);
+    await tester.ensureVisible(selector);
+    await tester.pumpAndSettle();
+    await tester.tap(selector);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('BAL-001 · Balatas traseras'),
+      findsOneWidget,
+      reason: 'las opciones llegan desde el lookup',
+    );
+    expect(
+      find.text('\$850.00'),
+      findsNothing,
+      reason: 'ningún precio en pantalla (D-10, FR-010)',
+    );
+
+    // Cierra el menú desplegado.
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
   });
 }

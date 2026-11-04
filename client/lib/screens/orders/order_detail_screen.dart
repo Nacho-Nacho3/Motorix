@@ -67,10 +67,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       context.read<ServiceOrdersProvider>()
         ..cargarDetalle(widget.orden.id)
         ..cargarRefacciones(widget.orden.id);
-      // Catálogo para el selector de refacciones (US7); si ya estaba
-      // cargado desde Inventario se reutiliza sin volver a pedirlo.
-      final partes = context.read<PartsProvider>();
-      if (partes.refacciones.isEmpty) partes.cargar();
+      // Selector del mecánico (US5, H-10): lookup SIN precios (FR-010,
+      // D-10); solo el mecánico agrega refacciones y los demás roles no
+      // consultan nada. Si ya estaba cargado se reutiliza.
+      if (context.read<SessionProvider>().usuario?.role == 'MECHANIC') {
+        final partes = context.read<PartsProvider>();
+        if (partes.disponibles.isEmpty) partes.cargarLookup();
+      }
       // Historial de cobros de la orden (US1); el mecánico no consulta
       // pagos porque el backend responde 403 (RN-15, matriz R-08).
       if (_puedeVerPagos()) {
@@ -443,7 +446,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     ServiceOrder orden,
     ServiceOrdersProvider proveedor,
   ) {
-    final catalogo = context.watch<PartsProvider>().refacciones;
+    // US5 (H-10): el selector usa el lookup SIN precios, no el catálogo.
+    final disponibles = context.watch<PartsProvider>().disponibles;
     final puedeAgregar = _puedeAgregarRefacciones(orden);
     final puedeCorregir = _puedeCorregirPrecio();
 
@@ -467,7 +471,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       hint: const Text('Refacción'),
                       isExpanded: true,
                       items: [
-                        for (final parte in catalogo)
+                        for (final parte in disponibles)
                           DropdownMenuItem(
                             value: parte.id,
                             child: Text(

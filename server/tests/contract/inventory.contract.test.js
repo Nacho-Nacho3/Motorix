@@ -249,3 +249,57 @@ describe("Contrato de inventory.md (US6)", () => {
     expect(listado.body.data.total).toBe(1);
   });
 });
+
+// Sprint 5 (US5, T039): contrato del lookup contra contracts/parts-catalog.md
+// (H-10, FR-010, D-10).
+describe("Contrato del lookup (US5, T039)", () => {
+  const CAMPOS_LOOKUP = [
+    "brand",
+    "category",
+    "id",
+    "name",
+    "partCode",
+    "stockCurrent",
+    "stockMin",
+  ];
+
+  test("200 con data.parts de 7 campos y sin precios (solo MECHANIC)", async () => {
+    const creada = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "LK-001",
+        name: "Filtro de aceite",
+        category: "Filtros",
+        brand: "Bosch",
+        stockCurrent: 8,
+        stockMin: 2,
+        purchasePrice: "60.00",
+        salePrice: "120.00",
+      });
+    expect(creada.status).toBe(201);
+
+    const lookup = await request(app)
+      .get("/api/parts/lookup")
+      .set(headersMecanico);
+
+    expect(lookup.status).toBe(200);
+    expect(Object.keys(lookup.body.data).sort()).toEqual(["parts"]);
+    expect(lookup.body.data.parts).toHaveLength(1);
+    expect(Object.keys(lookup.body.data.parts[0]).sort()).toEqual(
+      CAMPOS_LOOKUP,
+    );
+    expect(lookup.body.data.parts[0]).not.toHaveProperty("purchasePrice");
+    expect(lookup.body.data.parts[0]).not.toHaveProperty("salePrice");
+  });
+
+  test("403 FORBIDDEN para ADMIN y RECEPTIONIST", async () => {
+    for (const headers of [headersAdmin, headersRecepcion]) {
+      const respuesta = await request(app)
+        .get("/api/parts/lookup")
+        .set(headers);
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body.error.code).toBe("FORBIDDEN");
+    }
+  });
+});

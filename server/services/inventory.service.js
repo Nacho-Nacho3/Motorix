@@ -73,10 +73,11 @@ export async function createPart(payload, creadoPor) {
   }
 }
 
-/** Listado con filtros `q`/`low` y el contador global de stock bajo (CA-7). */
-export async function listParts({ q, low } = {}) {
-  // T075: `?low` solo admite el valor "true" (US8/CA-7); cualquier otro
-  // valor — incluido `?low` sin contenido — es 400 VALIDATION_ERROR.
+/**
+ * T075: `?low` solo admite el valor "true" (US8/CA-7); cualquier otro
+ * valor — incluido `?low` sin contenido — es 400 VALIDATION_ERROR.
+ */
+function normalizarLow(low) {
   const lowPresente = low !== undefined && low !== null;
   if (lowPresente && low !== "true" && low !== true) {
     throw new AppError(
@@ -85,14 +86,35 @@ export async function listParts({ q, low } = {}) {
       "El parámetro low solo admite el valor true.",
     );
   }
+  return lowPresente;
+}
 
+function normalizarQ(q) {
+  return typeof q === "string" && q.trim() !== "" ? q.trim() : undefined;
+}
+
+/** Listado con filtros `q`/`low` y el contador global de stock bajo (CA-7). */
+export async function listParts({ q, low } = {}) {
   const parts = await partes.listar({
-    q: typeof q === "string" && q.trim() !== "" ? q.trim() : undefined,
-    low: lowPresente,
+    q: normalizarQ(q),
+    low: normalizarLow(low),
   });
   const lowStockCount = await partes.contarStockBajo();
 
   return { parts, total: parts.length, lowStockCount };
+}
+
+/**
+ * Lookup ligero para el selector del mecánico (US5, H-10, FR-010, D-10):
+ * mismos filtros que `listParts` pero SIN precios: el mecánico no recibe
+ * ninguno y el precio de compra es solo de ADMIN.
+ */
+export async function listLookup({ q, low } = {}) {
+  const parts = await partes.listarLookup({
+    q: normalizarQ(q),
+    low: normalizarLow(low),
+  });
+  return { parts };
 }
 
 /** Edita los campos permitidos del contrato; 404 si la refacción no existe. */
@@ -187,7 +209,14 @@ export async function listarRefaccionesOrden(idOrden, usuario) {
     throw errores.forbidden();
   }
 
-  const parts = await orderParts.listarPorOrden(idOrden);
+  const filas = await orderParts.listarPorOrden(idOrden, {
+    conCorreccion: usuario.role === "ADMIN",
+  });
+  // FR-010 (D-10): proyección por rol — el mecánico no recibe precios y
+  // los campos de corrección son solo de ADMIN.
+  const parts = filas.map((fila) =>
+    orderParts.proyectarPorRol(fila, usuario.role),
+  );
   return { parts, total: parts.length };
 }
 
@@ -264,7 +293,10 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
       ]);
 
       await conexion.commit();
-      return orderParts.buscarPorId(idUso);
+      const uso = await orderParts.buscarPorId(idUso);
+      // FR-010 (D-10): la respuesta del POST es para el mecánico: sin
+      // precio; para verificarlo se consulta la lista como ADMIN.
+      return orderParts.proyectarPorRol(uso, usuario.role);
     } catch (error) {
       await conexion.rollback();
       throw error;

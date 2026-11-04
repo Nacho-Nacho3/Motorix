@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/inventory_movement.dart';
 import '../models/part.dart';
+import '../models/part_lookup.dart';
 import '../services/api_client.dart';
 
 /// Estado del catálogo de refacciones (US5/US6/US8, FR-009, FR-014).
@@ -23,6 +24,12 @@ class PartsProvider extends ChangeNotifier {
 
   /// Filtro de stock bajo (?low=true); llega en US8 desde la interfaz.
   bool soloStockBajo = false;
+
+  /// Lookup del selector del mecánico (US5, H-10): SIN precios (FR-010,
+  /// D-10). Lista aparte del catálogo de ADMIN para que nunca se mezclen.
+  List<PartLookup> disponibles = [];
+  bool cargandoDisponibles = false;
+  String? errorDisponibles;
 
   /// Carga el catálogo. `mostrarCarga` se apaga en la búsqueda para no
   /// parpadear la lista con cada tecleo.
@@ -66,6 +73,30 @@ class PartsProvider extends ChangeNotifier {
   Future<void> filtrarStockBajo(bool activo) async {
     soloStockBajo = activo;
     await cargar();
+  }
+
+  /// Carga `GET /parts/lookup` (US5, H-10): el listado ligero del
+  /// selector, sin precios; solo MECHANIC (los demás roles reciben 403).
+  Future<void> cargarLookup() async {
+    cargandoDisponibles = true;
+    errorDisponibles = null;
+    notifyListeners();
+    try {
+      final datos = await ApiClient.conRed(
+        () => api.get('/parts/lookup'),
+      ) as Map<String, dynamic>;
+      disponibles = [
+        for (final item in (datos['parts'] as List<dynamic>? ?? []))
+          PartLookup.fromJson(item as Map<String, dynamic>),
+      ];
+    } catch (excepcion) {
+      errorDisponibles = excepcion is ApiError
+          ? excepcion.message
+          : 'No se pudieron cargar las refacciones disponibles.';
+    } finally {
+      cargandoDisponibles = false;
+      notifyListeners();
+    }
   }
 
   /// Da de alta una refacción con su stock inicial (RN-8).

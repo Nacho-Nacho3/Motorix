@@ -360,7 +360,9 @@ describe("Refacciones utilizadas en una orden (US7, CA-5)", () => {
 
     const respuesta = await agregar(orden.id, { partId: parte.id, quantity: 2 });
     expect(respuesta.status).toBe(201);
-    expect(respuesta.body.data.orderPart.unitPrice).toBe("850.00");
+    // FR-010 (D-10): el POST es del mecánico, no recibe unitPrice; el
+    // precio se verifica con GET como ADMIN (T041).
+    expect(respuesta.body.data.orderPart).not.toHaveProperty("unitPrice");
 
     const filas = await filasDeOrden(orden.id);
     expect(filas).toHaveLength(1);
@@ -584,5 +586,98 @@ describe("US4 - Corrección administrativa de precio (T030, D-05)", () => {
 
     expect(respuesta.status).toBe(400);
     expect(respuesta.body.error.code).toBe("ORDER_ALREADY_PAID");
+  });
+});
+
+// Sprint 5 (US5, T038/T041, FR-010, D-10, SC-003): proyección por rol en
+// la lista de refacciones de la orden.
+describe("US5 - Proyección por rol de los precios de la orden (T041, D-10)", () => {
+  async function ordenConLineaProyectada() {
+    const orden = await crearOrden({ asignado: idMecanico });
+    const parte = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "PROY-001",
+        name: "Filtro de aceite",
+        category: "Filtros",
+        stockCurrent: 10,
+        stockMin: 2,
+        salePrice: "250.00",
+      });
+    expect(parte.status).toBe(201);
+    const uso = await agregar(orden.id, {
+      partId: parte.body.data.part.id,
+      quantity: 1,
+    });
+    expect(uso.status).toBe(201);
+    const [filas] = await poolPrueba.query(
+      "SELECT id FROM order_parts WHERE order_id = ?",
+      [orden.id],
+    );
+    return { orden, filaId: filas[0].id };
+  }
+
+  test("mecánico sin unitPrice, recepción con unitPrice sin corrección y admin con ambos", async () => {
+    const { orden, filaId } = await ordenConLineaProyectada();
+
+    const comoMecanico = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersMecanico);
+    expect(comoMecanico.status).toBe(200);
+    expect(comoMecanico.body.data.parts[0]).not.toHaveProperty("unitPrice");
+    expect(comoMecanico.body.data.parts[0]).not.toHaveProperty(
+      "priceCorrectionReason",
+    );
+
+    const comoRecepcion = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersRecepcion);
+    expect(comoRecepcion.status).toBe(200);
+    expect(comoRecepcion.body.data.parts[0].unitPrice).toBe("250.00");
+    expect(comoRecepcion.body.data.parts[0]).not.toHaveProperty(
+      "priceCorrectionReason",
+    );
+
+    const comoAdmin = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersAdmin);
+    expect(comoAdmin.status).toBe(200);
+    expect(comoAdmin.body.data.parts[0].unitPrice).toBe("250.00");
+    expect(comoAdmin.body.data.parts[0]).not.toHaveProperty(
+      "priceCorrectionReason",
+    );
+
+    // Tras corregir, solo ADMIN recibe los campos de corrección.
+    const correccion = await request(app)
+      .patch(`/api/service-orders/${orden.id}/parts/${filaId}/price`)
+      .set(headersAdmin)
+      .send({ unitPrice: "300.00", reason: "Precio capturado equivocado" });
+    expect(correccion.status).toBe(200);
+
+    const adminTras = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersAdmin);
+    expect(adminTras.body.data.parts[0].unitPrice).toBe("300.00");
+    expect(adminTras.body.data.parts[0].priceCorrectionReason).toBe(
+      "Precio capturado equivocado",
+    );
+    expect(typeof adminTras.body.data.parts[0].priceCorrectedBy).toBe("number");
+    expect(adminTras.body.data.parts[0].priceCorrectedAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+    );
+
+    const recepcionTras = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersRecepcion);
+    expect(recepcionTras.body.data.parts[0].unitPrice).toBe("300.00");
+    expect(recepcionTras.body.data.parts[0]).not.toHaveProperty(
+      "priceCorrectionReason",
+    );
+
+    const mecanicoTras = await request(app)
+      .get(`/api/service-orders/${orden.id}/parts`)
+      .set(headersMecanico);
+    expect(mecanicoTras.body.data.parts[0]).not.toHaveProperty("unitPrice");
   });
 });

@@ -47,17 +47,54 @@ export async function crear(
   return resultado.insertId;
 }
 
-/** Usos de la orden con los datos de la refacción; createdAt ascendente. */
-export async function listarPorOrden(orderId) {
+/**
+ * Usos de la orden con los datos de la refacción; createdAt ascendente.
+ * Con `conCorreccion` agrega los campos `priceCorrection*` (proyección
+ * ADMIN, US4/US5): solo cuando la línea se corrigió ("si se usaron").
+ */
+export async function listarPorOrden(orderId, { conCorreccion = false } = {}) {
+  const columnasCorreccion = conCorreccion
+    ? `,
+            op.price_correction_reason AS priceCorrectionReason,
+            op.price_corrected_by AS priceCorrectedBy,
+            op.price_corrected_at AS priceCorrectedAt`
+    : "";
   const [filas] = await pool.query(
-    `SELECT ${CAMPOS}
+    `SELECT ${CAMPOS}${columnasCorreccion}
        FROM order_parts op
        JOIN parts p ON p.id = op.part_id
       WHERE op.order_id = ?
       ORDER BY op.created_at ASC, op.id ASC`,
     [orderId],
   );
-  return filas.map(aOrderPart);
+  return filas.map((fila) => {
+    const uso = aOrderPart(fila);
+    if (!conCorreccion || fila.priceCorrectionReason == null) return uso;
+    return {
+      ...uso,
+      priceCorrectionReason: fila.priceCorrectionReason,
+      priceCorrectedBy: fila.priceCorrectedBy,
+      priceCorrectedAt: fila.priceCorrectedAt
+        ? fila.priceCorrectedAt.replace(" ", "T")
+        : null,
+    };
+  });
+}
+
+/**
+ * Proyección por rol de una fila de la orden (FR-010, D-10, contrato
+ * order-parts.md): el mecánico no recibe ningún precio; recepción recibe
+ * `unitPrice` sin campos de corrección; ADMIN recibe ambos.
+ */
+export function proyectarPorRol(orderPart, rol) {
+  const copia = { ...orderPart };
+  if (rol === "MECHANIC") delete copia.unitPrice;
+  if (rol !== "ADMIN") {
+    delete copia.priceCorrectionReason;
+    delete copia.priceCorrectedBy;
+    delete copia.priceCorrectedAt;
+  }
+  return copia;
 }
 
 /** Uso por id (respuesta del POST, T068). */

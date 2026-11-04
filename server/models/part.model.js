@@ -66,12 +66,8 @@ export async function buscarPorCodigo(partCode) {
   return aParte(filas[0]);
 }
 
-/**
- * Listado con los filtros del contrato: `q` contra código, nombre o
- * categoría y `low` para solo stock bajo. El contrato no expone
- * paginación: el catálogo se devuelve completo (total = resultados).
- */
-export async function listar({ q, low } = {}) {
+/** Condiciones compartidas de los listados (q + low), contrato inventory.md. */
+function condicionesDeListado({ q, low } = {}) {
   const condiciones = [];
   const parametros = [];
 
@@ -85,6 +81,16 @@ export async function listar({ q, low } = {}) {
   }
 
   const where = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
+  return { where, parametros };
+}
+
+/**
+ * Listado con los filtros del contrato: `q` contra código, nombre o
+ * categoría y `low` para solo stock bajo. El contrato no expone
+ * paginación: el catálogo se devuelve completo (total = resultados).
+ */
+export async function listar({ q, low } = {}) {
+  const { where, parametros } = condicionesDeListado({ q, low });
   const [filas] = await pool.query(
     `SELECT id, part_code AS partCode, name, category, brand,
             stock_current AS stockCurrent, stock_min AS stockMin,
@@ -95,6 +101,31 @@ export async function listar({ q, low } = {}) {
     parametros,
   );
   return filas.map(aParte);
+}
+
+/**
+ * Lookup ligero del selector del mecánico (US5, H-10, FR-010, D-10):
+ * mismos filtros que `listar` pero solo 7 campos — nunca `purchasePrice`
+ * ni `salePrice` (el mecánico no recibe ningún precio, D-10).
+ */
+export async function listarLookup({ q, low } = {}) {
+  const { where, parametros } = condicionesDeListado({ q, low });
+  const [filas] = await pool.query(
+    `SELECT id, part_code AS partCode, name, category, brand,
+            stock_current AS stockCurrent, stock_min AS stockMin
+       FROM parts ${where}
+      ORDER BY name`,
+    parametros,
+  );
+  return filas.map((fila) => ({
+    id: fila.id,
+    partCode: fila.partCode,
+    name: fila.name,
+    category: fila.category,
+    brand: fila.brand,
+    stockCurrent: fila.stockCurrent,
+    stockMin: fila.stockMin,
+  }));
 }
 
 /** Total GLOBAL de refacciones con stock bajo (contador de la interfaz, CA-7). */
