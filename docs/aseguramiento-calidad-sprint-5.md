@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
 
-**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`), la G-04 (`/speckit.checklist`) y la G-05 (`/speckit.plan`), las cuatro últimas el 2026-11-03; faltan la G-06 (`/speckit.tasks`), la G-07 (`/speckit.analyze`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`), la G-04 (`/speckit.checklist`) y la G-05 (`/speckit.plan`), las cuatro últimas el 2026-11-03; falta la G-07 (`/speckit.analyze`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
 
 ## 0. Datos del documento
 
@@ -15,7 +15,7 @@ Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las pue
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-02 |
 | Fecha de cierre | Se llena al cerrar el sprint |
-| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02, G-03, G-04 y G-05 completadas) |
+| Estado general | En elaboración - proceso Spec Kit en curso (G-01 a G-06 completadas) |
 
 ## 1. Objetivo y alcance
 
@@ -49,7 +49,7 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 ## 3. Puertas de calidad
 
-G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`), G-04 (`/speckit.checklist`) y G-05 (`/speckit.plan`) el 2026-11-03; G-06 (`/speckit.tasks`) y G-07 (`/speckit.analyze`) corresponden a etapas de Spec Kit que aún no se ejecutan.
+G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`), G-04 (`/speckit.checklist`) y G-05 (`/speckit.plan`) el 2026-11-03; G-06 (`/speckit.tasks`) también el 2026-11-03 y G-07 (`/speckit.analyze`) corresponde a una etapa de Spec Kit que aún no se ejecuta.
 
 | ID | Puerta | Estado | Evidencia |
 |:--:|---|---|---|
@@ -58,9 +58,9 @@ G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-
 | G-03 | Aclaraciones (`/speckit.clarify`) | Realizada con observación (2026-11-03) | 5 preguntas → 6 decisiones resueltas (D-01/D-03, D-04, D-05, D-08, D-10) en `spec.md` (`### Session 2026-11-03`), commit `86d29bc`; 4 diferidas por bajo impacto (D-02, D-06, D-07, D-09) con defaults en Supuestos |
 | G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/checklists/precios-cobro.md`: 38 ítems de calidad de requisitos, **38 cumplidos** (evaluación asistida y autorizada por el revisor, anotada en las notas del archivo); `checklists/requirements.md` sigue en 17/17; commit `d06a00e` |
 | G-05 | Plan (`/speckit.plan`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/`: `plan.md` (contexto técnico verificado; constitución con la puerta I en enmienda pendiente, H-01), `research.md` (14 decisiones P-01 a P-14), `data-model.md` (migración `014` con backfill y CHECK de tope), `contracts/` (order-parts, parts-catalog, payments) y `quickstart.md` (V1 a V10); commit `971aacf`; detecta el hallazgo H-10 |
-| G-06 | Tareas (`/speckit.tasks`) | No iniciada | `tasks.md` por crear; las pruebas van antes del código en cada historia |
+| G-06 | Tareas (`/speckit.tasks`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/tasks.md`: **52 tareas** en 8 fases (Preparación, Fundacional, US1-US5, Pulido), con las pruebas antes del código en cada historia por exigirlo FR-013; trazabilidad CA→tarea→prueba completada en la sección 6 (CA-1 a CA-14); commit `12e5ce8` |
 | G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
-| G-08 | Pruebas planeadas y línea base | Aprobado con observación | Línea base medida el 2026-11-02 (sección 8); las pruebas están planeadas por CA en la sección 6, todavía sin crear |
+| G-08 | Pruebas planeadas y línea base | Aprobado con observación | Línea base medida el 2026-11-02 (sección 8); las pruebas están planeadas por CA y por tarea (sección 6 y `tasks.md`), todavía sin crear |
 
 ## 4. Decisiones de aclaración
 
@@ -98,24 +98,24 @@ Riesgos identificados antes de implementar, con la prueba que los cubrirá. Los 
 
 ## 6. Trazabilidad
 
-Cada criterio de aceptación (CA) se enlaza con su requisito, su tarea y su prueba. Los requisitos funcionales (FR) ya existen en `specs/005-precios-refacciones-cobro/spec.md` (G-02, commit `959268b`); las tareas se definirán en `/speckit.tasks` (aún no ejecutado); «existente» señala una prueba que ya pasó en la línea base de la sección 8.
+Cada criterio de aceptación (CA) se enlaza con su requisito, su tarea (`tasks.md`, G-06, commit `12e5ce8`) y su prueba. Los requisitos funcionales (FR) ya existen en `specs/005-precios-refacciones-cobro/spec.md` (G-02, commit `959268b`); «existente» señala una prueba que ya pasó en la línea base de la sección 8 y «por crear» la que se creará en la tarea indicada. El resultado se llena cuando la prueba corra durante la implementación.
 
 | CA | Criterio de aceptación (resumen) | Requisito (FR) | Tarea | Prueba | Resultado | Evidencia |
 |:--:|---|---|---|---|---|---|
-| CA-1 | Refacción con categoría, marca y precios persistida | FR-001 | Por asignar | Existente: `parts-catalog.test.js` (alta 201 y PATCH) | Sin ejecutar | G-01/H-03: ya se cumple en lo esencial desde el Sprint 3 |
-| CA-2 | Precios rechazan negativos, no numéricos y más de 2 decimales; con límites máximos | FR-002 | Por asignar | Existente parcial: `parts-catalog.test.js` (negativos y 3 decimales); tope máximo por crear | Sin ejecutar | G-01/H-03: falta definir el límite máximo (D-08) |
-| CA-3 | El precio vigente se guarda al agregar la refacción a la orden | FR-003 | Por asignar | Por crear: guardado del precio en la línea de uso | Sin ejecutar | Hueco real confirmado en G-01: migración `011` no tiene columna de precio |
-| CA-4 | Total = servicios + mano de obra + refacciones, en centavos | FR-004 | Por asignar | Existente: `unit/order-total.test.js` (suma y redondeo); se amplía al precio guardado | Sin ejecutar | G-01/H-02: la suma de refacciones ya existe; falta usar el precio guardado |
-| CA-5 | El pago se registra por el total con refacciones; importe distinto se rechaza | FR-005 | Por asignar | Existente: `payments.test.js` (importe exacto, mismatch 400) | Sin ejecutar | La fórmula del total ya incluye refacciones (G-01/H-02) |
-| CA-6 | Pagos y tickets anteriores conservan importe y contenido | FR-006 | Por asignar | Por crear: compatibilidad con datos emitidos | Sin ejecutar | R-01/R-02 |
-| CA-7 | El ticket nuevo detalla refacciones con cantidad, precio e importe | FR-007 | Por asignar | Existente parcial: `tickets.test.js` (contenido completo); se adapta al precio guardado | Sin ejecutar | G-01/H-06: el ticket ya incluye refacciones con precio vivo |
-| CA-8 | Un solo pago vigente, también con solicitudes simultáneas; sin datos de tarjeta | FR-008 | Por asignar | Existente: `payments.test.js` (segundo pago); simultaneidad por crear | Sin ejecutar | G-01/H-09: no existe ninguna prueba simultánea hoy |
-| CA-9 | Mercado Pago recibe el importe correcto; pago pendiente desfasado se resuelve | FR-009 | Por asignar | Existente parcial: `payments-mp.test.js`; desfasado por crear | Sin ejecutar | Depende de D-04 |
-| CA-10 | El precio de compra solo lo ve el administrador | FR-010 | Por asignar | Existente: `parts-catalog.test.js` e `inventory.contract.test.js` (403); proyecciones por crear (lookup sin precios y lista de la orden sin `unitPrice` para el mecánico) | Sin ejecutar | G-01/H-07: hoy el catálogo es solo ADMIN; G-05/H-10: el selector del mecánico necesita el lookup sin precios |
-| CA-11 | Dashboard y listados funcionan con el nuevo total | FR-011 | Por asignar | Existente: `dashboard.test.js` y contratos; regresión al cierre | Sin ejecutar | R-07 |
-| CA-12 | Seeds con precios y una orden cobrable con refacciones, idempotentes | FR-012 | Por asignar | Existente parcial: `seed.js` ya crea refacciones con precios; prueba de idempotencia por crear | Sin ejecutar | G-01: el seed ya incluye precios; verificar orden cobrable con refacciones |
-| CA-13 | Pruebas de total, instantáneas, redondeo, permisos, concurrencia y compatibilidad | FR-013 | Por asignar | Todas las anteriores | Sin ejecutar | CA-1 a CA-12 |
-| CA-14 | `project-context.md`, `design-system.md` y comentarios desactualizados se actualizan | FR-014 | Por asignar | Revisión documental (sin prueba automática) | Sin ejecutar | G-01/H-08: `project-context.md` documenta `active`, que no existe en la tabla |
+| CA-1 | Refacción con categoría, marca y precios persistida | FR-001 | T012 | Existente: `integration/parts-catalog.test.js` (alta 201 y PATCH), verificado al ejecutar US1 | Sin ejecutar | G-01/H-03: ya se cumple en lo esencial desde el Sprint 3 |
+| CA-2 | Precios rechazan negativos, no numéricos y más de 2 decimales; con límites máximos | FR-002 | T007, T009, T010, T011 | Por crear: `integration/parts-catalog.test.js` con tope (T007), `contract/inventory.contract.test.js` (T008) y `client/test/parts_form_test.dart` (T009); existente: negativos y 3 decimales | Sin ejecutar | G-01/H-03 + D-08: tope de $99,999.99 |
+| CA-3 | El precio vigente se guarda al agregar la refacción a la orden | FR-003 | T004, T006, T013, T016 | Por crear: `integration/order-parts.test.js` (guardado del precio y `unit_price` de las filas existentes, T013) y `contract/order-parts.contract.test.js` (T014) | Sin ejecutar | Hueco real confirmado en G-01: migración `011` sin columna de precio; se cierra con la `014` |
+| CA-4 | Total = servicios + mano de obra + refacciones, en centavos | FR-004 | T015, T017 | Existente: `unit/order-total.test.js` (suma y redondeo); se amplía con precios de refacciones (T015) y `integration/order-parts.test.js` (total y `partsSubtotal`, T013) | Sin ejecutar | G-01/H-02: la suma ya existe; el cambio es la fuente (precio guardado) |
+| CA-5 | El pago se registra por el total con refacciones; importe distinto se rechaza | FR-005 | T019, T027 | Existente: `integration/payments.test.js` (importe exacto y mismatch 400); se amplía con el total de refacciones y la orden solo con refacciones (T019) | Sin ejecutar | La fórmula del total ya incluye refacciones (G-01/H-02) |
+| CA-6 | Pagos y tickets anteriores conservan importe y contenido | FR-006 | T004, T006, T029 | Por crear: `integration/historical-compat.test.js` (T029); backfill verificado en T006 y en los escenarios V1 y V10 del `quickstart.md` | Sin ejecutar | R-01 y R-02 |
+| CA-7 | El ticket nuevo detalla refacciones con cantidad, precio e importe | FR-007 | T022, T026, T028 | Existente parcial: `integration/tickets.test.js` (contenido completo); se amplía al precio guardado (T022) y se verifica en `client/test/ticket_screen_test.dart` (T028) | Sin ejecutar | G-01/H-06: el ticket ya incluye refacciones con precio vivo; ahora con precio guardado |
+| CA-8 | Un solo pago vigente, también con solicitudes simultáneas; sin datos de tarjeta | FR-008 | T021, T049 | Existente: `integration/payments.test.js` (segundo pago); **nueva** `integration/payment-concurrency.test.js` con `Promise.all` (T021) | Sin ejecutar | G-01/H-09: no existe ninguna prueba simultánea hoy |
+| CA-9 | Mercado Pago recibe el importe correcto; pago pendiente desfasado se resuelve | FR-009 | T020, T023, T024, T025 | Existente parcial: `integration/payments-mp.test.js`; por crear: desfase en `integration/payments.test.js` (T020) y `contract/payments.contract.test.js` (T023) | Sin ejecutar | D-04 resuelta: se cancela y se genera uno nuevo |
+| CA-10 | El precio de compra solo lo ve el administrador | FR-010 | T038, T039, T040, T041 | Existente: `integration/parts-catalog.test.js` e `inventory.contract.test.js` (403); por crear: lookup sin precios (T038/T039) y lista de la orden sin `unitPrice` para el mecánico | Sin ejecutar | G-01/H-07; G-05/H-10: el selector del mecánico necesita el lookup |
+| CA-11 | Dashboard y listados funcionan con el nuevo total | FR-011 | T048, T049, T050 | Existente: `integration/dashboard.test.js`, `integration/service-orders.test.js` y `integration/payments.test.js` (regresión, T048) | Sin ejecutar | R-07 |
+| CA-12 | Seeds con precios y una orden cobrable con refacciones, idempotentes | FR-012 | T045, T046 | Existente parcial: `server/scripts/seed.js` (refacciones con precios); por crear: orden cobrable con refacciones, pago pendiente de ejemplo y doble ejecución sin duplicados (T046) | Sin ejecutar | G-01: el seed ya incluye precios; verificar orden cobrable con refacciones |
+| CA-13 | Pruebas de total, instantáneas, redondeo, permisos, concurrencia y compatibilidad | FR-013 | T007 a T044 (pruebas de cada historia), T049, T050 | Todas las anteriores, más la regresión completa de backend (T049) y de frontend (T050) | Sin ejecutar | CA-1 a CA-12 |
+| CA-14 | `docs/project-context.md`, `docs/design-system.md` y los comentarios que dicen que las refacciones no suman importe se actualizan en el mismo sprint | FR-014 | T047 | Revisión documental (sin prueba automática) | Sin ejecutar | H-08: campo `active` inexistente y comentarios desactualizados |
 
 ## 7. Hallazgos y defectos
 
