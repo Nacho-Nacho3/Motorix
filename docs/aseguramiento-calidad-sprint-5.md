@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
 
-**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`) y la G-03 (`/speckit.clarify`), ambas el 2026-11-03; faltan plan, tasks e implement. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`) y la G-05 (`/speckit.plan`), las tres últimas el 2026-11-03; faltan la G-04 (`/speckit.checklist`), la G-06 (`/speckit.tasks`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
 
 ## 0. Datos del documento
 
@@ -15,7 +15,7 @@ Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las pue
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-02 |
 | Fecha de cierre | Se llena al cerrar el sprint |
-| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02 y G-03 completadas) |
+| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02, G-03 y G-05 completadas) |
 
 ## 1. Objetivo y alcance
 
@@ -49,7 +49,7 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 ## 3. Puertas de calidad
 
-G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`) y G-03 (`/speckit.clarify`) el 2026-11-03; las puertas G-04 a G-07 corresponden a etapas de Spec Kit que aún no se ejecutan.
+G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`) y G-05 (`/speckit.plan`) el 2026-11-03; G-04 (`/speckit.checklist`), G-06 (`/speckit.tasks`) y G-07 (`/speckit.analyze`) corresponden a etapas de Spec Kit que aún no se ejecutan.
 
 | ID | Puerta | Estado | Evidencia |
 |:--:|---|---|---|
@@ -57,7 +57,7 @@ G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-
 | G-02 | Especificación (`/speckit.specify`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/spec.md` (5 historias, 14 FR, 8 SC) y `checklists/requirements.md` (17/17 ítems); commit `959268b`; corrige los hallazgos H-02 a H-05 |
 | G-03 | Aclaraciones (`/speckit.clarify`) | Realizada con observación (2026-11-03) | 5 preguntas → 6 decisiones resueltas (D-01/D-03, D-04, D-05, D-08, D-10) en `spec.md` (`### Session 2026-11-03`), commit `86d29bc`; 4 diferidas por bajo impacto (D-02, D-06, D-07, D-09) con defaults en Supuestos |
 | G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | No iniciada | Existe `checklists/requirements.md` (17/17, creada en la G-02); falta ejecutar `/speckit.checklist` para el checklist completo |
-| G-05 | Plan (`/speckit.plan`) | No iniciada | `plan.md`, `data-model.md` y `contracts/` por crear; la migración nueva debe ser la siguiente a la 013 (H-05) |
+| G-05 | Plan (`/speckit.plan`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/`: `plan.md` (contexto técnico verificado; constitución con la puerta I en enmienda pendiente, H-01), `research.md` (14 decisiones P-01 a P-14), `data-model.md` (migración `014` con backfill y CHECK de tope), `contracts/` (order-parts, parts-catalog, payments) y `quickstart.md` (V1 a V10); commit `971aacf`; detecta el hallazgo H-10 |
 | G-06 | Tareas (`/speckit.tasks`) | No iniciada | `tasks.md` por crear; las pruebas van antes del código en cada historia |
 | G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
 | G-08 | Pruebas planeadas y línea base | Aprobado con observación | Línea base medida el 2026-11-02 (sección 8); las pruebas están planeadas por CA en la sección 6, todavía sin crear |
@@ -89,11 +89,12 @@ Riesgos identificados antes de implementar, con la prueba que los cubrirá. Los 
 | R-02 | Las líneas ya registradas no tienen precio y al migrar quedan en 0 o desfases | Medio: totales incorrectos en órdenes existentes | Resolver D-01 y D-03 antes de migrar datos | Por crear (CA-3) | Abierto |
 | R-03 | Se rompe el pago único vigente (VN-04/VN-05) al tocar total y cobro | Alto: doble cobro | Mantener la transacción con `SELECT ... FOR UPDATE` de `payments.service.js` | Existente: `integration/payments.test.js` (segundo pago 400 y importe distinto 400); simultaneidad por crear (H-09) | Abierto |
 | R-04 | Un pago pendiente de Mercado Pago queda con importe distinto al total | Medio | Resolver D-04 y señalar el importe desfasado | Existente parcial: `integration/payments-mp.test.js`; desfasado por crear (CA-9) | Abierto |
-| R-05 | El precio de compra llega a recepción o al mecánico al agregar importes a las vistas | Alto: fuga de información financiera | Mantener el catálogo solo ADMIN (`parts.routes.js`, líneas 13 a 18) y proyecciones por rol al agregar campos | Existente parcial: `integration/parts-catalog.test.js` (403 de otros roles); prueba de fuga por crear (CA-10) | Abierto |
+| R-05 | El precio de compra llega a recepción o al mecánico al agregar importes a las vistas | Alto: fuga de información financiera | Mantener el catálogo solo ADMIN (`parts.routes.js`, líneas 13 a 18), proyección sin precios en el lookup nuevo del mecánico y en la lista de refacciones de la orden (FR-010) | Existente parcial: `integration/parts-catalog.test.js` (403 de otros roles); prueba de fuga por crear (CA-10, H-10) | Abierto |
 | R-06 | Precios sin límite máximo y errores de redondeo en el importe de una línea | Medio | Definir límites en el validador (D-08) y conservar el cálculo en centavos | Existente: `unit/order-total.test.js`; límites por crear (CA-2) | Abierto |
 | R-07 | El panel de control o los listados fallan con el nuevo total | Medio | Regresión de dashboard y listados al cierre | Existente: `integration/dashboard.test.js` y contratos; regresión al cierre (CA-11) | Abierto |
 | R-08 | La documentación vuelve a quedar desfasada (como `active` en la entidad Part) | Bajo: contradicciones | Actualizar `project-context.md` y `design-system.md` dentro del sprint (CA-14), empezando por H-08 | Revisión documental (sin prueba automática) | Abierto |
 | R-09 | La CA-8 da por hechas pruebas de concurrencia que hoy no existen | Medio: falsa sensación de cobertura | Crear la prueba de cobros simultáneos desde el inicio (H-09) | Por crear (CA-8) | Abierto |
+| R-10 | El selector de refacciones del mecánico sigue sin funcionar si el lookup no se implementa o no se prueba (H-10) | Medio: US5 no demostrable de extremo a extremo | Implementar `GET /api/parts/lookup` sin campos de precio (`research.md` P-6) y probarlo en backend y en la interfaz | Por crear: `integration/parts-catalog.test.js` (lookup) y `client/test/order_detail_test.dart` (selector con opciones y sin precios) | Abierto |
 
 ## 6. Trazabilidad
 
@@ -110,7 +111,7 @@ Cada criterio de aceptación (CA) se enlaza con su requisito, su tarea y su prue
 | CA-7 | El ticket nuevo detalla refacciones con cantidad, precio e importe | FR-007 | Por asignar | Existente parcial: `tickets.test.js` (contenido completo); se adapta al precio guardado | Sin ejecutar | G-01/H-06: el ticket ya incluye refacciones con precio vivo |
 | CA-8 | Un solo pago vigente, también con solicitudes simultáneas; sin datos de tarjeta | FR-008 | Por asignar | Existente: `payments.test.js` (segundo pago); simultaneidad por crear | Sin ejecutar | G-01/H-09: no existe ninguna prueba simultánea hoy |
 | CA-9 | Mercado Pago recibe el importe correcto; pago pendiente desfasado se resuelve | FR-009 | Por asignar | Existente parcial: `payments-mp.test.js`; desfasado por crear | Sin ejecutar | Depende de D-04 |
-| CA-10 | El precio de compra solo lo ve el administrador | FR-010 | Por asignar | Existente: `parts-catalog.test.js` e `inventory.contract.test.js` (403); proyecciones por crear | Sin ejecutar | G-01/H-07: hoy el catálogo es solo ADMIN |
+| CA-10 | El precio de compra solo lo ve el administrador | FR-010 | Por asignar | Existente: `parts-catalog.test.js` e `inventory.contract.test.js` (403); proyecciones por crear (lookup sin precios y lista de la orden sin `unitPrice` para el mecánico) | Sin ejecutar | G-01/H-07: hoy el catálogo es solo ADMIN; G-05/H-10: el selector del mecánico necesita el lookup sin precios |
 | CA-11 | Dashboard y listados funcionan con el nuevo total | FR-011 | Por asignar | Existente: `dashboard.test.js` y contratos; regresión al cierre | Sin ejecutar | R-07 |
 | CA-12 | Seeds con precios y una orden cobrable con refacciones, idempotentes | FR-012 | Por asignar | Existente parcial: `seed.js` ya crea refacciones con precios; prueba de idempotencia por crear | Sin ejecutar | G-01: el seed ya incluye precios; verificar orden cobrable con refacciones |
 | CA-13 | Pruebas de total, instantáneas, redondeo, permisos, concurrencia y compatibilidad | FR-013 | Por asignar | Todas las anteriores | Sin ejecutar | CA-1 a CA-12 |
@@ -118,7 +119,7 @@ Cada criterio de aceptación (CA) se enlaza con su requisito, su tarea y su prue
 
 ## 7. Hallazgos y defectos
 
-Se registra todo lo que se encuentre, sea en los documentos, en el análisis o en las pruebas. Hoy todos provienen de la G-01 (revisión del insumo contra el código) y de la constitución; no hay defectos de implementación porque el código aún no cambió. **Seis hallazgos quedaron resueltos al escribir la especificación (G-02, commit `959268b`); permanecen abiertos H-01 (enmienda de la constitución), H-08 (documentación, tarea CA-14) y H-09 (prueba de concurrencia, tarea CA-8).**
+Se registra todo lo que se encuentre, sea en los documentos, en el análisis o en las pruebas. Los hallazgos H-01 a H-09 provienen de la G-01 (revisión del insumo contra el código) y de la constitución; H-10 lo detectó la G-05 (plan). No hay defectos de implementación porque el código aún no cambió. **Seis hallazgos quedaron resueltos al escribir la especificación (G-02, commit `959268b`); permanecen abiertos H-01 (enmienda de la constitución), H-08 (documentación, tarea CA-14), H-09 (prueba de concurrencia, tarea CA-8) y H-10 (selector del mecánico, con el diseño de corrección en `research.md` P-6, commit `971aacf`).**
 
 | ID | Descripción | Severidad | Origen | Estado | Resolución | Evidencia |
 |:--:|---|---|---|---|---|---|
@@ -131,6 +132,7 @@ Se registra todo lo que se encuentre, sea en los documentos, en el análisis o e
 | H-07 | La CA-10 ya se cumple hoy en lo esencial: el catálogo es solo ADMIN y el detalle de orden no trae precios | Baja | G-01 | Resuelto | Registrado en la especificación: FR-010 y US5 sostienen la proyección por rol al agregar importes | `server/routes/parts.routes.js`, líneas 13 a 18; `server/models/order_part.model.js`, líneas 9 a 12; commit `959268b` |
 | H-08 | `docs/project-context.md` documenta un campo `active` en la entidad Part que no existe en la tabla (y el spec prohíbe el borrado lógico) | Baja | G-01 | Abierto | Corregirlo en CA-14 dentro del sprint (FR-014) | `docs/project-context.md`, línea 678; migración `009` sin esa columna |
 | H-09 | La CA-8 asume que el Sprint 4 ya cubre «solicitudes simultáneas», pero no existe ninguna prueba de concurrencia en `server/tests/` | Media | G-01 | Abierto | Crear la prueba de cobros simultáneos desde el inicio del sprint (R-09, FR-013) | Búsqueda de `Promise.all`, `concurrenc` y `concurrent` sin resultados en `server/tests/` |
+| H-10 | El diálogo «agregar refacción» del mecánico no puede cargar el catálogo: `GET /api/parts` es solo ADMIN y responde 403, así que su selector queda vacío y US5 no sería demostrable de extremo a extremo | Media | G-05 (plan) | Abierto | Diseñado en `research.md` P-6 y `contracts/parts-catalog.md` (commit `971aacf`): endpoint nuevo `GET /api/parts/lookup`, solo MECHANIC y sin campos de precio, manteniendo el catálogo solo ADMIN; se cierra al implementar US5 | `server/routes/parts.routes.js`, líneas 13 a 18; `client/lib/screens/orders/order_detail_screen.dart`, líneas 71 a 72 y 419 |
 
 ## 8. Línea base de regresión
 
