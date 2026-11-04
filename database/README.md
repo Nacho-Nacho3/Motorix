@@ -10,7 +10,7 @@ Esquema de MySQL **local** para el MVP. Motor InnoDB, codificación `utf8mb4`.
   `007_create_order_labor.sql`, `008_create_maintenance.sql`,
   `009_create_parts.sql`, `010_create_inventory_movements.sql`,
   `011_create_order_parts.sql`, `012_create_payments.sql`,
-  `013_create_tickets.sql`, …). Los cambios de esquema
+  `013_create_tickets.sql`, `014_order_parts_price.sql`, …). Los cambios de esquema
   se agregan como **nuevos** scripts; NUNCA se editan scripts de sprints ya
   aplicados.
 - `scripts/` — utilidades de entorno:
@@ -50,8 +50,8 @@ Las pruebas (`npm test`) usan siempre `motorix_test`, nunca la base principal.
 ## Convención de nombres y orden de aplicación
 
 Los scripts se numeran en orden de aplicación y se ejecutan en ese orden
-(migraciones 004–007 del Sprint 2, 008–011 del Sprint 3 y 012–013 del
-Sprint 4 dependen de las tablas de los sprints anteriores):
+(migraciones 004–007 del Sprint 2, 008–011 del Sprint 3, 012–013 del
+Sprint 4 y 014 del Sprint 5 dependen de las tablas de los sprints anteriores):
 
 | Script | Tabla | Depende de |
 |--------|-------|------------|
@@ -68,5 +68,15 @@ Sprint 4 dependen de las tablas de los sprints anteriores):
 | `011_create_order_parts.sql` | `order_parts` | `service_orders`, `parts`, `users` |
 | `012_create_payments.sql` | `payments` | `service_orders`, `users` |
 | `013_create_tickets.sql` | `tickets` | `service_orders`, `users` |
+| `014_order_parts_price.sql` | `order_parts` (columnas nuevas), `parts` (CHECK) | `order_parts`, `parts`, `users` |
+
+La `014_order_parts_price.sql` (Sprint 5) agrega a `order_parts` la columna
+`unit_price`, con el precio de venta **guardado al agregar la refacción a la
+orden** (instantánea D-01/D-03; hace backfill con el precio vigente de `parts`
+para las líneas existentes), junto con las columnas de la corrección
+administrativa de precio (`price_correction_reason`, `price_corrected_by`,
+`price_corrected_at`, D-05, única mutación admitida sobre la tabla). Incluye el
+CHECK de tope `unit_price <= 99999.99` (D-08) y los CHECK equivalentes de tope
+sobre `parts.purchase_price` y `parts.sale_price`.
 
 El registro en `schema_migrations` usa el nombre del archivo como `version`.
