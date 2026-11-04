@@ -31,8 +31,8 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 **Propósito**: condiciones de entrada del sprint y punto de partida verificable
 
 - [x] T001 Registrar la enmienda de la constitución antes de implementar (H-01): actualizar `.specify/memory/constitution.md` (alcance de 4 a 5 sprints en las líneas 36, 48 y 84, versión 1.0.0 → 1.1.0 y reporte de impacto en el encabezado) y marcar el criterio de entrada como cumplido en `docs/aseguramiento-calidad-sprint-5.md` (sección 2) — **ejecutada**: commit `ef56cc7`
-- [ ] T002 Crear e ingresar a la rama `005-precios-refacciones-cobro` desde `main` en la raíz del repositorio (sin squash ni force-push durante todo el sprint, según `Trabajo.md`)
-- [ ] T003 [P] Verificar que la rama arranca con la línea base verde: `cd server && npm.cmd test`, y en `client/` `flutter test` y `flutter analyze lib`; anotar conteos y fecha en `docs/aseguramiento-calidad-sprint-5.md` (sección 8)
+- [x] T002 Crear e ingresar a la rama `005-precios-refacciones-cobro` desde `main` en la raíz del repositorio (sin squash ni force-push durante todo el sprint, según `Trabajo.md`) — **ejecutada**: rama creada el 2026-11-03
+- [x] T003 [P] Verificar que la rama arranca con la línea base verde: `cd server && npm.cmd test`, y en `client/` `flutter test` y `flutter analyze lib`; anotar conteos y fecha en `docs/aseguramiento-calidad-sprint-5.md` (sección 8) — **ejecutada**: backend 49 suites/390 pruebas, frontend 120 pruebas y `flutter analyze` sin problemas (2026-11-03)
 
 ---
 
@@ -40,9 +40,9 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 
 **Propósito**: esquema del sprint. **?? CRÍTICO**: ninguna historia puede comenzar hasta completar esta fase
 
-- [ ] T004 Crear la migración aditiva `database/migrations/014_order_parts_price.sql` con: columnas `unit_price DECIMAL(10,2) NOT NULL DEFAULT 0`, `price_correction_reason VARCHAR(200) NULL`, `price_corrected_by INT UNSIGNED NULL` y `price_corrected_at DATETIME NULL` en `order_parts`; backfill `UPDATE order_parts op JOIN parts p ON p.id = op.part_id SET op.unit_price = p.sale_price;` (D-01/D-03); CHECK `unit_price >= 0 AND unit_price <= 99999.99`; CHECK `purchase_price <= 99999.99` y `sale_price <= 99999.99` en `parts` (D-08); y FK `price_corrected_by → users(id)` con `ON DELETE RESTRICT ON UPDATE CASCADE`
-- [ ] T005 [P] Documentar la migración 014 en `database/README.md` (propósito, columnas nuevas, backfill del precio vigente y CHECK de tope)
-- [ ] T006 Aplicar las migraciones a la base principal y a `motorix_test` con `database/scripts/aplicar-migraciones.ps1` y verificar en `schema_migrations` el registro de `014_order_parts_price`, además de que ninguna línea de `order_parts` quedó con `unit_price = 0.00`
+- [x] T004 Crear la migración aditiva `database/migrations/014_order_parts_price.sql` con: columnas `unit_price DECIMAL(10,2) NOT NULL DEFAULT 0`, `price_correction_reason VARCHAR(200) NULL`, `price_corrected_by INT UNSIGNED NULL` y `price_corrected_at DATETIME NULL` en `order_parts`; backfill `UPDATE order_parts op JOIN parts p ON p.id = op.part_id SET op.unit_price = p.sale_price;` (D-01/D-03); CHECK `unit_price >= 0 AND unit_price <= 99999.99`; CHECK `purchase_price <= 99999.99` y `sale_price <= 99999.99` en `parts` (D-08); y FK `price_corrected_by → users(id)` con `ON DELETE RESTRICT ON UPDATE CASCADE` — **ejecutada**: commit `9b529f9`
+- [x] T005 [P] Documentar la migración 014 en `database/README.md` (propósito, columnas nuevas, backfill del precio vigente y CHECK de tope) — **ejecutada**: commit `9b529f9`
+- [x] T006 Aplicar las migraciones a la base principal y a `motorix_test` con `database/scripts/aplicar-migraciones.ps1` y verificar en `schema_migrations` el registro de `014_order_parts_price`, además de que ninguna línea de `order_parts` quedó con `unit_price = 0.00` — **ejecutada**: ambas bases al día; 9 líneas, 0 en cero y 0 desalineadas; los 3 CHECK presentes en `information_schema`
 
 **Checkpoint**: fundación lista; las historias pueden empezar
 
