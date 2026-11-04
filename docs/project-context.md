@@ -294,6 +294,28 @@ Cuando una refacción sea utilizada en una orden, el sistema debe
 reflejar la salida correspondiente del inventario. La implementación
 debe evitar que el stock quede en valores inválidos.
 
+### Reglas de precios (Sprint 5)
+
+-   **Precio guardado en la línea**: al agregar una refacción a una
+    orden se guarda una instantánea del precio de venta vigente
+    (`unit_price`, 2 decimales); el total de la orden y el ticket usan
+    ese valor aunque el catálogo cambie después (D-01).
+-   **Tope de precio**: los precios de compra y venta no pueden superar
+    `$99,999.99` ni tener más de 2 decimales; el precio de venta debe
+    ser mayor o igual al de compra, con advertencia si es menor (D-08).
+-   **Lookup del mecánico**: el mecánico lista refacciones con
+    `GET /api/parts/lookup`, que nunca incluye precios; el catálogo
+    completo (`GET /api/parts`) sigue siendo solo de ADMIN (FR-010,
+    D-10, H-10).
+-   **Proyección por rol**: en la lista de refacciones de la orden el
+    mecánico no recibe `unitPrice` ni campos de corrección; recepción
+    recibe `unitPrice` sin corrección; ADMIN recibe ambos (D-10).
+-   **Corrección con motivo**: solo ADMIN corrige el precio de una línea
+    con `PATCH /api/service-orders/{id}/parts/{partRowId}/price`, con
+    motivo obligatorio de 10 a 200 caracteres; la corrección queda
+    registrada con autor y fecha, y las órdenes `DELIVERED` o ya pagadas
+    no se corrigen (D-05).
+
 ------------------------------------------------------------------------
 
 ## 6.8 Pagos
@@ -675,10 +697,12 @@ stock
 minimumStock
 purchasePrice
 salePrice
-active
 createdAt
 updatedAt
 ```
+
+> Sin campo `active`: las refacciones no se borran ni se desactivan
+> (H-08, FR-015); el stock se administra con movimientos `IN`/`OUT`.
 
 ## InventoryMovement
 

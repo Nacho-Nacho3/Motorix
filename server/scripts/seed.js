@@ -9,6 +9,7 @@ import * as servicios from "../models/order_service.model.js";
 import * as manoDeObra from "../models/order_labor.model.js";
 import * as mantenimientos from "../models/maintenance.model.js";
 import { buscarPorCodigo as buscarPartePorCodigo } from "../models/part.model.js";
+import * as pagos from "../models/payment.model.js";
 import * as inventario from "../services/inventory.service.js";
 import { calcularTotalOrden } from "../services/order-total.service.js";
 import { registrarPago } from "../services/payments.service.js";
@@ -414,8 +415,17 @@ export async function crearMantenimientosDeEjemplo(registradoPor) {
  * una fila en `order_parts` con su salida OUT y el stock descontado.
  */
 export async function crearUsoDeOrdenDeEjemplo() {
-  const existentes = await contar("order_parts");
-  if (existentes > 0) return { creados: 0, omitidos: existentes };
+  // Marcador propio (T045): una línea en una orden COBRABLE; las líneas de
+  // órdenes abiertas (escenario del sprint) no desactivan este caso.
+  const [cobrables] = await pool.query(
+    `SELECT COUNT(*) AS total
+       FROM order_parts op
+       JOIN service_orders so ON so.id = op.order_id
+      WHERE so.status IN ('FINISHED', 'DELIVERED')`,
+  );
+  if (Number(cobrables[0].total) > 0) {
+    return { creados: 0, omitidos: Number(cobrables[0].total) };
+  }
 
   const [ordenes] = await pool.query(
     `SELECT id, mechanic_id AS mechanicId
@@ -492,6 +502,100 @@ export async function crearPagoYTicketDeEjemplo(usuario) {
   return { pago, ticket };
 }
 
+/**
+ * Sprint 5 (US2/US3, T045): dos escenarios de demo con marcadores propios
+ * (SC-007), para no duplicar nada en una base ya sembrada:
+ * 1. una orden ABIERTA con una línea de refacción con precio, que muestra
+ *    el total parcial mientras se trabaja (D-01, FR-003);
+ * 2. un pago `PENDING` de Mercado Pago con importe distinto al total, sobre
+ *    la orden terminada que quedó sin cobrar: al verla o cobrarla el
+ *    backend lo cancela como desfasado (D-04, FR-009).
+ *
+ * Corre DESPUÉS de `crearPagoYTicketDeEjemplo`, para que el pendiente caiga
+ * siempre en la orden sin pago efectivo.
+ */
+export async function crearEscenariosPreciosDeEjemplo(usuario) {
+  const resultado = { ordenAbierta: 0, pagoPendiente: 0 };
+
+  // (1) Marcador propio: ya existe una línea sobre una orden abierta.
+  const [lineasAbiertas] = await pool.query(
+    `SELECT COUNT(*) AS total
+       FROM order_parts op
+       JOIN service_orders so ON so.id = op.order_id
+      WHERE so.status NOT IN ('FINISHED', 'DELIVERED')`,
+  );
+  if (Number(lineasAbiertas[0].total) === 0) {
+    const [ordenes] = await pool.query(
+      `SELECT id, mechanic_id AS mechanicId
+         FROM service_orders
+        WHERE status NOT IN ('FINISHED', 'DELIVERED')
+          AND mechanic_id IS NOT NULL
+        ORDER BY id
+        LIMIT 1`,
+    );
+    // Refacción con stock holgado y precio de venta > 0: la línea guarda el
+    // precio vigente del catálogo al momento de agregarla (D-01).
+    const [partes] = await pool.query(
+      `SELECT id FROM parts
+        WHERE stock_current > stock_min AND sale_price > 0
+        ORDER BY id
+        LIMIT 1`,
+    );
+    if (ordenes.length > 0 && partes.length > 0) {
+      await inventario.agregarRefaccionOrden(
+        ordenes[0].id,
+        { partId: partes[0].id, quantity: 1 },
+        { id: ordenes[0].mechanicId, role: "MECHANIC" },
+      );
+      resultado.ordenAbierta = 1;
+    }
+  }
+
+  // (2) Marcador propio: ya hay un pago PENDING de Mercado Pago.
+  const [pendientes] = await pool.query(
+    `SELECT COUNT(*) AS total
+       FROM payments
+      WHERE method = 'MERCADO_PAGO' AND status = 'PENDING'`,
+  );
+  if (Number(pendientes[0].total) === 0) {
+    const problemasTerminados = ORDENES_EJEMPLO.filter(
+      (ejemplo) =>
+        ejemplo.status === "FINISHED" || ejemplo.status === "DELIVERED",
+    ).map((ejemplo) => ejemplo.reportedProblem);
+    let candidatas = [];
+    if (problemasTerminados.length > 0) {
+      const [filas] = await pool.query(
+        `SELECT id FROM service_orders
+          WHERE status IN ('FINISHED', 'DELIVERED')
+            AND reported_problem IN (${problemasTerminados.map(() => "?").join(", ")})
+            AND NOT EXISTS (
+              SELECT 1 FROM payments p
+               WHERE p.order_id = service_orders.id AND p.status = 'PAID'
+            )
+          ORDER BY id ASC`,
+        problemasTerminados,
+      );
+      candidatas = filas;
+    }
+    if (candidatas.length > 0) {
+      const { total } = await calcularTotalOrden(candidatas[0].id);
+      // Importe desfasado a propósito: total + 10.00 (D-04).
+      const importe = (Number(total) + 10).toFixed(2);
+      await pagos.crear({
+        orderId: candidatas[0].id,
+        amount: importe,
+        method: "MERCADO_PAGO",
+        status: "PENDING",
+        externalReference: `SEED-PENDIENTE-${candidatas[0].id}`,
+        createdBy: usuario.id,
+      });
+      resultado.pagoPendiente = 1;
+    }
+  }
+
+  return resultado;
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -511,6 +615,12 @@ export async function ejecutarSeed() {
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
     : { pago: false, ticket: false };
+  // Sprint 5 (T045): escenarios de precios con marcadores propios; corre
+  // después del cobro para que el pendiente desfasado caiga en la orden
+  // que quedó sin pago efectivo (D-04).
+  const escenariosDePrecios = admin
+    ? await crearEscenariosPreciosDeEjemplo({ id: admin, role: "ADMIN" })
+    : { ordenAbierta: 0, pagoPendiente: 0 };
 
   return {
     usuarios: {
@@ -531,6 +641,7 @@ export async function ejecutarSeed() {
     mantenimientos: mantenimientosDeEjemplo,
     usosDeOrden: usoDeOrden,
     pagoYTicket,
+    escenariosDePrecios,
   };
 }
 
@@ -575,6 +686,11 @@ if (esEjecucionDirecta) {
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +
       `${resumen.pagoYTicket.ticket ? "ticket generado" : "ticket ya existente u orden sin terminar"}`,
+  );
+  console.log(
+    `  - Escenarios de precios (T045): ` +
+      `${resumen.escenariosDePrecios.ordenAbierta ? "línea en orden abierta creada" : "línea en orden abierta ya existente u no disponible"}, ` +
+      `${resumen.escenariosDePrecios.pagoPendiente ? "pago PENDING desfasado creado" : "pago PENDING desfasado ya existente u no disponible"}`,
   );
   await pool.end();
 }
