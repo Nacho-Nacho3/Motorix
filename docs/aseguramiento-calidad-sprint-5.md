@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
 
-**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`) y la G-05 (`/speckit.plan`), las tres últimas el 2026-11-03; faltan la G-04 (`/speckit.checklist`), la G-06 (`/speckit.tasks`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`), la G-04 (`/speckit.checklist`) y la G-05 (`/speckit.plan`), las cuatro últimas el 2026-11-03; faltan la G-06 (`/speckit.tasks`), la G-07 (`/speckit.analyze`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
 
 ## 0. Datos del documento
 
@@ -15,7 +15,7 @@ Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las pue
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-02 |
 | Fecha de cierre | Se llena al cerrar el sprint |
-| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02, G-03 y G-05 completadas) |
+| Estado general | En elaboración - proceso Spec Kit en curso (G-01, G-02, G-03, G-04 y G-05 completadas) |
 
 ## 1. Objetivo y alcance
 
@@ -49,14 +49,14 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 ## 3. Puertas de calidad
 
-G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`) y G-05 (`/speckit.plan`) el 2026-11-03; G-04 (`/speckit.checklist`), G-06 (`/speckit.tasks`) y G-07 (`/speckit.analyze`) corresponden a etapas de Spec Kit que aún no se ejecutan.
+G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`), G-04 (`/speckit.checklist`) y G-05 (`/speckit.plan`) el 2026-11-03; G-06 (`/speckit.tasks`) y G-07 (`/speckit.analyze`) corresponden a etapas de Spec Kit que aún no se ejecutan.
 
 | ID | Puerta | Estado | Evidencia |
 |:--:|---|---|---|
 | G-01 | Insumo del sprint revisado contra el código | Aprobado con observación | Revisión del 2026-11-02 contra `order-total.service.js`, migraciones `009`/`011`, `validators/parts.js`, `payments.service.js`, `tickets.service.js` y `parts.routes.js`: 9 hallazgos H-01 a H-09 (sección 7) |
 | G-02 | Especificación (`/speckit.specify`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/spec.md` (5 historias, 14 FR, 8 SC) y `checklists/requirements.md` (17/17 ítems); commit `959268b`; corrige los hallazgos H-02 a H-05 |
 | G-03 | Aclaraciones (`/speckit.clarify`) | Realizada con observación (2026-11-03) | 5 preguntas → 6 decisiones resueltas (D-01/D-03, D-04, D-05, D-08, D-10) en `spec.md` (`### Session 2026-11-03`), commit `86d29bc`; 4 diferidas por bajo impacto (D-02, D-06, D-07, D-09) con defaults en Supuestos |
-| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | No iniciada | Existe `checklists/requirements.md` (17/17, creada en la G-02); falta ejecutar `/speckit.checklist` para el checklist completo |
+| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/checklists/precios-cobro.md`: 38 ítems de calidad de requisitos, **38 cumplidos** (evaluación asistida y autorizada por el revisor, anotada en las notas del archivo); `checklists/requirements.md` sigue en 17/17; commit `d06a00e` |
 | G-05 | Plan (`/speckit.plan`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/`: `plan.md` (contexto técnico verificado; constitución con la puerta I en enmienda pendiente, H-01), `research.md` (14 decisiones P-01 a P-14), `data-model.md` (migración `014` con backfill y CHECK de tope), `contracts/` (order-parts, parts-catalog, payments) y `quickstart.md` (V1 a V10); commit `971aacf`; detecta el hallazgo H-10 |
 | G-06 | Tareas (`/speckit.tasks`) | No iniciada | `tasks.md` por crear; las pruebas van antes del código en cada historia |
 | G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
