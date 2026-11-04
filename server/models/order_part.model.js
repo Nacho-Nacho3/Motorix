@@ -72,3 +72,30 @@ export async function buscarPorId(id) {
   );
   return aOrderPart(filas[0]);
 }
+
+/**
+ * Uso por (orden, fila) con los campos de corrección (US4, D-05): es la
+ * proyección ADMIN de la respuesta del PATCH .../parts/{partRowId}/price.
+ */
+export async function buscarCorregida(orderId, id, conexion = pool) {
+  const [filas] = await conexion.query(
+    `SELECT ${CAMPOS},
+            op.price_correction_reason AS priceCorrectionReason,
+            op.price_corrected_by AS priceCorrectedBy,
+            op.price_corrected_at AS priceCorrectedAt
+       FROM order_parts op
+       JOIN parts p ON p.id = op.part_id
+      WHERE op.order_id = ? AND op.id = ?
+      LIMIT 1`,
+    [orderId, id],
+  );
+  if (filas.length === 0) return null;
+  return {
+    ...aOrderPart(filas[0]),
+    priceCorrectionReason: filas[0].priceCorrectionReason,
+    priceCorrectedBy: filas[0].priceCorrectedBy,
+    priceCorrectedAt: filas[0].priceCorrectedAt
+      ? filas[0].priceCorrectedAt.replace(" ", "T")
+      : null,
+  };
+}

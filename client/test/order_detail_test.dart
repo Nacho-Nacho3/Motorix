@@ -11,16 +11,43 @@ import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/screens/orders/order_detail_screen.dart';
 import 'package:motorix_client/services/api_client.dart';
 
-/// ApiClient falso del detalle: diagnóstico guardado, un servicio y una fila
-/// de mano de obra; el DELETE del servicio quita la fila.
+/// ApiClient falso del detalle: diagnóstico guardado, un servicio, una fila
+/// de mano de obra y una línea de refacción; el DELETE del servicio quita la
+/// fila y el PATCH de precio corrige la línea (US4).
 class _ApiDetalleFalsa extends ApiClient {
   bool servicioBorrado = false;
   int borradosDeServicio = 0;
+
+  /// Precio de la línea devuelto por GET /parts; `null` simula la
+  /// proyección del mecánico (no recibe precios, D-10).
+  String? precioLinea = '850.00';
+
+  /// Conteo de correcciones recibidas y precio enviado (US4, T037).
+  int correcciones = 0;
+  String? precioCorregido;
 
   @override
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     if (path.startsWith('/service-orders/mechanics')) {
       return {'mechanics': <Map<String, dynamic>>[]};
+    }
+    if (path == '/service-orders/1/parts') {
+      return {
+        'total': 1,
+        'parts': [
+          {
+            'id': 31,
+            'orderId': 1,
+            'partId': 4,
+            'partCode': 'BAL-001',
+            'name': 'Balatas traseras',
+            'quantity': 2,
+            if (precioLinea != null) 'unitPrice': precioLinea,
+            'createdBy': 3,
+            'createdAt': '2026-11-03T10:00:00',
+          },
+        ],
+      };
     }
     return {
       'order': {
@@ -65,6 +92,36 @@ class _ApiDetalleFalsa extends ApiClient {
   }
 
   @override
+  Future<dynamic> patch(String path, Object cuerpo) async {
+    if (path == '/service-orders/1/parts/31/price') {
+      final datos = cuerpo as Map<String, dynamic>;
+      final motivo = (datos['reason'] as String?) ?? '';
+      if (motivo.length < 10) {
+        // Mismo patrón que el backend: mensaje principal genérico.
+        throw ApiError(
+          status: 400,
+          code: 'VALIDATION_ERROR',
+          message: 'Datos inválidos en el cuerpo de la petición.',
+        );
+      }
+      correcciones += 1;
+      precioCorregido = datos['unitPrice'] as String?;
+      precioLinea = precioCorregido;
+      return {
+        'ok': true,
+        'data': {
+          'orderPart': {'id': 31},
+        },
+      };
+    }
+    throw ApiError(
+      status: 404,
+      code: 'UNKNOWN',
+      message: 'Ruta desconocida.',
+    );
+  }
+
+  @override
   Future<dynamic> delete(String path) async {
     if (path == '/service-orders/1/services/10') {
       servicioBorrado = true;
@@ -92,15 +149,23 @@ const _orden = ServiceOrder(
   reportedProblem: 'Ruido al frenar',
 );
 
-Widget _pantalla(_ApiDetalleFalsa api) {
+Widget _pantalla(_ApiDetalleFalsa api, {String rol = 'MECHANIC'}) {
   final sesion = SessionProvider(api);
-  sesion.usuario = const User(
-    id: 3,
-    username: 'mecanico-uno',
-    name: 'Mecánico Uno',
-    email: 'mecanico@motorix.local',
-    role: 'MECHANIC',
-  );
+  sesion.usuario = rol == 'ADMIN'
+      ? const User(
+          id: 1,
+          username: 'admin',
+          name: 'Administrador',
+          email: 'admin@motorix.local',
+          role: 'ADMIN',
+        )
+      : const User(
+          id: 3,
+          username: 'mecanico-uno',
+          name: 'Mecánico Uno',
+          email: 'mecanico@motorix.local',
+          role: 'MECHANIC',
+        );
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<SessionProvider>.value(value: sesion),
@@ -174,5 +239,115 @@ void main() {
       reason: 'el servicio eliminado ya no debe aparecer',
     );
     expect(find.text('Sin servicios registrados.'), findsOneWidget);
+  });
+
+  testWidgets('el admin ve el precio de la línea y la acción «Corregir» (US4, D-05)',
+      (tester) async {
+    await tester.pumpWidget(_pantalla(_ApiDetalleFalsa(), rol: 'ADMIN'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('\$850.00'),
+      findsOneWidget,
+      reason: 'el precio de la línea se muestra a quien lo recibe',
+    );
+    expect(
+      find.widgetWithText(TextButton, 'Corregir'),
+      findsOneWidget,
+      reason: 'solo ADMIN tiene la acción de corrección',
+    );
+  });
+
+  testWidgets('el mecánico no ve precios ni la acción de corrección (D-10)',
+      (tester) async {
+    final api = _ApiDetalleFalsa()..precioLinea = null;
+    await tester.pumpWidget(_pantalla(api));
+    await tester.pumpAndSettle();
+
+    expect(find.text('\$850.00'), findsNothing);
+    expect(find.widgetWithText(TextButton, 'Corregir'), findsNothing);
+    expect(
+      find.text('BAL-001 · Balatas traseras · 2 uds'),
+      findsOneWidget,
+      reason: 'la fila sigue visible sin precios',
+    );
+  });
+
+  testWidgets('el motivo corto no se envía y el diálogo sigue abierto (US4)',
+      (tester) async {
+    final api = _ApiDetalleFalsa();
+    await tester.pumpWidget(_pantalla(api, rol: 'ADMIN'));
+    await tester.pumpAndSettle();
+
+    final botonCorregir = find.widgetWithText(TextButton, 'Corregir');
+    await tester.ensureVisible(botonCorregir);
+    await tester.pumpAndSettle();
+    await tester.tap(botonCorregir);
+    await tester.pumpAndSettle();
+    expect(find.text('Corregir precio'), findsOneWidget);
+
+    final motivo = find.ancestor(
+      of: find.text('Motivo (mínimo 10 caracteres)'),
+      matching: find.byType(TextFormField),
+    );
+    await tester.enterText(motivo, 'corto');
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('El motivo debe tener al menos 10 caracteres.'),
+      findsOneWidget,
+      reason: 'el motivo obligatorio se valida en pantalla',
+    );
+    expect(
+      find.text('Corregir precio'),
+      findsOneWidget,
+      reason: 'el diálogo sigue abierto',
+    );
+    expect(api.correcciones, 0, reason: 'no se llamó al backend');
+  });
+
+  testWidgets('la corrección exitosa cierra el diálogo y actualiza el precio (US4)',
+      (tester) async {
+    final api = _ApiDetalleFalsa();
+    await tester.pumpWidget(_pantalla(api, rol: 'ADMIN'));
+    await tester.pumpAndSettle();
+
+    final botonCorregir = find.widgetWithText(TextButton, 'Corregir');
+    await tester.ensureVisible(botonCorregir);
+    await tester.pumpAndSettle();
+    await tester.tap(botonCorregir);
+    await tester.pumpAndSettle();
+
+    final precio = find.ancestor(
+      of: find.text('Precio unitario'),
+      matching: find.byType(TextFormField),
+    );
+    final motivo = find.ancestor(
+      of: find.text('Motivo (mínimo 10 caracteres)'),
+      matching: find.byType(TextFormField),
+    );
+    await tester.enterText(precio, '950.00');
+    await tester.enterText(motivo, 'Precio capturado de otra pieza');
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(api.correcciones, 1, reason: 'el PATCH se envió una sola vez');
+    expect(api.precioCorregido, '950.00');
+    expect(
+      find.text('Corregir precio'),
+      findsNothing,
+      reason: 'el diálogo se cerró al confirmar',
+    );
+    expect(find.text('Precio de la línea corregido.'), findsOneWidget);
+    expect(
+      find.text('\$950.00'),
+      findsOneWidget,
+      reason: 'la lista muestra el precio corregido',
+    );
+
+    // Deja pasar el temporizador de la barra de aviso.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 }

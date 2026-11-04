@@ -155,3 +155,27 @@ export const orderPartCreateSchema = z
       .positive("La cantidad debe ser un número entero mayor que cero."),
   })
   .strict();
+
+// T031 (US4): corrección administrativa de precio de una línea (D-05, D-08).
+// `unitPrice` usa el formato de precio existente con el mismo tope del
+// catálogo; `reason` es obligatorio de 10 a 200 caracteres y queda
+// registrado en la fila (D-05).
+export const orderPartPricePatchSchema = z
+  .object({
+    unitPrice: z
+      .string({ required_error: "El precio es obligatorio." })
+      .trim()
+      .regex(
+        /^\d+(\.\d{1,2})?$/,
+        "El precio debe ser un número mayor o igual a cero con hasta 2 decimales.",
+      )
+      .refine((valor) => Number(valor) <= 99999.99, {
+        message: "El precio no puede superar los 99,999.99.",
+      }),
+    reason: z
+      .string({ required_error: "El motivo es obligatorio." })
+      .trim()
+      .min(10, "El motivo debe tener al menos 10 caracteres.")
+      .max(200, "El motivo no puede superar los 200 caracteres."),
+  })
+  .strict();

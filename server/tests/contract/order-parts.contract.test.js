@@ -201,3 +201,86 @@ describe("Contrato de order-parts.md (US7)", () => {
     expect(listado.body.data.total).toBe(1);
   });
 });
+
+// Sprint 5 (US4, T034): contrato de la corrección de precio contra
+// contracts/order-parts.md (D-05, FR-002).
+describe("Contrato de la corrección de precio (US4, T034)", () => {
+  const CAMPOS_CORRECCION = [
+    ...CAMPOS_ORDER_PART,
+    "priceCorrectionReason",
+    "priceCorrectedBy",
+    "priceCorrectedAt",
+  ].sort();
+
+  /** Orden con una línea de refacción (precio inicial 0.00). */
+  async function ordenConLinea() {
+    const orden = await crearOrden({ asignado: idMecanico });
+    const parte = await crearParte(10);
+    expect((await agregar(orden.id, { partId: parte.id, quantity: 2 })).status).toBe(201);
+    const [filas] = await poolPrueba.query(
+      "SELECT id FROM order_parts WHERE order_id = ?",
+      [orden.id],
+    );
+    return { orden, filaId: filas[0].id };
+  }
+
+  function corregir(orden, filaId, cuerpo, headers = headersAdmin) {
+    return request(app)
+      .patch(`/api/service-orders/${orden.id}/parts/${filaId}/price`)
+      .set(headers)
+      .send(cuerpo);
+  }
+
+  test("200 con data.orderPart: campos priceCorrection* y 2 decimales", async () => {
+    const { orden, filaId } = await ordenConLinea();
+
+    const correccion = await corregir(orden, filaId, {
+      unitPrice: "75.50",
+      reason: "Precio capturado de otra pieza",
+    });
+
+    expect(correccion.status).toBe(200);
+    expect(correccion.body.ok).toBe(true);
+    const uso = correccion.body.data.orderPart;
+    expect(Object.keys(uso).sort()).toEqual(CAMPOS_CORRECCION);
+    expect(uso.unitPrice).toMatch(/^\d+\.\d{2}$/);
+    expect(uso.priceCorrectionReason).toBe("Precio capturado de otra pieza");
+    expect(typeof uso.priceCorrectedBy).toBe("number");
+    expect(uso.priceCorrectedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+  });
+
+  test("códigos VALIDATION_ERROR, FORBIDDEN, SERVICE_ORDER_NOT_FOUND y ORDER_ITEM_NOT_FOUND", async () => {
+    const { orden, filaId } = await ordenConLinea();
+
+    const motivoCorto = await corregir(orden, filaId, {
+      unitPrice: "75.50",
+      reason: "corto",
+    });
+    expect(motivoCorto.status).toBe(400);
+    expect(motivoCorto.body.error.code).toBe("VALIDATION_ERROR");
+
+    const recepcion = await corregir(
+      orden,
+      filaId,
+      { unitPrice: "75.50", reason: "Precio capturado de otra pieza" },
+      headersRecepcion,
+    );
+    expect(recepcion.status).toBe(403);
+    expect(recepcion.body.error.code).toBe("FORBIDDEN");
+
+    const sinOrden = await request(app)
+      .patch("/api/service-orders/99999999/parts/1/price")
+      .set(headersAdmin)
+      .send({ unitPrice: "75.50", reason: "Precio capturado de otra pieza" });
+    expect(sinOrden.status).toBe(404);
+    expect(sinOrden.body.error.code).toBe("SERVICE_ORDER_NOT_FOUND");
+
+    const otra = await crearOrden({ asignado: idMecanico, placas: "QWE1234" });
+    const filaAjena = await corregir(otra, filaId, {
+      unitPrice: "75.50",
+      reason: "Fila que no pertenece a la orden",
+    });
+    expect(filaAjena.status).toBe(404);
+    expect(filaAjena.body.error.code).toBe("ORDER_ITEM_NOT_FOUND");
+  });
+});

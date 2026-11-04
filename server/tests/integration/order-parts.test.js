@@ -19,6 +19,7 @@ let headersAdmin;
 let headersRecepcion;
 let headersMecanico;
 let idMecanico;
+let idAdmin;
 
 beforeAll(async () => {
   poolPrueba = await crearPoolDePrueba();
@@ -36,6 +37,7 @@ beforeEach(async () => {
 
   const admin = await tokenPara({ username: "admin", role: "ADMIN", name: "Administrador" });
   headersAdmin = conToken(admin.token);
+  idAdmin = admin.usuario.id;
 
   const recepcion = await tokenPara({
     username: "recepcion",
@@ -421,5 +423,166 @@ describe("Refacciones utilizadas en una orden (US7, CA-5)", () => {
       partsSubtotal: "0.00",
       total: "0.00",
     });
+  });
+});
+
+// Sprint 5 (US4, T030): corrección administrativa de precio (D-05, US4
+// escenario 4, FR-002). Es la única mutación admitida sobre order_parts
+// (R-06 sigue sin DELETE).
+describe("US4 - Corrección administrativa de precio (T030, D-05)", () => {
+  /** Orden con una línea de refacción a 850.00 (2 unidades). */
+  async function ordenConLinea() {
+    const orden = await crearOrden({ asignado: idMecanico });
+    const parte = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: `COR-${String(contador).padStart(4, "0")}`,
+        name: "Filtro de freno",
+        category: "Frenos",
+        stockCurrent: 10,
+        stockMin: 2,
+        salePrice: "850.00",
+      });
+    expect(parte.status).toBe(201);
+    const uso = await agregar(orden.id, {
+      partId: parte.body.data.part.id,
+      quantity: 2,
+    });
+    expect(uso.status).toBe(201);
+    const [filas] = await poolPrueba.query(
+      "SELECT id FROM order_parts WHERE order_id = ?",
+      [orden.id],
+    );
+    return { orden, filaId: filas[0].id };
+  }
+
+  async function cambiarEstado(orden, hasta) {
+    for (const status of hasta) {
+      const respuesta = await request(app)
+        .patch(`/api/service-orders/${orden.id}/status`)
+        .set(headersMecanico)
+        .send({ status });
+      expect(respuesta.status).toBe(200);
+    }
+  }
+
+  function corregir(orden, filaId, cuerpo, headers = headersAdmin) {
+    return request(app)
+      .patch(`/api/service-orders/${orden.id}/parts/${filaId}/price`)
+      .set(headers)
+      .send(cuerpo);
+  }
+
+  test("admin corrige el precio con motivo → 200 con priceCorrection* y total recalculado", async () => {
+    const { orden, filaId } = await ordenConLinea();
+
+    const correccion = await corregir(orden, filaId, {
+      unitPrice: "950.00",
+      reason: "Precio capturado de otra pieza",
+    });
+
+    expect(correccion.status).toBe(200);
+    const uso = correccion.body.data.orderPart;
+    expect(uso.unitPrice).toBe("950.00");
+    expect(uso.priceCorrectionReason).toBe("Precio capturado de otra pieza");
+    expect(uso.priceCorrectedBy).toBe(idAdmin);
+    expect(uso.priceCorrectedAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+    );
+
+    const [filas] = await poolPrueba.query(
+      "SELECT unit_price, price_correction_reason FROM order_parts WHERE id = ?",
+      [filaId],
+    );
+    expect(Number(filas[0].unit_price)).toBe(950);
+    expect(filas[0].price_correction_reason).toBe(
+      "Precio capturado de otra pieza",
+    );
+
+    // El total es derivado (RN-10): cambia en la siguiente consulta.
+    const total = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersAdmin);
+    expect(total.body.data.partsSubtotal).toBe("1900.00");
+    expect(total.body.data.total).toBe("1900.00");
+  });
+
+  test("reason con menos de 10 caracteres → 400 VALIDATION_ERROR y la fila no cambia", async () => {
+    const { orden, filaId } = await ordenConLinea();
+
+    const respuesta = await corregir(orden, filaId, {
+      unitPrice: "950.00",
+      reason: "muy corto",
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+
+    const [filas] = await poolPrueba.query(
+      "SELECT unit_price FROM order_parts WHERE id = ?",
+      [filaId],
+    );
+    expect(Number(filas[0].unit_price)).toBe(850);
+  });
+
+  test("recepción y mecánico reciben 403 FORBIDDEN (solo ADMIN, RN-15)", async () => {
+    const { orden, filaId } = await ordenConLinea();
+
+    for (const headers of [headersRecepcion, headersMecanico]) {
+      const respuesta = await corregir(
+        orden,
+        filaId,
+        { unitPrice: "950.00", reason: "Precio capturado de otra pieza" },
+        headers,
+      );
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body.error.code).toBe("FORBIDDEN");
+    }
+  });
+
+  test("la fila de otra orden responde 404 ORDER_ITEM_NOT_FOUND", async () => {
+    const { orden, filaId } = await ordenConLinea();
+    const otra = await crearOrden({ asignado: idMecanico, placas: "XYZ9876" });
+
+    const respuesta = await corregir(otra, filaId, {
+      unitPrice: "950.00",
+      reason: "Fila que no pertenece a la orden",
+    });
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.error.code).toBe("ORDER_ITEM_NOT_FOUND");
+  });
+
+  test("orden DELIVERED → 400 ORDER_DELIVERED (historial intacto, RN-9)", async () => {
+    const { orden, filaId } = await ordenConLinea();
+    await cambiarEstado(orden, ["DIAGNOSIS", "IN_REPAIR", "FINISHED", "DELIVERED"]);
+
+    const respuesta = await corregir(orden, filaId, {
+      unitPrice: "950.00",
+      reason: "Corrección posterior a la entrega",
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("ORDER_DELIVERED");
+  });
+
+  test("orden con pago PAID → 400 ORDER_ALREADY_PAID (no se altera dinero cobrado)", async () => {
+    const { orden, filaId } = await ordenConLinea();
+    await cambiarEstado(orden, ["DIAGNOSIS", "IN_REPAIR", "FINISHED"]);
+
+    const pago = await request(app)
+      .post(`/api/service-orders/${orden.id}/payments`)
+      .set(headersRecepcion)
+      .send({ method: "CASH", amount: "1700.00" });
+    expect(pago.status).toBe(201);
+
+    const respuesta = await corregir(orden, filaId, {
+      unitPrice: "950.00",
+      reason: "Corrección después de cobrar",
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("ORDER_ALREADY_PAID");
   });
 });

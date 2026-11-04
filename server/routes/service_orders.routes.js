@@ -11,6 +11,7 @@ import {
   laborCreateSchema,
   statusUpdateSchema,
   orderPartCreateSchema,
+  orderPartPricePatchSchema,
 } from "../validators/service_orders.js";
 
 // T029: rutas de órdenes según contracts/service-orders.md.
@@ -120,4 +121,15 @@ rutasServiceOrders.post(
   authorize("MECHANIC"),
   validate(orderPartCreateSchema),
   controlador.addPart,
+);
+
+// US4 (T033, D-05): corrección administrativa de precio de una línea.
+// Es la única mutación admitida sobre order_parts (R-06 sigue sin DELETE);
+// solo ADMIN (RN-15) y con motivo obligatorio.
+rutasServiceOrders.patch(
+  "/:id/parts/:partRowId/price",
+  authenticate,
+  authorize("ADMIN"),
+  validate(orderPartPricePatchSchema),
+  controlador.correctPartPrice,
 );

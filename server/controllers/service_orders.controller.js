@@ -200,3 +200,18 @@ export async function addPart(req, res, next) {
     next(error);
   }
 }
+
+// US4 (T033, D-05): corrección administrativa de precio de una línea.
+export async function correctPartPrice(req, res, next) {
+  try {
+    const orderPart = await inventario.corregirPrecioRefaccionOrden(
+      idDeRuta(req.params.id),
+      req.params.partRowId,
+      req.body,
+      req.user,
+    );
+    ok(res, { orderPart });
+  } catch (error) {
+    next(error);
+  }
+}

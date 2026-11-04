@@ -66,7 +66,7 @@ Comportamiento: actualiza `unit_price` y registra motivo, autor y fecha en la
 misma fila; no toca stock ni estados; el total de la orden cambia en la
 siguiente consulta por ser derivado (RN-10). Siempre en transacción.
 
-**200** con el objeto uso ya corregido (incluye `unitPrice` nuevo y los campos
+**200** `data.orderPart` con el objeto uso ya corregido (incluye `unitPrice` nuevo y los campos
 `priceCorrection*`, proyección ADMIN) ·
 
 | Éxito | Error | Condición |

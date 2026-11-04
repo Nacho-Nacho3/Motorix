@@ -273,3 +273,81 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
     conexion.release();
   }
 }
+
+/**
+ * Corrige el precio capturado mal en una línea de una orden (US4, D-05,
+ * FR-002). Es la ÚNICA mutación admitida sobre `order_parts` (R-06 sigue
+ * sin DELETE): actualiza `unit_price` y registra motivo, autor y fecha en
+ * la misma fila, siempre en transacción.
+ *
+ * Guardas: la fila debe pertenecer a la orden (404 ORDER_ITEM_NOT_FOUND);
+ * la orden no puede estar `DELIVERED` (400 ORDER_DELIVERED, RN-9) ni tener
+ * un pago `PAID` (400 ORDER_ALREADY_PAID: no se altera dinero cobrado).
+ *
+ * @param {number} idOrden Orden dueña de la fila
+ * @param {string|number} partRowId Id de la fila en order_parts
+ * @param {{unitPrice: string, reason: string}} payload Ya validado con zod
+ * @param {{id: number}} usuario Administrador que corrige (price_corrected_by)
+ * @returns {Promise<object|null>} La fila corregida con los campos priceCorrection*
+ */
+export async function corregirPrecioRefaccionOrden(
+  idOrden,
+  partRowId,
+  payload,
+  usuario,
+) {
+  const { unitPrice, reason } = payload;
+  const filaId = Number(partRowId);
+  if (!Number.isInteger(filaId) || filaId <= 0) {
+    throw errores.orderItemNotFound();
+  }
+
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+    try {
+      // La orden se bloquea primero (misma fila que el cobro): la corrección
+      // y el cobro se serializan entre sí.
+      const [ordenes] = await conexion.query(
+        "SELECT id, status FROM service_orders WHERE id = ? FOR UPDATE",
+        [idOrden],
+      );
+      if (ordenes.length === 0) throw errores.serviceOrderNotFound();
+      if (ordenes[0].status === "DELIVERED") throw errores.orderDelivered();
+
+      const [pagos] = await conexion.query(
+        "SELECT id FROM payments WHERE order_id = ? AND status = 'PAID' LIMIT 1",
+        [idOrden],
+      );
+      if (pagos.length > 0) throw errores.orderAlreadyPaid();
+
+      // La fila existe y pertenece a ESTA orden (404 si no).
+      const [filas] = await conexion.query(
+        "SELECT id FROM order_parts WHERE id = ? AND order_id = ? FOR UPDATE",
+        [filaId, idOrden],
+      );
+      if (filas.length === 0) throw errores.orderItemNotFound();
+
+      await conexion.query(
+        `UPDATE order_parts
+            SET unit_price = ?, price_correction_reason = ?,
+                price_corrected_by = ?, price_corrected_at = CURRENT_TIMESTAMP
+          WHERE id = ? AND order_id = ?`,
+        [unitPrice, reason, usuario.id, filaId, idOrden],
+      );
+
+      const corregida = await orderParts.buscarCorregida(
+        idOrden,
+        filaId,
+        conexion,
+      );
+      await conexion.commit();
+      return corregida;
+    } catch (error) {
+      await conexion.rollback();
+      throw error;
+    }
+  } finally {
+    conexion.release();
+  }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/order_item.dart';
+import '../../models/order_part.dart';
 import '../../models/payment.dart';
 import '../../models/service_order.dart';
 import '../../providers/parts_provider.dart';
@@ -409,6 +410,32 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     _aviso('Refacción agregada a la orden.');
   }
 
+  /// US4 (D-05, RN-15): solo ADMIN corrige el precio de una línea.
+  bool _puedeCorregirPrecio() {
+    final usuario = context.read<SessionProvider>().usuario;
+    return usuario != null && usuario.role == 'ADMIN';
+  }
+
+  /// US4 (D-05): diálogo con precio y motivo obligatorio; al confirmar el
+  /// proveedor ya recargó la lista y aquí se avisa el resultado.
+  Future<void> _corregirPrecio(ServiceOrder orden, OrderPart uso) async {
+    final corregido = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      // Aparición de diálogos: 200 ms con easeOutCubic (sección 6.4).
+      animationStyle: const AnimationStyle(
+        duration: AppDurations.element,
+        curve: AppDurations.curveOut,
+        reverseCurve: AppDurations.curve,
+      ),
+      builder: (_) => _DialogoCorreccionPrecio(
+        ordenId: orden.id,
+        uso: uso,
+      ),
+    );
+    if (corregido == true) _aviso('Precio de la línea corregido.');
+  }
+
   /// Refacciones utilizadas en la orden (CA-5): la lista es de lectura para
   /// los tres roles y el alta inline (selector + cantidad) solo aparece para
   /// el mecánico dueño de la orden.
@@ -418,6 +445,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   ) {
     final catalogo = context.watch<PartsProvider>().refacciones;
     final puedeAgregar = _puedeAgregarRefacciones(orden);
+    final puedeCorregir = _puedeCorregirPrecio();
 
     return Card(
       child: Padding(
@@ -496,8 +524,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   padding: const EdgeInsets.symmetric(
                     vertical: AppSpacing.xs,
                   ),
-                  child: Text(
-                    '${uso.partCode} · ${uso.name} · ${uso.quantity} uds',
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${uso.partCode} · ${uso.name} · ${uso.quantity} uds',
+                        ),
+                      ),
+                      // US4 (FR-002, D-01): el precio de la línea solo si el
+                      // backend lo envía (el mecánico no recibe precios, D-10).
+                      if (uso.unitPrice != null)
+                        Text(
+                          '\$${uso.unitPrice}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      if (puedeCorregir) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        TextButton(
+                          onPressed: () => _corregirPrecio(orden, uso),
+                          child: const Text('Corregir'),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
           ],
@@ -1360,6 +1410,146 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// US4 (D-05): diálogo de corrección administrativa de precio de una línea.
+/// El precio usa el formato y el tope del backend, el motivo es obligatorio
+/// (10 a 200 caracteres); los errores del servidor se muestran sin cerrar y
+/// al confirmar se devuelve `true` (la lista ya se recargó en el proveedor).
+class _DialogoCorreccionPrecio extends StatefulWidget {
+  const _DialogoCorreccionPrecio({
+    required this.ordenId,
+    required this.uso,
+  });
+
+  final int ordenId;
+  final OrderPart uso;
+
+  @override
+  State<_DialogoCorreccionPrecio> createState() =>
+      _DialogoCorreccionPrecioState();
+}
+
+class _DialogoCorreccionPrecioState extends State<_DialogoCorreccionPrecio> {
+  final _formKey = GlobalKey<FormState>();
+  final _precioCtrl = TextEditingController();
+  final _motivoCtrl = TextEditingController();
+  bool _guardando = false;
+  String? _errorServidor;
+
+  @override
+  void initState() {
+    super.initState();
+    _precioCtrl.text = widget.uso.unitPrice ?? '';
+  }
+
+  @override
+  void dispose() {
+    _precioCtrl.dispose();
+    _motivoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _guardando = true;
+      _errorServidor = null;
+    });
+    final error = await context
+        .read<ServiceOrdersProvider>()
+        .corregirPrecioRefaccionOrden(
+          widget.ordenId,
+          partRowId: widget.uso.id,
+          unitPrice: _precioCtrl.text.trim(),
+          reason: _motivoCtrl.text.trim(),
+        );
+    if (!mounted) return;
+    if (error != null) {
+      setState(() {
+        _guardando = false;
+        _errorServidor = error.message;
+      });
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Corregir precio'),
+      content: SizedBox(
+        width: 360,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '${widget.uso.partCode} · ${widget.uso.name}',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _precioCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Precio unitario'),
+                validator: (valor) {
+                  final texto = valor?.trim() ?? '';
+                  if (!RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(texto)) {
+                    return 'Usa un precio con hasta 2 decimales (ej. 850.00).';
+                  }
+                  if (double.parse(texto) > 99999.99) {
+                    return 'El precio no puede superar los 99,999.99.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _motivoCtrl,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo (mínimo 10 caracteres)',
+                ),
+                validator: (valor) {
+                  final texto = valor?.trim() ?? '';
+                  if (texto.length < 10) {
+                    return 'El motivo debe tener al menos 10 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+              if (_errorServidor != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _errorServidor!,
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _guardando ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _guardando ? null : _guardar,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          child: Text(_guardando ? 'Guardando…' : 'Guardar'),
+        ),
+      ],
     );
   }
 }

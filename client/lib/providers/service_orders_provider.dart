@@ -328,4 +328,29 @@ class ServiceOrdersProvider extends ChangeNotifier {
       return e;
     }
   }
+
+  /// Corrige el precio capturado mal en una línea con motivo obligatorio
+  /// (US4, D-05, `PATCH /{id}/parts/{partRowId}/price`; solo ADMIN).
+  ///
+  /// Devuelve `null` si se corrigió (y recarga la sección) o el error del
+  /// backend (`ORDER_ALREADY_PAID`, `VALIDATION_ERROR`…) para mostrarlo.
+  Future<ApiError?> corregirPrecioRefaccionOrden(
+    int orderId, {
+    required int partRowId,
+    required String unitPrice,
+    required String reason,
+  }) async {
+    try {
+      await ApiClient.conRed(
+        () => api.patch('/service-orders/$orderId/parts/$partRowId/price', {
+          'unitPrice': unitPrice,
+          'reason': reason,
+        }),
+      );
+      await cargarRefacciones(orderId);
+      return null;
+    } on ApiError catch (e) {
+      return e;
+    }
+  }
 }
