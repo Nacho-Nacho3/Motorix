@@ -33,5 +33,5 @@
 
 - **17/17 ítems cumplidos.** Validación de la puerta G-02 del aseguramiento de calidad (2026-11-03).
 - Correcciones aplicadas desde los hallazgos de la G-01 (`docs/aseguramiento-calidad-sprint-5.md`): la especificación NO repite la premisa de que «las refacciones no suman» (ya suman, H-02) ni la de que el Sprint 3 difirió los precios (ya existen, H-03); usa la migración siguiente a la 013 (H-05) y describe el rechazo de cobro real en lugar de `NOTHING_TO_CHARGE` (H-04).
-- **Quedan 10 decisiones abiertas** (sección Clarificaciones) con defaults documentados en Supuestos; se resolverán en `/speckit.clarify` (puerta G-03).
-- Especificación validada y lista para `/speckit.clarify` (siguiente paso).
+- **Clarify (2026-11-03): 5 preguntas y 5 respuestas → 6 decisiones resueltas** (D-01/D-03 con una misma respuesta, D-04, D-05, D-08 y D-10), registradas en `### Session 2026-11-03` del `spec.md`; quedan diferidas 4 decisiones con defaults documentados en Supuestos: D-02, D-06, D-07 y D-09 (bajo impacto en arquitectura y pruebas).
+- Especificación validada y lista para `/speckit.plan` (siguiente paso).

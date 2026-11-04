@@ -23,7 +23,7 @@ Como administrador, quiero registrar la categoría, la marca, el precio de compr
 1. **Dado** una refacción nueva, **Cuando** el administrador la registra con categoría, marca, precio de compra y precio de venta, **Entonces** se guarda y se reconsulta con esos datos.
 2. **Dado** una refacción registrada, **Cuando** el administrador edita su precio de venta, **Entonces** el cambio persiste y las líneas ya agregadas a órdenes conservan su precio original (ver User Story 4).
 3. **Dado** un precio negativo, no numérico o con más de dos decimales, **Cuando** se intenta guardarlo, **Entonces** se rechaza con un mensaje claro en español.
-4. **Dado** un precio por encima del límite máximo del negocio, **Cuando** se intenta guardarlo, **Entonces** se rechaza con un mensaje claro en español.
+4. **Dado** un precio por encima del límite máximo de $99,999.99, **Cuando** se intenta guardarlo, **Entonces** se rechaza con un mensaje claro en español.
 
 ---
 
@@ -56,7 +56,7 @@ Como recepcionista, quiero que el pago y el ticket reflejen el total con refacci
 
 1. **Dado** una orden terminada con refacciones, **Cuando** la recepción registra el pago por el total, **Entonces** el pago queda con ese importe; un importe que no coincida con él se rechaza.
 2. **Dado** esa orden, **Cuando** se genera el ticket, **Entonces** incluye cada refacción con cantidad, precio unitario e importe, más los subtotales y el total que los suman.
-3. **Dado** un pago de Mercado Pago pendiente cuyo importe ya no coincide con el total, **Cuando** se consulta la orden, **Entonces** el desfase se detecta y se resuelve según la regla definida en clarify (D-04).
+3. **Dado** un pago de Mercado Pago pendiente cuyo importe ya no coincide con el total, **Cuando** se consulta la orden, **Entonces** el desfase se detecta, el pago pendiente se cancela y puede generarse uno nuevo con el importe correcto (D-04).
 4. **Dado** un ticket ya generado, **Cuando** se vuelve a consultar, **Entonces** se muestra idéntico, aunque los precios del catálogo hayan cambiado.
 
 ---
@@ -74,6 +74,7 @@ Como administrador, quiero que un cambio de precio no altere órdenes abiertas n
 1. **Dado** una orden abierta con refacciones, **Cuando** se cambia el precio de esas refacciones en el catálogo, **Entonces** sus líneas y su total conservan el precio original.
 2. **Dado** un pago y un ticket ya emitidos, **Cuando** se cambian precios del catálogo, **Entonces** conservan su importe y su contenido.
 3. **Dado** pagos y tickets generados antes del sprint, **Cuando** se aplica el cambio del sprint, **Entonces** siguen consultándose y mostrándose sin cambios.
+4. **Dado** una línea de refacción con el precio capturado mal en una orden abierta, **Cuando** el administrador corrige el precio con un motivo obligatorio, **Entonces** la línea y el total se actualizan y el motivo queda registrado (D-05).
 
 ---
 
@@ -87,7 +88,7 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 
 **Acceptance Scenarios**:
 
-1. **Dado** un mecánico con sesión iniciada, **Cuando** consulta o agrega refacciones en una orden, **Entonces** no recibe el precio de compra.
+1. **Dado** un mecánico con sesión iniciada, **Cuando** consulta o agrega refacciones en una orden, **Entonces** no recibe precios (ni de compra ni de venta, D-10).
 2. **Dado** un administrador con sesión iniciada, **Cuando** consulta el catálogo de refacciones, **Entonces** sí recibe los precios de compra y de venta.
 3. **Dado** cualquier rol sin permiso, **Cuando** intenta consultar el precio de compra, **Entonces** el sistema lo rechaza en el backend, no solo en la interfaz (RN-15).
 
@@ -95,15 +96,15 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 
 ### Casos límite
 
-- Líneas de órdenes existentes que se registraron sin precio guardado: qué precio toman al aplicar el sprint (D-01, D-03).
+- Líneas de órdenes existentes que se registraron sin precio guardado: qué precio toman al aplicar el sprint (D-01, D-03; resuelto: precio vigente al migrar, ver Clarificaciones).
 - Orden con solo refacciones y total mayor a 0.00: ¿pasa a ser cobrable? (D-02).
-- Pago de Mercado Pago pendiente cuando cambia el total: ¿se cancela, se actualiza o se marca desfasado? (D-04).
-- Corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo? (D-05).
+- Pago de Mercado Pago pendiente cuando cambia el total: ¿se cancela, se actualiza o se marca desfasado? (D-04; resuelto: se cancela y se genera uno nuevo, ver Clarificaciones).
+- Corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo? (D-05; resuelto: solo administrador con motivo obligatorio, ver Clarificaciones).
 - Categoría como lista administrable o texto libre; marca como texto libre (D-06).
 - Precio de venta menor al de compra: ¿se permite, se advierte o se rechaza? (D-07).
-- Redondeo del importe de una línea (cantidad por precio) y límites máximos de precio y de total (D-08).
+- Redondeo del importe de una línea (cantidad por precio) y límites máximos de precio y de total (D-08; resuelto: precio máximo $99,999.99, redondeo al centavo más cercano, ver Clarificaciones).
 - Tickets anteriores, sin precio de refacciones, mostrándose junto a los nuevos (D-09).
-- Precio de venta visible para el mecánico: ¿lo ve o solo ve nombre, código y existencia? (D-10).
+- Precio de venta visible para el mecánico: ¿lo ve o solo ve nombre, código y existencia? (D-10; resuelto: no ve ningún precio, ver Clarificaciones).
 - La misma refacción agregada dos veces a una orden: cada uso conserva su propio precio guardado.
 - Cambio de precio en el catálogo en el mismo momento en que se registra el cobro.
 
@@ -112,15 +113,15 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 ### Requisitos funcionales
 
 - **FR-001**: El sistema DEBE permitir al administrador registrar y editar la categoría, la marca, el precio de compra y el precio de venta de una refacción, y conservar esos datos en las consultas.
-- **FR-002**: El sistema DEBE rechazar precios negativos, no numéricos o con más de dos decimales, y DEBE aplicar un límite máximo de precio definido por el negocio.
-- **FR-003**: Al agregar una refacción a una orden, el sistema DEBE guardar en esa línea el precio de venta que la refacción tenía en ese momento; cambios posteriores de precio NO deben modificar la línea.
+- **FR-002**: El sistema DEBE rechazar precios negativos, no numéricos o con más de dos decimales, y DEBE aplicar un límite máximo de precio de $99,999.99 (D-08, Clarificaciones).
+- **FR-003**: Al agregar una refacción a una orden, el sistema DEBE guardar en esa línea el precio de venta que la refacción tenía en ese momento; cambios posteriores de precio NO deben modificar la línea. Al aplicar este cambio, las líneas de refacciones ya registradas DEBEN recibir el precio de venta vigente de su refacción (D-01/D-03, Clarificaciones). Solo el administrador puede corregir el precio de una línea en una orden abierta, con un motivo obligatorio que queda registrado (D-05, Clarificaciones).
 - **FR-004**: El total de la orden DEBE calcularse con exactitud de centavos enteros como la suma de servicios, mano de obra y refacciones (cantidad por el precio guardado en cada línea), y presentarse siempre con dos decimales.
 - **FR-005**: El pago nuevo DEBE registrarse por el total calculado de la orden; un importe que no coincida con él DEBE rechazarse con mensaje claro.
 - **FR-006**: Los pagos y tickets generados antes del sprint NO deben alterarse: deben conservar su importe y su contenido y seguir consultándose y mostrándose correctamente.
 - **FR-007**: El ticket nuevo DEBE incluir, por cada refacción, cantidad, precio unitario e importe, y subtotales y total que los suman.
 - **FR-008**: El sistema DEBE mantener un solo pago vigente por orden, también cuando lleguen solicitudes de cobro al mismo tiempo, y NO debe almacenar ningún dato de tarjeta (RN-14).
-- **FR-009**: El sistema DEBE detectar un pago pendiente de Mercado Pago cuyo importe ya no coincida con el total de la orden y resolverlo según la regla que defina el negocio (D-04).
-- **FR-010**: El precio de compra solo DEBE estar disponible para el administrador en las consultas del sistema; el mecánico y recepción no deben recibirlo, y la restricción DEBE validarse en el backend (RN-15).
+- **FR-009**: El sistema DEBE detectar un pago pendiente de Mercado Pago cuyo importe ya no coincida con el total de la orden, cancelarlo y permitir generar un pago nuevo con el importe correcto (D-04, Clarificaciones).
+- **FR-010**: El precio de compra solo DEBE estar disponible para el administrador en las consultas del sistema; el mecánico no DEBE recibir precios (ni de compra ni de venta, D-10) y recepción no DEBE recibir el precio de compra; las restricciones DEBEN validarse en el backend (RN-15).
 - **FR-011**: El panel de control y los listados de órdenes y pagos DEBEN seguir funcionando correctamente con el total nuevo.
 - **FR-012**: Los datos de ejemplo del sistema DEBEN incluir refacciones con precios y al menos una orden cobrable con refacciones, y DEBEN poder ejecutarse de nuevo sin duplicar registros.
 - **FR-013**: DEBEN existir y pasar pruebas automatizadas de cálculo del total, guardado de precios, redondeo, permisos por rol, cobros simultáneos y compatibilidad con pagos y tickets anteriores.
@@ -149,18 +150,26 @@ Como mecánico, quiero seguir agregando refacciones a una orden sin ver los prec
 
 ## Clarificaciones
 
-Decisiones pendientes del insumo (sección 9), por resolver en `/speckit.clarify`:
+### Session 2026-11-03
 
-- **D-01**: refacciones existentes y líneas ya registradas sin precio: ¿se les asigna 0, se les exige precio o se bloquean?
+- Q: ¿Qué precio deben tomar las líneas de refacción de las órdenes que ya existen cuando se aplique el guardado de precios? → A: **precio vigente al migrar** (opción A): cada línea existente recibe el precio de venta que su refacción tiene al aplicar el cambio.
+- Q: ¿Qué hacemos con un pago de Mercado Pago que está pendiente cuando cambia el total de su orden? → A: **cancelarlo y generar uno nuevo con el importe correcto** (opción A): un pago pendiente aún no cobró nada; se cancela y el cobro nuevo nace con el total vigente.
+- Q: ¿Cuál es el límite máximo que aceptamos para el precio de una refacción? → A: **$99,999.99** (opción A): tope que cubre cualquier pieza real sin aceptar cifras que delatan un error de captura; el redondeo se mantiene al centavo más cercano.
+- Q: ¿Debe ver el mecánico el precio de venta de las refacciones cuando trabaja sobre una orden? → A: **no ve ningún precio** (opción A): solo nombre, código, cantidad y existencia; ni de compra ni de venta.
+- Q: ¿Se puede corregir el precio capturado en una línea de refacción de una orden abierta, y quién tiene permiso? → A: **solo el administrador, con motivo obligatorio registrado** (opción B): corrige capturas erróneas sin abrir el mecanismo a otros roles.
+
+Decisiones del insumo (sección 9), por resolver en `/speckit.clarify`:
+
+- **D-01** (resuelta en Session 2026-11-03): refacciones existentes y líneas ya registradas sin precio: ¿se les asigna 0, se les exige precio o se bloquean? → respuesta: precio vigente al migrar.
 - **D-02**: orden con solo refacciones: ¿pasa a ser cobrable?
-- **D-03**: órdenes abiertas al desplegar: ¿qué precio toman sus refacciones ya agregadas?
-- **D-04**: pago de Mercado Pago pendiente cuando cambia el total: ¿se cancela, se actualiza o se marca desfasado?
-- **D-05**: corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo?
+- **D-03** (resuelta en Session 2026-11-03): órdenes abiertas al desplegar: ¿qué precio toman sus refacciones ya agregadas? → respuesta: el precio vigente al migrar (misma respuesta que D-01).
+- **D-04** (resuelta en Session 2026-11-03): pago de Mercado Pago pendiente cuando cambia el total: ¿se cancela, se actualiza o se marca desfasado? → respuesta: se cancela y se genera uno nuevo con el importe correcto.
+- **D-05** (resuelta en Session 2026-11-03): corrección del precio de una línea en una orden abierta: ¿se permite y con qué permiso o motivo? → respuesta: solo el administrador, con motivo obligatorio registrado.
 - **D-06**: categoría: ¿lista administrable o texto libre? ¿marca como texto libre?
 - **D-07**: precio de venta menor al de compra: ¿se permite, se advierte o se rechaza?
-- **D-08**: redondeo del importe de una línea y límites máximos de precio y de total.
+- **D-08** (resuelta en Session 2026-11-03): redondeo del importe de una línea y límites máximos de precio y de total → respuesta: precio máximo $99,999.99 (el total queda limitado por la suma de sus líneas) y redondeo al centavo más cercano.
 - **D-09**: convivencia de tickets anteriores (sin precios) con los nuevos.
-- **D-10**: visibilidad del precio de venta para el mecánico.
+- **D-10** (resuelta en Session 2026-11-03): visibilidad del precio de venta para el mecánico → respuesta: el mecánico no ve precios (ni de compra ni de venta), solo nombre, código, cantidad y existencia.
 
 ## Fuera de alcance
 
@@ -179,15 +188,15 @@ Decisiones pendientes del insumo (sección 9), por resolver en `/speckit.clarify
 - **Datos de ejemplo**: el archivo de seeds ya existe y ya incluye refacciones con precios; el sprint lo amplía en lugar de crear uno nuevo (hallazgo H-05).
 - **Rechazo de cobro sin importes**: hoy una orden con total 0.00 se rechaza con un mensaje de validación (el código `NOTHING_TO_CHARGE` del insumo no existe, hallazgo H-04); el comportamiento se mantiene salvo que D-02 diga lo contrario.
 - **Defaults mientras se resuelven las decisiones** (se actualizarán con las respuestas de clarify):
-  - D-01/D-03: las líneas existentes toman el precio vigente al momento de aplicar el cambio.
+  - D-01/D-03: RESUELTA en Clarificaciones (Session 2026-11-03): las líneas existentes toman el precio vigente al migrar.
   - D-02: una orden con solo refacciones y total mayor a 0.00 es cobrable; el rechazo queda para totales de 0.00.
-  - D-04: el pago pendiente no se modifica; se advierte del importe desfasado y se permite registrar el cobro correspondiente.
-  - D-05: los precios de línea de una orden abierta son de solo lectura.
+  - D-04: RESUELTA en Clarificaciones (Session 2026-11-03): el pago pendiente desfasado se cancela y se genera uno nuevo con el importe correcto.
+  - D-05: RESUELTA en Clarificaciones (Session 2026-11-03): solo el administrador corrige el precio de una línea en orden abierta, con motivo obligatorio registrado.
   - D-06: categoría como texto libre administrado (se mantiene el comportamiento actual) y marca como texto libre.
   - D-07: se permite el precio de venta menor al de compra con una advertencia.
-  - D-08: redondeo al centavo más cercano; el límite máximo se define con el negocio antes de implementar.
+  - D-08: RESUELTA en Clarificaciones (Session 2026-11-03): precio máximo $99,999.99 y redondeo al centavo más cercano.
   - D-09: los tickets anteriores se muestran tal cual los conserva el sistema; los nuevos usan el formato con precios.
-  - D-10: el mecánico no recibe precios (ni de compra ni de venta) en sus consultas.
+  - D-10: RESUELTA en Clarificaciones (Session 2026-11-03): el mecánico no recibe precios (ni de compra ni de venta) en sus consultas.
 - **Constitución**: el proyecto está definido para cuatro sprints; este sprint posterior al MVP requiere una enmienda aprobada antes de implementar (hallazgo H-01 del aseguramiento).
 - **Dependencias heredadas**: se apoya en el inventario (Sprint 3) y en pagos y tickets (Sprint 4); no se tocan sus reglas (RN-6, RN-7, RN-8, RN-9, RN-13, RN-14, RN-15).
 - **Entorno**: MySQL local con datos de demostración; las pruebas del proyecto corren contra su base de pruebas, nunca contra la base principal.
