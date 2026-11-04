@@ -30,7 +30,7 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 
 **Propósito**: condiciones de entrada del sprint y punto de partida verificable
 
-- [ ] T001 Registrar la enmienda de la constitución antes de implementar (H-01): actualizar `.specify/memory/constitution.md` (alcance de 4 a 5 sprints en las líneas 36, 48 y 84, versión 1.0.0 → 1.1.0 y reporte de impacto en el encabezado) y marcar el criterio de entrada como cumplido en `docs/aseguramiento-calidad-sprint-5.md` (sección 2)
+- [x] T001 Registrar la enmienda de la constitución antes de implementar (H-01): actualizar `.specify/memory/constitution.md` (alcance de 4 a 5 sprints en las líneas 36, 48 y 84, versión 1.0.0 → 1.1.0 y reporte de impacto en el encabezado) y marcar el criterio de entrada como cumplido en `docs/aseguramiento-calidad-sprint-5.md` (sección 2) — **ejecutada**: commit `ef56cc7`
 - [ ] T002 Crear e ingresar a la rama `005-precios-refacciones-cobro` desde `main` en la raíz del repositorio (sin squash ni force-push durante todo el sprint, según `Trabajo.md`)
 - [ ] T003 [P] Verificar que la rama arranca con la línea base verde: `cd server && npm.cmd test`, y en `client/` `flutter test` y `flutter analyze lib`; anotar conteos y fecha en `docs/aseguramiento-calidad-sprint-5.md` (sección 8)
 

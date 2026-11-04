@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 4 y el control de calidad final, con sus evidencias.
 
-**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`), la G-04 (`/speckit.checklist`) y la G-05 (`/speckit.plan`), las cuatro últimas el 2026-11-03; falta la G-07 (`/speckit.analyze`) y la implementación. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
+**Estado: en elaboración (proceso Spec Kit en curso).** Se ejecutaron la G-01 (revisión del insumo contra el código, 2026-11-02), la G-02 (`/speckit.specify`), la G-03 (`/speckit.clarify`), la G-04 (`/speckit.checklist`), la G-05 (`/speckit.plan`), la G-06 (`/speckit.tasks`) y la G-07 (`/speckit.analyze`), del 2 al 3 de noviembre; falta la implementación de las 52 tareas y el cierre del documento. Según `docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`, este documento se llena **durante** el sprint: las secciones que dependen de la implementación quedan marcadas como no ejecutadas y se completan al avanzar. Por eso todavía no se declara resultado general ni aprobación.
 
 ## 0. Datos del documento
 
@@ -15,7 +15,7 @@ Este documento es el registro de calidad del Sprint 5 de Motorix. Reúne las pue
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-02 |
 | Fecha de cierre | Se llena al cerrar el sprint |
-| Estado general | En elaboración - proceso Spec Kit en curso (G-01 a G-06 completadas) |
+| Estado general | En elaboración - proceso Spec Kit en curso (G-01 a G-07 completadas) |
 
 ## 1. Objetivo y alcance
 
@@ -31,10 +31,10 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 **Criterios de entrada (para comenzar la implementación):**
 
-- [ ] Las 8 puertas de la sección 3 están Aprobadas o Aprobadas con observación (solo G-01, G-02, G-03 y G-08 avanzaron).
-- [ ] Si el sprint contradice un principio de la constitución, la enmienda está aprobada y registrada (hallazgo H-01): la constitución limita el proyecto a **cuatro sprints** (`.specify/memory/constitution.md`, líneas 36, 48 y 84) y el Sprint 5 es posterior al MVP.
-- [ ] Las 10 decisiones de la sección 4 están resueltas y registradas (6 de 10 resueltas en la sesión de clarify del 2026-11-03; faltan D-02, D-06, D-07 y D-09).
-- [ ] No hay hallazgos críticos ni altos abiertos en el análisis de consistencia (G-07 sin ejecutar).
+- [x] Las 8 puertas de la sección 3 tienen estado final (G-01 a G-07 realizadas y G-08 aprobada con observación; ninguna pendiente).
+- [x] Si el sprint contradice un principio de la constitución, la enmienda está aprobada y registrada (hallazgo H-01): enmienda **1.1.0** en `.specify/memory/constitution.md` (líneas 36, 48 y 84 ampliadas al quinto sprint, con reporte de impacto en el encabezado), aprobada por el responsable con delegación del 2026-11-03, commit `ef56cc7`.
+- [x] Las 10 decisiones de la sección 4 tienen estado final registrado (6 resueltas en la sesión de clarify del 2026-11-03; D-02, D-06, D-07 y D-09 cerradas como diferidas con default documentado en `spec.md`).
+- [x] No hay hallazgos críticos, altos ni medios abiertos en el análisis de consistencia (G-07: 0/0/0 tras los commits `f44a180` y `ef56cc7`; 2 bajos aceptados sin impacto: A1 y F3).
 - [x] Cada criterio de aceptación tuvo al menos una prueba planeada (sección 6).
 - [x] La línea base de regresión está registrada (sección 8).
 - [x] La documentación desfasada de los sprints anteriores está identificada (G-01: hallazgo H-08).
@@ -49,7 +49,7 @@ Estado real al 2026-11-03. Los criterios se completan a lo largo del sprint; `[x
 
 ## 3. Puertas de calidad
 
-G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`), G-04 (`/speckit.checklist`) y G-05 (`/speckit.plan`) el 2026-11-03; G-06 (`/speckit.tasks`) también el 2026-11-03 y G-07 (`/speckit.analyze`) corresponde a una etapa de Spec Kit que aún no se ejecuta.
+G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-02 (`/speckit.specify`), G-03 (`/speckit.clarify`), G-04 (`/speckit.checklist`) y G-05 (`/speckit.plan`) el 2026-11-03, al igual que G-06 (`/speckit.tasks`) y G-07 (`/speckit.analyze`); todas las puertas de Spec Kit quedaron ejecutadas y restan las de implementación y cierre.
 
 | ID | Puerta | Estado | Evidencia |
 |:--:|---|---|---|
@@ -59,7 +59,7 @@ G-01 se ejecutó el 2026-11-02 (revisión del insumo contra el código real); G-
 | G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/checklists/precios-cobro.md`: 38 ítems de calidad de requisitos, **38 cumplidos** (evaluación asistida y autorizada por el revisor, anotada en las notas del archivo); `checklists/requirements.md` sigue en 17/17; commit `d06a00e` |
 | G-05 | Plan (`/speckit.plan`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/`: `plan.md` (contexto técnico verificado; constitución con la puerta I en enmienda pendiente, H-01), `research.md` (14 decisiones P-01 a P-14), `data-model.md` (migración `014` con backfill y CHECK de tope), `contracts/` (order-parts, parts-catalog, payments) y `quickstart.md` (V1 a V10); commit `971aacf`; detecta el hallazgo H-10 |
 | G-06 | Tareas (`/speckit.tasks`) | Realizada (2026-11-03) | `specs/005-precios-refacciones-cobro/tasks.md`: **52 tareas** en 8 fases (Preparación, Fundacional, US1-US5, Pulido), con las pruebas antes del código en cada historia por exigirlo FR-013; trazabilidad CA→tarea→prueba completada en la sección 6 (CA-1 a CA-14); commit `12e5ce8` |
-| G-07 | Consistencia (`/speckit.analyze`) | No iniciada | Se repetirá hasta 0 hallazgos críticos, altos ni medios |
+| G-07 | Consistencia (`/speckit.analyze`) | Realizada (2026-11-03) | Análisis solo lectura de `spec.md`, `plan.md` y `tasks.md`: cobertura 14/14 FR y 8/8 SC, sin marcadores de plantilla; hallazgos D1 crítico (constitución), B1/C1/F1 medios y A1/B2/F2/F3 bajos; correcciones al spec en commit `f44a180` y enmienda 1.1.0 en commit `ef56cc7`; reanálisis: **0 críticos, 0 altos, 0 medios** (2 bajos aceptados sin impacto: A1 y F3); criterio cumplido |
 | G-08 | Pruebas planeadas y línea base | Aprobado con observación | Línea base medida el 2026-11-02 (sección 8); las pruebas están planeadas por CA y por tarea (sección 6 y `tasks.md`), todavía sin crear |
 
 ## 4. Decisiones de aclaración
@@ -123,7 +123,7 @@ Se registra todo lo que se encuentre, sea en los documentos, en el análisis o e
 
 | ID | Descripción | Severidad | Origen | Estado | Resolución | Evidencia |
 |:--:|---|---|---|---|---|---|
-| H-01 | La constitución limita el proyecto a cuatro sprints y el Sprint 5 es posterior al MVP: se necesita enmienda aprobada antes de implementar | Media | G-01 (constitución) | Abierto | Registrar enmienda con la autoridad del proyecto y aprobarla como criterio de entrada | `.specify/memory/constitution.md`, líneas 36, 48 y 84 |
+| H-01 | La constitución limita el proyecto a cuatro sprints y el Sprint 5 es posterior al MVP: se necesita enmienda aprobada antes de implementar | Media | G-01 (constitución) | Resuelto | Enmienda **1.1.0** registrada: líneas 36, 48 y 84 ampliadas al quinto sprint con reporte de impacto, aprobada por el responsable con delegación del 2026-11-03; criterio de entrada cumplido | `.specify/memory/constitution.md`, commits `ef56cc7` y `f44a180` |
 | H-02 | El insumo afirma «hoy el total es solo servicios más mano de obra y las refacciones no suman»: es falso, ya suman | Media | G-01 | Resuelto | Corregido en la especificación: los requisitos parten de que el total ya suma refacciones y la deuda real es la instantánea (Supuestos del `spec.md`) | `server/services/order-total.service.js`, líneas 45 a 57 y 86 a 92; `unit/order-total.test.js`, línea 8; corrección en commit `959268b` |
 | H-03 | El insumo afirma que el Sprint 3 difirió categoría, marca y precios: ya existen | Media | G-01 | Resuelto | Corregido en la especificación: FR-001 y FR-002 se enfocan en límites y reglas sobre lo ya existente (Supuestos del `spec.md`) | Migración `009`, líneas 10 a 23; `validators/parts.js`, líneas 7 y 52 a 69; `seed.js`, líneas 124 a 178; corrección en commit `959268b` |
 | H-04 | El insumo menciona el código `NOTHING_TO_CHARGE`, que no existe; el rechazo real es un `VALIDATION_ERROR` con otro mensaje | Baja | G-01 | Resuelto | Corregido en la especificación: el Supuesto describe el rechazo real y D-02 queda en Clarificaciones | `server/services/payments.service.js`, líneas 81 a 87; corrección en commit `959268b` |
