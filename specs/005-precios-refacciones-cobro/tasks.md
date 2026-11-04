@@ -177,7 +177,7 @@ description: "Lista de tareas del sprint 5: precios de refacciones y cobro compl
 - [x] T049 Regresión completa del backend: `cd server && npm.cmd test` con todas las suites de la línea base en verde más la nueva de concurrencia (SC-006, CA-8) — **ejecutada**: 51 suites / 423 pruebas
 - [x] T050 Regresión completa del frontend: `cd client && flutter analyze lib` sin problemas y `flutter test` en verde (SC-006) — **ejecutada**: `flutter analyze` (proyecto completo) sin problemas y 128 pruebas en verde
 - [x] T051 Recorrido manual de extremo a extremo y capturas en `docs/evidencias/sprint-5/` (minúsculas y guiones) siguiendo `specs/005-precios-refacciones-cobro/quickstart.md` (V1 a V10, SC-008)
-- [ ] T052 Completar `docs/aseguramiento-calidad-sprint-5.md`: trazabilidad CA con tareas y pruebas, estados de hallazgos y riesgos, regresión con conteos, control de calidad final y anexo de evidencias E-01 a E-06
+- [x] T052 Completar `docs/aseguramiento-calidad-sprint-5.md`: trazabilidad CA con tareas y pruebas, estados de hallazgos y riesgos, regresión con conteos, control de calidad final y anexo de evidencias E-01 a E-06
 
 ---
 
