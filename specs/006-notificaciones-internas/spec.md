@@ -80,13 +80,13 @@ Como administrador, quiero ver las refacciones con stock bajo o agotado en el ce
 
 Como administrador o recepcionista, quiero ver las órdenes detenidas en el centro, para destrabarlas antes de que se atrasen más.
 
-**Why this priority**: Es un tipo de aviso nuevo sobre datos existentes; su criterio de "detenida" se define en Clarificaciones (D-01) y el resto del sprint no depende de él.
+**Why this priority**: Es un tipo de aviso nuevo sobre datos existentes; su criterio de "detenida" quedó definido en Clarificaciones (D-01: 2 días sin cambio de estado) y el resto del sprint no depende de él.
 
-**Independent Test**: Puede probarse teniendo una orden sin cambios por encima del umbral definido y verificando que aparece como detenida para administrador y recepción, que no aparece una orden reciente y que el aviso abre esa orden.
+**Independent Test**: Puede probarse teniendo una orden sin cambios de estado por más de 2 días y verificando que aparece como detenida para administrador y recepción, que no aparece una orden reciente y que el aviso abre esa orden.
 
 **Acceptance Scenarios**:
 
-1. **Dado** una orden sin cambio de estado por más del umbral definido (D-01), **Cuando** el administrador o la recepción abren el centro, **Entonces** ven el aviso de orden detenida con la orden identificable.
+1. **Dado** una orden sin cambio de estado por más de 2 días en cualquier estado no terminal (D-01), **Cuando** el administrador o la recepción abren el centro, **Entonces** ven el aviso de orden detenida con la orden identificable.
 2. **Dado** una orden activa con cambio de estado reciente, **Cuando** se consulta el centro, **Entonces** no aparece como detenida.
 3. **Dado** el aviso de una orden detenida, **Cuando** el usuario lo selecciona, **Entonces** se abre el detalle de esa orden.
 
@@ -132,13 +132,13 @@ Como recepcionista, quiero una lista de clientes por avisar (vehículo listo, ci
 - Aviso leído que empeora (mantenimiento de Próximo a Vencido): vuelve a mostrarse como no leído (D-05; el criterio se confirma en Clarificaciones; es coherente con la regla de reaparición del CA-6).
 - Mismo aviso visto por dos usuarios: cada quien lo marca por su cuenta; la lectura de uno no afecta al otro.
 - Rol sin ningún aviso de sus tipos (mecánico sin órdenes, recepción sin stock): estado vacío.
-- Criterio de "orden detenida": umbral de días sin cambio de estado, valor y si es configurable (D-01).
-- Alcance de "cita del día": solo hoy o también mañana; si incluye citas sin confirmar (D-02).
-- Momento de actualización del contador: al navegar, con intervalo automático o solo al abrir el panel (D-03).
-- Identidad de un aviso para guardar la lectura: por tipo y objeto, o por tipo y estado (D-04).
+- Criterio de "orden detenida" (D-01, resuelto): sin cambio de estado por más de 2 días en cualquier estado no terminal; N = 2 fijo, sin configuración en este sprint.
+- Alcance de "cita del día" (D-02, resuelto): solo citas con fecha de hoy, sin importar su estado; la "cita de mañana" queda como motivo de la lista de clientes por avisar (CA-10), no de la campana.
+- Momento de actualización del contador (D-03, resuelto): al iniciar sesión, al abrir el panel y al navegar entre pantallas; sin consulta automática en segundo plano.
+- Identidad de un aviso para guardar la lectura (D-04, resuelto): tipo + hecho que lo origina + estado; si el estado cambia, es un aviso nuevo que vuelve a mostrarse como no leído.
 - Antelación del aviso de mantenimiento próximo: días previos y si la cita se avisa un día antes o el mismo día (D-06).
 - Aviso de orden terminada para el cliente: una sola vez o repetible, y si el registro guarda una nota (D-07).
-- Alcance de los avisos del mecánico: solo sus órdenes o también mantenimientos de los vehículos que atiende (D-08).
+- Alcance de los avisos del mecánico (D-08, resuelto): solo avisos ligados a sus órdenes asignadas; sin mantenimientos generales de vehículos que no le corresponden.
 - Convivencia de la campana con la insignia actual de Inventario y el aviso de la pantalla de inicio: deben calcularse igual y no contradecirse (CA-8).
 - Dos avisos distintos del mismo tipo (dos mantenimientos vencidos): cada hecho genera su propio aviso con su propia lectura.
 - Cambio de fecha durante el día: los avisos de "citas del día" se recalculan en cada consulta.
@@ -147,10 +147,10 @@ Como recepcionista, quiero una lista de clientes por avisar (vehículo listo, ci
 
 ### Requisitos funcionales
 
-- **FR-001**: El encabezado DEBE mostrar una campana con el total de avisos no leídos del usuario, y al abrirse DEBE mostrar un panel con los avisos agrupados por tipo.
+- **FR-001**: El encabezado DEBE mostrar una campana con el total de avisos no leídos del usuario, y al abrirse DEBE mostrar un panel con los avisos agrupados por tipo. El contador DEBE actualizarse al iniciar sesión, al abrir el panel y al navegar entre pantallas, sin consulta automática en segundo plano (D-03, Clarificaciones).
 - **FR-002**: Los avisos DEBEN calcularse en cada consulta con datos reales del sistema; NO deben copiarse a otra tabla de avisos: lo único que se persiste es la lectura (RN-10).
-- **FR-003**: Los tipos de aviso incluidos DEBEN ser: mantenimientos próximos, mantenimientos vencidos, citas del día, stock bajo o agotado y órdenes detenidas.
-- **FR-004**: El backend DEBE devolver a cada rol únicamente sus avisos: administrador todos; recepción mantenimientos, citas y órdenes detenidas (sin stock); mecánico solo avisos de órdenes asignadas a él. El stock NO se debe entregar a recepción ni a mecánico; la validación DEBE hacerse en el backend (RN-5, RN-15).
+- **FR-003**: Los tipos de aviso incluidos DEBEN ser: mantenimientos próximos, mantenimientos vencidos, citas del día (con fecha de hoy, sin importar su estado, D-02, Clarificaciones), stock bajo o agotado y órdenes detenidas (sin cambio de estado por más de 2 días en cualquier estado no terminal, D-01, Clarificaciones).
+- **FR-004**: El backend DEBE devolver a cada rol únicamente sus avisos: administrador todos; recepción mantenimientos, citas y órdenes detenidas (sin stock); mecánico solo avisos de órdenes asignadas a él, sin mantenimientos generales de otros vehículos (D-08, Clarificaciones). El stock NO se debe entregar a recepción ni a mecánico; la validación DEBE hacerse en el backend (RN-5, RN-15).
 - **FR-005**: Los avisos DEBEN usar el mismo cálculo que el panel de control, la lista de Mantenimientos y las alertas de stock, y los números DEBEN coincidir entre pantallas.
 - **FR-006**: Marcar un aviso como leído DEBE persistir por usuario; si la condición deja de cumplirse el aviso DEBE desaparecer, y si reaparece con otro estado DEBE mostrarse de nuevo como no leído (D-04, D-05, Clarificaciones).
 - **FR-007**: Cada aviso DEBE abrir la pantalla relacionada (orden, cita, vehículo o inventario) desde el centro.
@@ -165,7 +165,7 @@ Como recepcionista, quiero una lista de clientes por avisar (vehículo listo, ci
 ### Entidades clave
 
 - **Aviso**: hecho que requiere atención del usuario, derivado de datos existentes (mantenimiento, cita, refacción, orden). Atributos de negocio: tipo, el hecho que lo origina, descripción para reconocerlo y la pantalla a la que abre. No se almacena como registro: se calcula en cada consulta.
-- **Lectura de aviso**: estado de atención de un aviso por un usuario concreto. Atributos: usuario, identidad del aviso y fecha de lectura. Es lo único que se persiste del centro (identidad del aviso: D-04, Clarificaciones).
+- **Lectura de aviso**: estado de atención de un aviso por un usuario concreto. Atributos: usuario, identidad del aviso (tipo + hecho que lo origina + estado, por ejemplo `MANT_VENCIDO:orden-42`, D-04, Clarificaciones) y fecha de lectura; una fila por usuario y clave. Es lo único que se persiste del centro.
 - **Aviso a cliente**: registro de que recepción contactó a un cliente por un hecho concreto. Atributos: cliente, tipo de aviso, hecho que lo origina (orden, cita o mantenimiento), quién avisó, fecha y nota opcional (D-07, Clarificaciones). Evita repetir el mismo aviso y permite que un hecho nuevo lo genere de nuevo.
 - **Entidades consultadas** (sin cambios): mantenimiento (con su indicador Próximo / Vencido), cita, refacción (con sus alertas de stock) y orden de servicio; más el cliente para el teléfono de la lista por avisar.
 
@@ -184,16 +184,24 @@ Como recepcionista, quiero una lista de clientes por avisar (vehículo listo, ci
 
 ## Clarificaciones
 
+### Session 2026-11-05
+
+- Q: ¿Qué debe considerar el sistema una «orden detenida» para mostrarla como aviso en el centro? → A: **sin cambio de estado por más de 2 días, en cualquier estado no terminal** (opción A): cubre todos los estados donde una orden puede estancarse, se detecta al siguiente día hábil y es fácil de sembrar y probar (N = 2, fijo; sin configuración en este sprint).
+- Q: ¿Con qué identidad debe guardar el sistema la lectura de un aviso para saber si ese usuario ya lo leyó? → A: **por tipo, objeto y estado** (opción B): es la única opción que cumple el CA-6 sin lógica extra: si el estado empeora (Próximo → Vencido) la clave es distinta, así que vuelve a mostrarse como no leído; y una única fila por clave mantiene la tabla simple.
+- Q: ¿Con qué frecuencia debe actualizarse el contador de avisos no leídos de la campana? → A: **al iniciar sesión, al abrir el panel y al navegar entre pantallas, sin intervalo automático** (opción A): mantiene el contador fresco justo cuando el usuario actúa, sin consultas constantes de fondo ni temporizadores, y es lo más simple de probar.
+- Q: ¿Qué debe considerar el sistema una «cita del día» para mostrarla como aviso en la campana? → A: **solo citas con fecha de hoy, sin importar su estado** (opción A): «del día» significa la fecha de hoy, coincide con el CA-3, evita duplicar con la lista de clientes por avisar (que ya usa «cita de mañana» como motivo aparte en el CA-10) y no pierde citas por su estado.
+- Q: ¿Qué avisos debe ver el mecánico en la campana? → A: **solo avisos ligados a sus órdenes asignadas; sin mantenimientos generales de otros vehículos** (opción A): coincide literalmente con la US5 y el CA-4 («solo avisos de órdenes asignadas a él»), es lo más simple de probar y evita tener que definir qué significa «vehículos que atiende», que ambiguaría el alcance.
+
 Decisiones del insumo (sección 9), por resolver en `/speckit.clarify`:
 
-- **D-01**: criterio de "orden detenida": ¿más de N días sin cambio de estado, o solo `ESPERANDO_REFACCION` por más de N días? ¿Cuánto vale N y es configurable?
-- **D-02**: qué considera "cita del día": ¿solo hoy o también mañana? ¿Incluye citas pendientes sin confirmar?
-- **D-03**: actualización del contador: ¿al navegar, con un intervalo de consulta (por ejemplo cada 60 segundos) o solo al abrir el panel?
-- **D-04**: identidad de un aviso para la lectura: ¿por tipo y objeto (por ejemplo `STOCK:parte-12`) o por tipo y estado?
-- **D-05**: si un aviso leído debe volver a aparecer cuando empeora (de Próximo a Vencido).
+- **D-01** (resuelta en Session 2026-11-05): criterio de "orden detenida": ¿más de N días sin cambio de estado, o solo `ESPERANDO_REFACCION` por más de N días? ¿Cuánto vale N y es configurable? → respuesta: sin cambio de estado por más de 2 días en cualquier estado no terminal (N = 2, fijo; la configuración de N queda para el Sprint 7).
+- **D-02** (resuelta en Session 2026-11-05): qué considera "cita del día": ¿solo hoy o también mañana? ¿Incluye citas pendientes sin confirmar? → respuesta: solo citas con fecha de hoy, sin importar su estado.
+- **D-03** (resuelta en Session 2026-11-05): actualización del contador: ¿al navegar, con un intervalo de consulta (por ejemplo cada 60 segundos) o solo al abrir el panel? → respuesta: al iniciar sesión, al abrir el panel y al navegar entre pantallas, sin intervalo automático.
+- **D-04** (resuelta en Session 2026-11-05): identidad de un aviso para la lectura: ¿por tipo y objeto (por ejemplo `STOCK:parte-12`) o por tipo y estado? → respuesta: por tipo, objeto y estado (por ejemplo `MANT_VENCIDO:orden-42`): si el estado cambia, la clave cambia y el aviso vuelve a mostrarse como no leído.
+- **D-05** (derivada de D-04 en Session 2026-11-05): si un aviso leído debe volver a aparecer cuando empeora (de Próximo a Vencido) → respuesta: sí, al cambiar de estado la clave es nueva y el aviso vuelve como no leído (coherente con el CA-6).
 - **D-06**: cuántos días antes se avisa de un mantenimiento próximo y si la cita se avisa un día antes o el mismo día.
 - **D-07**: si el aviso de orden terminada se da una sola vez o puede repetirse, y si el registro guarda una nota (por ejemplo, "no contestó").
-- **D-08**: si el mecánico debe ver avisos de mantenimiento de los vehículos que atiende o solo de órdenes.
+- **D-08** (resuelta en Session 2026-11-05): si el mecánico debe ver avisos de mantenimiento de los vehículos que atiende o solo de órdenes → respuesta: solo avisos ligados a sus órdenes asignadas; sin mantenimientos generales de otros vehículos.
 
 ## Fuera de alcance
 
@@ -209,14 +217,14 @@ Decisiones del insumo (sección 9), por resolver en `/speckit.clarify`:
 - **Numeración de migración**: el repositorio ya tiene migraciones 001 a 014; la del sprint debe ser la siguiente en la serie (`015_...sql`), aditiva y sin tocar migraciones ya aplicadas. El `006_...sql` que menciona el insumo es un número obsoleto (misma corrección que el hallazgo H-05 del Sprint 5).
 - **Datos de ejemplo**: el archivo de seeds ya existe; el sprint lo amplía con al menos un caso por tipo de aviso, manteniendo la idempotencia.
 - **Defaults mientras se resuelven las decisiones** (se actualizarán con las respuestas de clarify):
-  - D-01: orden detenida = sin cambio de estado por más de 2 días naturales (N = 2, fijo en el sistema; hacer N configurable queda para el Sprint 7 de configuración).
-  - D-02: "cita del día" = citas con fecha de hoy, sin importar su estado; la lista de clientes por avisar usa "cita de mañana" (fecha de mañana) como motivo, según el CA-10.
-  - D-03: el contador se actualiza al iniciar sesión, al abrir el panel y al navegar entre pantallas; sin intervalo automático.
-  - D-04: identidad del aviso = tipo + hecho que lo origina + estado; la lectura se guarda con esa clave por usuario (permite que el mismo hecho con estado distinto sea un aviso nuevo).
-  - D-05: sí vuelve a aparecer como no leído cuando empeora (coherente con la regla de reaparición del CA-6).
+  - D-01: RESUELTA en Clarificaciones (Session 2026-11-05): orden detenida = sin cambio de estado por más de 2 días en cualquier estado no terminal (N = 2, fijo; la configuración de N queda para el Sprint 7).
+  - D-02: RESUELTA en Clarificaciones (Session 2026-11-05): "cita del día" = citas con fecha de hoy, sin importar su estado; la lista de clientes por avisar usa "cita de mañana" (fecha de mañana) como motivo, según el CA-10.
+  - D-03: RESUELTA en Clarificaciones (Session 2026-11-05): el contador se actualiza al iniciar sesión, al abrir el panel y al navegar entre pantallas; sin intervalo automático.
+  - D-04: RESUELTA en Clarificaciones (Session 2026-11-05): identidad del aviso = tipo + hecho que lo origina + estado; la lectura se guarda con esa clave por usuario (permite que el mismo hecho con estado distinto sea un aviso nuevo).
+  - D-05: RESUELTA por la respuesta de D-04 (Session 2026-11-05): sí vuelve a aparecer como no leído cuando empeora, porque el cambio de estado genera una clave nueva (coherente con la regla de reaparición del CA-6).
   - D-06: los mantenimientos próximos usan la antelación ya guardada en cada mantenimiento (RN-11), sin valor global nuevo; la cita se avisa el mismo día (coherente con D-02).
   - D-07: el aviso de orden terminada para el cliente es una sola vez por hecho (coherente con el CA-11); el registro guarda quién y cuándo, con una nota opcional.
-  - D-08: el mecánico solo ve avisos ligados a sus órdenes asignadas (coherente con US5 y CA-4), sin mantenimientos generales de vehículos que no le corresponden.
+  - D-08: RESUELTA en Clarificaciones (Session 2026-11-05): el mecánico solo ve avisos ligados a sus órdenes asignadas (coherente con US5 y CA-4), sin mantenimientos generales de vehículos que no le corresponden.
 - **Constitución**: la constitución 1.1.0 cubre cinco sprints (1 al 5); este Sprint 6 es posterior a esa enmienda y DEBE incorporarse al alcance con una enmienda aprobada antes de implementar, igual que el hallazgo H-01 del Sprint 5. El borrador de alcance vive en `docs/sprints/propuesta-sprints-post-mvp.md`.
 - **Dependencias heredadas**: se apoya en el panel y tickets (Sprint 4), en mantenimientos e inventario (Sprint 3) y en citas y órdenes (Sprint 2); no se tocan sus reglas (RN-5, RN-8, RN-10, RN-11, RN-15).
 - **Entorno**: MySQL local con datos de demostración; las pruebas del proyecto corren contra su base de pruebas, nunca contra la base principal.
