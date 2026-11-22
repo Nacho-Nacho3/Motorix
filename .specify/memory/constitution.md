@@ -34,6 +34,15 @@ Reporte de Impacto de la Sincronización
   Aprobación: Ignacio Joaquín Trejo (responsable del sprint) con delegación explícita del
   2026-11-03 para concluir el trabajo; la ratificación formal del equipo sigue pendiente
   como en las contribuciones previas.
+- Enmienda (2026-11-18): se amplía el alcance de cinco a siete sprints para incluir los
+  Sprints 6 y 7 posteriores al MVP (notificaciones internas; reportes y configuración),
+  definidos en `docs/sprints/propuesta-sprints-post-mvp.md` y en `docs/project-context.md`
+  (sección 6.12). Principios modificados: I (sprints 1 → 4 → 5 → 6 → 7) y III («siete
+  sprints» de MySQL local); también la introducción. Cambio de versión:
+  1.1.0 → 1.2.0 (MINOR: se añade alcance de sprint; no se eliminan ni redefinen principios).
+  Aprobación: registrada en la ejecución de `/speckit.implement` del Sprint 6 (2026-11-18)
+  bajo el criterio de entrada T001; la ratificación formal del equipo sigue pendiente como
+  en las contribuciones previas.
 - Secciones eliminadas: ninguna
 - Pendientes: ratificación por el equipo; decisiones listadas en "Decisiones Pendientes"
 -->
@@ -41,8 +50,9 @@ Reporte de Impacto de la Sincronización
 # Constitución de Motorix
 
 Motorix es el Sistema de Gestión para Taller Mecánico: un proyecto académico cuyo MVP
-se construye en cuatro sprints y que continúa con un quinto sprint posterior al MVP
-(precios de refacciones y cobro completo). El detalle de requisitos, módulos, entidades, reglas de
+se construye en cuatro sprints y que continúa con tres sprints posteriores al MVP
+(precios de refacciones y cobro completo; notificaciones internas; reportes y configuración).
+El detalle de requisitos, módulos, entidades, reglas de
 negocio y sprints vive en `docs/project-context.md` (MOTORIX_PROJECT_CONTEXT.md), que es
 la fuente de verdad del alcance. Esta constitución define las reglas que NO se rompen al
 desarrollarlo, tanto por el equipo como por el agente de IA.
@@ -54,9 +64,9 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
 - El agente DEBE leer `docs/project-context.md` antes de implementar cualquier sprint.
 - NO se permite agregar funcionalidades fuera del alcance sin indicarlo y obtener
   aprobación del equipo.
-- El desarrollo DEBE seguir los sprints en orden (1 → 4, y el 5 posterior al MVP solo
-  una vez cerrados los cuatro); NO se implementa todo el sistema de una sola vez. No iniciar
-  por Mercado Pago, dashboard o tickets.
+- El desarrollo DEBE seguir los sprints en orden (1 → 4, y los sprints 5, 6 y 7
+  posteriores al MVP solo una vez cerrados los cuatro); NO se implementa todo el sistema
+  de una sola vez. No iniciar por Mercado Pago, dashboard o tickets.
 - El chatbot de WhatsApp está FUERA del MVP; solo puede tratarse como integración
   externa futura.
 - DEBE mantenerse la trazabilidad: requisito de alto nivel → historia de usuario →
@@ -91,8 +101,8 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
   backend DEBE usar ES Modules (`import`/`export`). NO se usa CommonJS
   (`require`/`module.exports`). `package.json` del backend DEBE declarar
   `"type": "module"`.
-- Base de datos: MySQL, ejecutada de forma LOCAL durante todo el proyecto (los cinco sprints
-  del proyecto).
+- Base de datos: MySQL, ejecutada de forma LOCAL durante todo el proyecto (los siete
+  sprints del proyecto).
 - Autenticación: JWT con contraseñas cifradas mediante bcrypt.
 - Login: acepta usuario (`username`) o correo electrónico (`email`) en el mismo campo,
   para todos los roles.
@@ -270,4 +280,4 @@ asumirlas como definitivas:
 - El cumplimiento se revisa en cada contribución; cualquier desviación DEBE justificarse
   explícitamente o descartarse.
 
-**Versión**: 1.1.0 | **Redactada**: 2026-10-01 | **Ratificación**: pendiente del equipo | **Última enmienda**: 2026-11-03
+**Versión**: 1.2.0 | **Redactada**: 2026-10-01 | **Ratificación**: pendiente del equipo | **Última enmienda**: 2026-11-18
