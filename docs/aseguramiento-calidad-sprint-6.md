@@ -36,7 +36,7 @@ Estado real al 2026-11-18. Los criterios se completan a lo largo del sprint; `[x
 - [x] Rama `006-notificaciones-internas` creada desde `main` (T002, 2026-11-05), sin squash ni force-push.
 - [x] Checklist de requisitos en verde: [`checklists/requirements.md`](../specs/006-notificaciones-internas/checklists/requirements.md) 16/16 (specify + clarify, 2026-11-05).
 - [x] Fases de Spec Kit completadas: specify (`a06e485`), clarify (`be2ad7d`), plan (`528b405`), tasks (`39c27e1`).
-- [ ] Línea base de regresión medida y registrada (sección 8) — pendiente (T003).
+- [x] Línea base de regresión medida y registrada (sección 8) — T003, 2026-11-22.
 
 **Criterios de salida (para cerrar el sprint):**
 
@@ -68,7 +68,17 @@ Pendiente: se completa al cierre (T064).
 
 ## 8. Línea base de regresión
 
-Pendiente (T003): conteos de `npm.cmd test` (backend), `flutter test` y `flutter analyze lib` (frontend) medidos antes de escribir código, y regresión de cierre.
+**Línea base (antes de escribir código del sprint), medida el 2026-11-22 en la rama `006-notificaciones-internas`:**
+
+| Comando | Resultado |
+|---|---|
+| `cd server && npm.cmd test` | 51 suites y **423 pruebas**, todas en verde |
+| `flutter test` (en `client/`) | **128 pruebas**, todas en verde |
+| `flutter analyze lib` (en `client/`) | sin observaciones |
+
+Nota de la primera corrida (hallazgo, se documenta en la sección 7 al cierre): el backend arrancó en rojo porque el checksum registrado de `014_order_parts_price.sql` ya no coincidía con el archivo — el script tenía fin de línea CRLF en disco mientras `schema_migrations` guardaba el hash de la versión LF (el guardián de inmutabilidad lo marcó). Se restauraron los bytes LF originales (contenido SQL idéntico, solo cambia el fin de línea; `git diff` vacío) y la línea base quedó en verde.
+
+**Regresión de cierre:** pendiente al final del sprint (T063/T064).
 
 ## 9. Control de calidad final
 

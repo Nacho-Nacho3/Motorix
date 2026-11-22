@@ -51,7 +51,8 @@ Las pruebas (`npm test`) usan siempre `motorix_test`, nunca la base principal.
 
 Los scripts se numeran en orden de aplicación y se ejecutan en ese orden
 (migraciones 004–007 del Sprint 2, 008–011 del Sprint 3, 012–013 del
-Sprint 4 y 014 del Sprint 5 dependen de las tablas de los sprints anteriores):
+Sprint 4, 014 del Sprint 5 y 015 del Sprint 6 dependen de las tablas de los
+sprints anteriores):
 
 | Script | Tabla | Depende de |
 |--------|-------|------------|
@@ -69,6 +70,7 @@ Sprint 4 y 014 del Sprint 5 dependen de las tablas de los sprints anteriores):
 | `012_create_payments.sql` | `payments` | `service_orders`, `users` |
 | `013_create_tickets.sql` | `tickets` | `service_orders`, `users` |
 | `014_order_parts_price.sql` | `order_parts` (columnas nuevas), `parts` (CHECK) | `order_parts`, `parts`, `users` |
+| `015_notifications.sql` | `notification_reads`, `client_notices` | `users`, `clients` |
 
 La `014_order_parts_price.sql` (Sprint 5) agrega a `order_parts` la columna
 `unit_price`, con el precio de venta **guardado al agregar la refacción a la
@@ -78,5 +80,13 @@ administrativa de precio (`price_correction_reason`, `price_corrected_by`,
 `price_corrected_at`, D-05, única mutación admitida sobre la tabla). Incluye el
 CHECK de tope `unit_price <= 99999.99` (D-08) y los CHECK equivalentes de tope
 sobre `parts.purchase_price` y `parts.sale_price`.
+
+La `015_notifications.sql` (Sprint 6) crea las dos tablas nuevas de las
+notificaciones internas: `notification_reads` (una fila por usuario y clave de
+aviso leído, con `UNIQUE (user_id, notification_key)` y `user_id` en
+`ON DELETE CASCADE`) y `client_notices` (registro del aviso de recepción a un
+cliente con `UNIQUE (client_id, notice_type, source_id)` para garantizar
+«una vez por hecho», D-07, y `notified_by`/`notified_at` de quién y cuándo).
+Los avisos en sí NO se almacenan: se calculan en cada consulta (RN-10).
 
 El registro en `schema_migrations` usa el nombre del archivo como `version`.

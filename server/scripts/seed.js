@@ -596,6 +596,105 @@ export async function crearEscenariosPreciosDeEjemplo(usuario) {
   return resultado;
 }
 
+/**
+ * T008 (Sprint 6): escenarios de demo para las notificaciones internas
+ * (CA-12, FR-012), con detección por estado para no duplicar nada:
+ * 1. una cita con `appointment_date = CURDATE()` (aviso APPOINTMENT en la
+ *    campana, D-02/D-03);
+ * 2. una cita con `CURDATE() + 1` (motivo APPOINTMENT_TOMORROW de la lista
+ *    de clientes por avisar, CA-11/D-02);
+ * 3. una orden no terminal con `updated_at` retrotraído 3 días (criterio
+ *    D-01: el corte son 2 días); el marcador es el propio reloj: si ya hay
+ *    una abierta con más de 2 días sin cambio, el escenario existe.
+ *
+ * Los demás tipos ya los cubren los seeds anteriores (verificación en T008):
+ * mantenimiento UPCOMING (2026-12-20) y OVERDUE (2026-09-15/2026-10-25),
+ * refacción LOW (AMO-003) y OUT (FUS-004), y una orden FINISHED sin
+ * entregar (ORDER_READY).
+ */
+export async function crearEscenariosNotificacionesDeEjemplo() {
+  const resultado = { citaHoy: 0, citaManana: 0, ordenDetenida: 0 };
+
+  const fechaConOffset = (dias) => {
+    const fecha = new Date();
+    fecha.setDate(fecha.getDate() + dias);
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    return `${anio}-${mes}-${dia}`;
+  };
+
+  // Par cliente+vehículo para las citas de demo (el primero de la base).
+  const [pares] = await pool.query(
+    `SELECT c.id AS clientId, v.id AS vehicleId
+       FROM clients c
+       JOIN vehicles v ON v.client_id = c.id
+      ORDER BY c.id, v.id
+      LIMIT 1`,
+  );
+
+  // (1) Cita de hoy: marcador = ya existe una cita con fecha de hoy.
+  const [citasHoy] = await pool.query(
+    "SELECT COUNT(*) AS total FROM appointments WHERE appointment_date = CURDATE()",
+  );
+  if (Number(citasHoy[0].total) === 0 && pares.length > 0) {
+    await citas.insertar({
+      clientId: pares[0].clientId,
+      vehicleId: pares[0].vehicleId,
+      date: fechaConOffset(0),
+      time: "10:00",
+      reason: "Cambio de aceite y revisión general",
+      notes: "Cita de hoy para la demo de notificaciones (Sprint 6).",
+    });
+    resultado.citaHoy = 1;
+  }
+
+  // (2) Cita de mañana: marcador = ya existe una cita con fecha de mañana.
+  const [citasManana] = await pool.query(
+    "SELECT COUNT(*) AS total FROM appointments WHERE appointment_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY)",
+  );
+  if (Number(citasManana[0].total) === 0 && pares.length > 0) {
+    await citas.insertar({
+      clientId: pares[0].clientId,
+      vehicleId: pares[0].vehicleId,
+      date: fechaConOffset(1),
+      time: "12:00",
+      reason: "Alineación y balanceo",
+      notes: "Cita de mañana para la demo de notificaciones (Sprint 6).",
+    });
+    resultado.citaManana = 1;
+  }
+
+  // (3) Orden detenida: marcador = alguna no terminal con más de 2 días sin
+  // cambio de estado (D-01). Si falta, se retrotrae el reloj de la primera
+  // orden abierta (todas las de ejemplo llevan mecánico asignado, T025).
+  const [detenidas] = await pool.query(
+    `SELECT COUNT(*) AS total
+       FROM service_orders
+      WHERE status NOT IN ('FINISHED', 'DELIVERED')
+        AND updated_at <= DATE_SUB(NOW(), INTERVAL 2 DAY)`,
+  );
+  if (Number(detenidas[0].total) === 0) {
+    const [abiertas] = await pool.query(
+      `SELECT id FROM service_orders
+        WHERE status NOT IN ('FINISHED', 'DELIVERED')
+        ORDER BY id
+        LIMIT 1`,
+    );
+    if (abiertas.length > 0) {
+      await pool.query(
+        `UPDATE service_orders
+            SET updated_at = DATE_SUB(NOW(), INTERVAL 3 DAY)
+          WHERE id = ?`,
+        [abiertas[0].id],
+      );
+      resultado.ordenDetenida = 1;
+    }
+  }
+
+  return resultado;
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -621,6 +720,9 @@ export async function ejecutarSeed() {
   const escenariosDePrecios = admin
     ? await crearEscenariosPreciosDeEjemplo({ id: admin, role: "ADMIN" })
     : { ordenAbierta: 0, pagoPendiente: 0 };
+  // Sprint 6 (T008): escenarios de notificaciones. Corre al final para que
+  // el retroceso del reloj de la orden detenida no lo pisen pasos previos.
+  const escenariosNotificaciones = await crearEscenariosNotificacionesDeEjemplo();
 
   return {
     usuarios: {
@@ -642,6 +744,7 @@ export async function ejecutarSeed() {
     usosDeOrden: usoDeOrden,
     pagoYTicket,
     escenariosDePrecios,
+    escenariosNotificaciones,
   };
 }
 
@@ -691,6 +794,12 @@ if (esEjecucionDirecta) {
     `  - Escenarios de precios (T045): ` +
       `${resumen.escenariosDePrecios.ordenAbierta ? "línea en orden abierta creada" : "línea en orden abierta ya existente u no disponible"}, ` +
       `${resumen.escenariosDePrecios.pagoPendiente ? "pago PENDING desfasado creado" : "pago PENDING desfasado ya existente u no disponible"}`,
+  );
+  console.log(
+    `  - Escenarios de notificaciones (T008): ` +
+      `${resumen.escenariosNotificaciones.citaHoy ? "cita de hoy creada" : "cita de hoy ya existente u no disponible"}, ` +
+      `${resumen.escenariosNotificaciones.citaManana ? "cita de mañana creada" : "cita de mañana ya existente u no disponible"}, ` +
+      `${resumen.escenariosNotificaciones.ordenDetenida ? "orden detenida preparada" : "orden detenida ya existente u no disponible"}`,
   );
   await pool.end();
 }
