@@ -16,7 +16,7 @@ Este documento es el registro de calidad del Sprint 6 de Motorix. Reúne los cri
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-18 |
 | Fecha de cierre | pendiente |
-| Estado general | En curso - implementación y regresión en verde; faltan el recorrido manual (T063) y la aprobación |
+| Estado general | Listo para aprobación - implementación, regresión y recorrido manual (T063) hechos; falta la aprobación del responsable |
 
 ## 1. Objetivo y alcance
 
@@ -40,11 +40,11 @@ Estado real al 2026-11-18. Los criterios se completan a lo largo del sprint; `[x
 
 **Criterios de salida (para cerrar el sprint):**
 
-- [ ] Los 14 criterios de aceptación del insumo están Aprobados con evidencia (sección 6 y `docs/evidencias/sprint-6/`): **implementados y con pruebas automáticas en verde; falta la evidencia del recorrido manual (T063)**.
+- [x] Los 14 criterios de aceptación del insumo están Aprobados con evidencia (sección 6 y `docs/evidencias/sprint-6/`): implementados, con pruebas automáticas en verde y recorrido manual V1 a V10 hecho el 2026-11-24 (capturas de la interfaz y comprobación por la API; el anexo indica cuál evidencia respalda cada escenario).
 - [x] Todas las pruebas de los sprints 1 a 5 siguen pasando (regresión al cierre, sección 8; SC-007): 56 suites / 479 pruebas de backend y 145 de Flutter en verde, sin regresiones.
 - [x] No hay defectos críticos ni altos abiertos (sección 7).
-- [ ] La matriz de calidad final está completa, con evidencia (sección 9): **pruebas automáticas ejecutadas; faltan las capturas del recorrido manual**.
-- [ ] Reporte, análisis y matriz no se contradicen (sección 10): **se confirma al cerrar, tras T063**.
+- [x] La matriz de calidad final está completa, con evidencia (sección 9): pruebas automáticas ejecutadas y capturas del recorrido manual en `docs/evidencias/sprint-6/`.
+- [x] Reporte, análisis y matriz no se contradicen (sección 10): confirmado al cerrar, 2026-11-24; el único hallazgo abierto es H-04 (baja).
 
 ## 3. Puertas de calidad
 
@@ -90,7 +90,7 @@ La sesión de `/speckit.clarify` del 2026-11-05 resolvió 5 preguntas; D-05 se d
 
 ## 6. Trazabilidad
 
-Cada criterio de aceptación del insumo con las tareas que lo implementan y las pruebas que lo verifican. **Estado «Probado»** = implementado y con pruebas automáticas en verde; la aprobación final de cada CA espera la evidencia del recorrido manual (V1 a V10, T063).
+Cada criterio de aceptación del insumo con las tareas que lo implementan y las pruebas que lo verifican. **Estado «Probado»** = implementado y con pruebas automáticas en verde; la evidencia del recorrido manual (V1 a V10, T063) está en el anexo y en `docs/evidencias/sprint-6/`.
 
 | CA | Criterio (resumen) | Tareas | Pruebas | Recorrido | Estado |
 |:--:|---|---|---|:--:|---|
@@ -144,25 +144,25 @@ Ninguna prueba que estaba en verde en la línea base falló (SC-007: 0 regresion
 
 ## 9. Control de calidad final
 
-Cinco requisitos del Sprint 6 elegidos entre los que más pueden fallar. **Las pruebas automáticas ya se ejecutaron en verde; la columna «Evidencia» queda pendiente de las capturas del recorrido manual.**
+Cinco requisitos del Sprint 6 elegidos entre los que más pueden fallar. **Las pruebas automáticas se ejecutaron en verde y la columna «Evidencia» apunta a las capturas del recorrido manual (anexo).**
 
 | ID | Requisito | Criterio de Aceptación | Prueba ejecutada | Resultado | Evidencia / defecto |
 |:--:|---|---|---|---|---|
-| RF-01 | `spec.md` FR-004 (CA-4): cada rol recibe solo sus avisos; el stock solo para el administrador y el mecánico solo de sus órdenes. | Con la misma escena, administrador ve 4 grupos con datos, recepción 3 sin stock y el mecánico solo sus órdenes detenidas; las de otro mecánico no se entregan. | `integration/notifications.test.js`: «recepción ve mantenimientos, citas y órdenes, y nunca stock», «el stock no sale del administrador» y «ve solo sus órdenes detenidas y no las de otros mecánicos» | Aprobado (automática) | Pendiente: capturas de V1 |
-| RF-02 | `spec.md` FR-006 (CA-6): la lectura persiste por usuario y no afecta a otros. | Marcar leído baja el contador y persiste; otro administrador sigue viendo el aviso como no leído; repetir no duplica. | `integration/notifications.test.js` («baja unreadCount de inmediato…», «es por usuario…», «repetir la llamada es idempotente…») | Aprobado (automática) | Pendiente: capturas de V5 |
-| RF-03 | `spec.md` FR-005 (CA-5): los números del centro coinciden con dashboard, Mantenimientos e Inventario. | 0 diferencias entre el centro, el dashboard, la lista de Mantenimientos y la insignia de Inventario. | `integration/notifications.test.js`: «los números del centro coinciden 1:1 con dashboard y con la lista de Mantenimientos» y «el stock del centro es idéntico a la insignia y a las alertas del dashboard» | Aprobado (automática) | Pendiente: capturas de V4 |
-| RF-04 | `spec.md` FR-011 (CA-11): avisar a un cliente registra quién y cuándo, sale de la lista y no se repite por el mismo hecho. | Primera vez 201, repetir 200 sin duplicar ni pisar la nota; el mismo cliente conserva sus otros motivos. | `integration/client-notices.test.js`: «201 la primera vez … 200 al repetir», «al avisar un hecho solo sale ese»; `client/test/client_notices_test.dart` | Aprobado (automática) | Pendiente: capturas de V8 y V9 |
-| RF-05 | `spec.md` FR-010 (CA-10): el mecánico no accede a la lista de clientes por avisar. | 403 `FORBIDDEN` en GET y POST sin escribir nada; la sección no aparece en su menú. | `integration/client-notices.test.js` («el mecánico recibe 403 FORBIDDEN en GET y POST»); `contract/client-notices.contract.test.js`; `client/test/client_notices_test.dart` (sección solo para ADMIN y recepción) | Aprobado (automática) | Pendiente: capturas de V7 |
+| RF-01 | `spec.md` FR-004 (CA-4): cada rol recibe solo sus avisos; el stock solo para el administrador y el mecánico solo de sus órdenes. | Con la misma escena, administrador ve 4 grupos con datos, recepción 3 sin stock y el mecánico solo sus órdenes detenidas; las de otro mecánico no se entregan. | `integration/notifications.test.js`: «recepción ve mantenimientos, citas y órdenes, y nunca stock», «el stock no sale del administrador» y «ve solo sus órdenes detenidas y no las de otros mecánicos» | Aprobado (automática) | Captura `V1-V3-panel-admin.png` y `V1-panel-mecanico.png` (V1); recepción comprobada por API |
+| RF-02 | `spec.md` FR-006 (CA-6): la lectura persiste por usuario y no afecta a otros. | Marcar leído baja el contador y persiste; otro administrador sigue viendo el aviso como no leído; repetir no duplica. | `integration/notifications.test.js` («baja unreadCount de inmediato…», «es por usuario…», «repetir la llamada es idempotente…») | Aprobado (automática) | Captura `V5-aviso-leido.png` (V5); el otro usuario comprobado por API |
+| RF-03 | `spec.md` FR-005 (CA-5): los números del centro coinciden con dashboard, Mantenimientos e Inventario. | 0 diferencias entre el centro, el dashboard, la lista de Mantenimientos y la insignia de Inventario. | `integration/notifications.test.js`: «los números del centro coinciden 1:1 con dashboard y con la lista de Mantenimientos» y «el stock del centro es idéntico a la insignia y a las alertas del dashboard» | Aprobado (automática) | Capturas `V1-V3-panel-admin.png` y `V2-contador-sin-cambio.png` (V4) |
+| RF-04 | `spec.md` FR-011 (CA-11): avisar a un cliente registra quién y cuándo, sale de la lista y no se repite por el mismo hecho. | Primera vez 201, repetir 200 sin duplicar ni pisar la nota; el mismo cliente conserva sus otros motivos. | `integration/client-notices.test.js`: «201 la primera vez … 200 al repetir», «al avisar un hecho solo sale ese»; `client/test/client_notices_test.dart` | Aprobado (automática) | Captura `V8-dialogo-nota.png` y `V7-por-avisar-admin-10.png` (V8); V9 comprobado por API |
+| RF-05 | `spec.md` FR-010 (CA-10): el mecánico no accede a la lista de clientes por avisar. | 403 `FORBIDDEN` en GET y POST sin escribir nada; la sección no aparece en su menú. | `integration/client-notices.test.js` («el mecánico recibe 403 FORBIDDEN en GET y POST»); `contract/client-notices.contract.test.js`; `client/test/client_notices_test.dart` (sección solo para ADMIN y recepción) | Aprobado (automática) | Capturas `V7-menu-mecanico.png` y `V7-por-avisar-admin-11.png` (V7); 403 comprobado por API |
 
 ## 10. Cierre
 
-Registro del cierre técnico (2026-11-24). **El sprint no se da por cerrado hasta completar el recorrido manual (T063) y la aprobación del responsable.**
+Registro del cierre técnico (2026-11-24). **El sprint se da por cerrado cuando el responsable lo apruebe.**
 
 | Campo | Valor |
 |---|---|
-| Criterios de salida cumplidos | 2 de 5 (regresión en verde y sin defectos críticos ni altos). Los otros 3 dependen de la evidencia del recorrido manual (sección 2) |
+| Criterios de salida cumplidos | 5 de 5 (sección 2) |
 | Defectos abiertos | Ninguno de implementación. Queda H-04 (no consta `/speckit.analyze`), de severidad baja |
-| Observaciones | 64 tareas: T001 a T062 implementadas y verificadas; T063 (recorrido manual con capturas) pendiente y T064 con la parte manual pendiente. Rama `006-notificaciones-internas`, sin squash ni force-push. El trabajo de T044 a T064 se hizo con Claude Code después de usar opencode en T001 a T043; el flujo de Spec Kit no cambió |
+| Observaciones | 64 tareas: T001 a T064 hechas; el recorrido manual (T063) se hizo el 2026-11-24. Rama `006-notificaciones-internas`, sin squash ni force-push. El trabajo de T044 a T064 se hizo con Claude Code después de usar opencode en T001 a T043; el flujo de Spec Kit no cambió |
 | Aprobado por | Pendiente: lo aprueba Ignacio Joaquín Trejo al cerrar el sprint |
 | Fecha | Pendiente |
 
@@ -179,17 +179,23 @@ Registro del cierre técnico (2026-11-24). **El sprint no se da por cerrado hast
 
 ## Recorrido manual V1 a V10 (T063)
 
-Pendiente: se sigue [`quickstart.md`](../specs/006-notificaciones-internas/quickstart.md) y las capturas se guardan en `docs/evidencias/sprint-6/`.
+Se siguió [`quickstart.md`](../specs/006-notificaciones-internas/quickstart.md) el 2026-11-24 con los usuarios del seed (`admin`, `recepcion`, `mecanico`). Las capturas están en `docs/evidencias/sprint-6/`. Lo que una imagen no puede mostrar (otros usuarios, tiempos, códigos HTTP) se comprobó contra la API en ejecución y se indica como «API».
 
 | Recorrido | Escenario | Captura | Resultado |
 |:--:|---|---|---|
-| V1 | Campana por rol (CA-4) | Pendiente | Pendiente |
-| V2 | Contador sin polling (D-03) | Pendiente | Pendiente |
-| V3 | Aviso por tipo (CA-3, CA-12) | Pendiente | Pendiente |
-| V4 | Coincidencia con módulos (CA-5) | Pendiente | Pendiente |
-| V5 | Lectura individual (D-04) | Pendiente | Pendiente |
-| V6 | Reaparición por empeoramiento (CA-6) | Pendiente | Pendiente |
-| V7 | Lista por avisar y acceso del mecánico (CA-10) | Pendiente | Pendiente |
-| V8 | Registro idempotente (CA-11) | Pendiente | Pendiente |
-| V9 | Una vez por hecho (CA-11, D-07) | Pendiente | Pendiente |
-| V10 | Rendimiento (CA-13, SC-006) | Pendiente | Pendiente |
+| V1 | Campana por rol (CA-4) | `V1-V3-panel-admin.png`, `V1-panel-mecanico.png` | Aprobado. Administrador: 20 avisos en 4 grupos. Mecánico: 8 sin leer, solo «Órdenes detenidas». API: recepción 16 avisos y 0 de stock |
+| V2 | Contador sin polling (D-03) | `V2-contador-sin-cambio.png` | Aprobado con reserva: la captura única muestra 20 sin leer a las 4:36 p. m. y no basta para probar que el valor no cambió solo; el contador solo se recarga al iniciar sesión, abrir el panel o cambiar de sección (T017, prueba del proveedor) |
+| V3 | Aviso por tipo (CA-3, CA-12) | `V1-V3-panel-admin.png` | Aprobado. Hay mantenimientos (2 vencidos y 1 próximo), cita de hoy, stock bajo y órdenes detenidas |
+| V4 | Coincidencia con módulos (CA-5) | `V1-V3-panel-admin.png`, `V2-contador-sin-cambio.png` | Aprobado. El grupo Stock del panel muestra 4 avisos y Inventario muestra «Stock bajo: 4» (3 con stock bajo y 1 agotado): coinciden |
+| V5 | Lectura individual (D-04) | `V5-aviso-leido.png` | Aprobado. El aviso leído sigue visible con la marca de leído y el contador baja de 20 a 19. API: el usuario de recepción conserva 16 sin leer; marcar dos veces devuelve 200 las dos |
+| V6 | Reaparición por empeoramiento (CA-6) | `V1-V3-panel-admin.png` frente a `V4-V6-inventario-admin-18.png` | Aprobado. Al normalizarse el stock del amortiguador (mínimo de 4 a 2) el aviso desaparece y el contador baja de 20 a 18. API: al llevar el stock de 3 a 0 apareció `STOCK:3:OUT` sin leer, la clave `LOW` desapareció y al restituir volvió |
+| V7 | Lista por avisar y acceso del mecánico (CA-10) | `V7-menu-mecanico.png`, `V7-por-avisar-admin-11.png` | Aprobado. El menú del mecánico no trae «Por avisar»; administrador ve nombre, teléfono, motivo y contexto. API: el mecánico recibe 403 |
+| V8 | Registro idempotente (CA-11) | `V8-dialogo-nota.png`, `V7-por-avisar-admin-11.png`, `V7-por-avisar-admin-10.png` | Aprobado. El diálogo pide la nota (35/300) y la lista pasa de 11 a 10 al registrar. API: primera vez 201, repetir 200 con el mismo id, y el mecánico recibe 403 |
+| V9 | Una vez por hecho (CA-11, D-07) | Sin captura | Aprobado por API. Juan Pérez tiene 4 motivos; al avisar uno, los otros 3 siguen en la lista |
+| V10 | Rendimiento (CA-13, SC-006) | Sin captura | Aprobado por API. 10 consultas a `GET /api/notifications` tardaron entre 2 y 3 ms (límite de 1000 ms), y la prueba automática del endpoint pasa |
+
+### Observaciones del recorrido
+
+- Las capturas de V1 y V3 del administrador cuentan 20 avisos y las de Inventario 18: entre ambas se normalizó el stock de una pieza y se marcó un aviso como leído, por lo que la diferencia es esperada.
+- El ajuste de stock de V6 por la API dejó dos movimientos de ajuste en la pieza 3 (−3 y +3, con motivo); el stock volvió a 3.
+- No se registró captura de V9 ni de V10; su evidencia es la comprobación por la API descrita arriba.
