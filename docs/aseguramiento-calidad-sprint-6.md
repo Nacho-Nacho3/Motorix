@@ -15,8 +15,8 @@ Este documento es el registro de calidad del Sprint 6 de Motorix. Reúne los cri
 | Rama | `006-notificaciones-internas` desde `main` (sin squash ni force-push durante todo el sprint) |
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-18 |
-| Fecha de cierre | pendiente |
-| Estado general | Listo para aprobación - implementación, regresión y recorrido manual (T063) hechos; falta la aprobación del responsable |
+| Fecha de cierre | 2026-11-24 |
+| Estado general | Cerrado - implementación, regresión y recorrido manual hechos; aprobado el 2026-11-24 |
 
 ## 1. Objetivo y alcance
 
@@ -44,7 +44,7 @@ Estado real al 2026-11-18. Los criterios se completan a lo largo del sprint; `[x
 - [x] Todas las pruebas de los sprints 1 a 5 siguen pasando (regresión al cierre, sección 8; SC-007): 56 suites / 479 pruebas de backend y 145 de Flutter en verde, sin regresiones.
 - [x] No hay defectos críticos ni altos abiertos (sección 7).
 - [x] La matriz de calidad final está completa, con evidencia (sección 9): pruebas automáticas ejecutadas y capturas del recorrido manual en `docs/evidencias/sprint-6/`.
-- [x] Reporte, análisis y matriz no se contradicen (sección 10): confirmado al cerrar, 2026-11-24; el único hallazgo abierto es H-04 (baja).
+- [x] Reporte, análisis y matriz no se contradicen (sección 10): confirmado al cerrar, 2026-11-24; H-04 (baja) quedó cerrado por decisión del responsable (se omite `/speckit.analyze`).
 
 ## 3. Puertas de calidad
 
@@ -58,7 +58,7 @@ Estado al 2026-11-24. Solo se marca como realizada la puerta que tiene evidencia
 | G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada | [`checklists/requirements.md`](../specs/006-notificaciones-internas/checklists/requirements.md): 16 de 16 marcados |
 | G-05 | Plan (`/speckit.plan`) | Realizada | [`plan.md`](../specs/006-notificaciones-internas/plan.md), commit `528b405`; 7 de 8 puertas de la constitución en PASS y la puerta I resuelta con la enmienda 1.2.0 (commit `eb22526`) |
 | G-06 | Tareas (`/speckit.tasks`) | Realizada | [`tasks.md`](../specs/006-notificaciones-internas/tasks.md), commit `39c27e1`: 64 tareas en 10 fases |
-| G-07 | Consistencia (`/speckit.analyze`) | **No consta** | No hay registro de que se haya ejecutado el análisis entre `tasks.md` y la implementación. Se puede correr antes del cierre |
+| G-07 | Consistencia (`/speckit.analyze`) | **Omitida por decisión del responsable (2026-11-24)** | No hay registro de que se haya ejecutado el análisis entre `tasks.md` y la implementación; el responsable decidió no correrlo antes del cierre. La consistencia se respaldó con la trazabilidad CA-1 a CA-14 (sección 6) y la regresión en verde |
 | G-08 | Pruebas planeadas y línea base | Aprobada | Línea base del 2026-11-22 (sección 8); las pruebas se escribieron antes de cada implementación y fallaron primero (T010 a T013, T044, T049 a T051) |
 
 ## 4. Decisiones de aclaración
@@ -116,7 +116,7 @@ Cada criterio de aceptación del insumo con las tareas que lo implementan y las 
 | H-01 | El backend arrancó en rojo en la línea base: el checksum de `014_order_parts_price.sql` no coincidía porque el archivo tenía fin de línea CRLF y `schema_migrations` guardaba el hash de la versión LF | Media | T003 (línea base) | Resuelto | Se restauraron los bytes LF originales (contenido SQL idéntico, `git diff` vacío); la línea base quedó en verde |
 | H-02 | La cabecera de la lista de Mantenimientos se desbordaba con títulos largos | Baja | Implementación de US1 | Resuelto | Commit `536987f`: se evitó el desbordamiento de la cabecera con títulos largos |
 | H-03 | El contrato de `GET /api/client-notices` pedía `id` y `createdAt = notified_at`, pero un pendiente aún no tiene fila en `client_notices` | Baja | US7 (T052 y T053) | Resuelto | `id` es la posición del pendiente en la respuesta y `createdAt` es la fecha del hecho; el contrato [`client-notices.md`](../specs/006-notificaciones-internas/contracts/client-notices.md) quedó actualizado y la pantalla identifica cada fila por `(clientId, motive, sourceId)` |
-| H-04 | No consta la ejecución de `/speckit.analyze` (G-07) | Baja | Cierre | Abierto | Ejecutarla antes del cierre o registrar la decisión de omitirla |
+| H-04 | No consta la ejecución de `/speckit.analyze` (G-07) | Baja | Cierre | Cerrado por decisión | El responsable decidió omitir `/speckit.analyze` (2026-11-24); queda registrado en G-07 |
 
 No hay defectos críticos ni altos abiertos.
 
@@ -156,15 +156,15 @@ Cinco requisitos del Sprint 6 elegidos entre los que más pueden fallar. **Las p
 
 ## 10. Cierre
 
-Registro del cierre técnico (2026-11-24). **El sprint se da por cerrado cuando el responsable lo apruebe.**
+Registro del cierre técnico (2026-11-24). **Sprint cerrado y aprobado por el responsable.**
 
 | Campo | Valor |
 |---|---|
 | Criterios de salida cumplidos | 5 de 5 (sección 2) |
-| Defectos abiertos | Ninguno de implementación. Queda H-04 (no consta `/speckit.analyze`), de severidad baja |
+| Defectos abiertos | Ninguno de implementación. Ninguno abierto. H-04 (no se ejecutó `/speckit.analyze`) se cerró por decisión del responsable |
 | Observaciones | 64 tareas: T001 a T064 hechas; el recorrido manual (T063) se hizo el 2026-11-24. Rama `006-notificaciones-internas`, sin squash ni force-push. El trabajo de T044 a T064 se hizo con Claude Code después de usar opencode en T001 a T043; el flujo de Spec Kit no cambió |
-| Aprobado por | Pendiente: lo aprueba Ignacio Joaquín Trejo al cerrar el sprint |
-| Fecha | Pendiente |
+| Aprobado por | Ignacio Joaquín Trejo (responsable del proyecto) |
+| Fecha | 2026-11-24 |
 
 # Anexo de evidencias
 
