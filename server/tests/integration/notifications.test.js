@@ -344,3 +344,116 @@ describe("Marcar como leído (US6, FR-006, SC-004)", () => {
     expect(Number(filas[0].total)).toBe(1);
   });
 });
+
+describe("Avisos de recepción (US2, FR-004, SC-003)", () => {
+  test("recepción ve mantenimientos, citas y órdenes, y nunca stock (CA-4)", async () => {
+    await cargarEscena();
+    const recepcion = await tokenPara({
+      username: "recepcion",
+      role: "RECEPTIONIST",
+      name: "Recepción",
+    });
+    const headers = conToken(recepcion.token);
+
+    const respuesta = await getNotificaciones(headers);
+
+    expect(respuesta.status).toBe(200);
+    const { unreadCount, groups } = respuesta.body.data;
+    // Los 4 grupos siempre presentes para que la UI no cambie de estructura.
+    expect(groups.map((grupo) => grupo.type)).toEqual([
+      "MAINTENANCE",
+      "APPOINTMENT",
+      "STOCK",
+      "ORDER_STOPPED",
+    ]);
+    const porTipo = Object.fromEntries(
+      groups.map((grupo) => [grupo.type, grupo.items]),
+    );
+    expect(porTipo.MAINTENANCE).toHaveLength(1);
+    expect(porTipo.APPOINTMENT).toHaveLength(1);
+    expect(porTipo.ORDER_STOPPED).toHaveLength(1);
+    expect(porTipo.STOCK).toEqual([]);
+    // 3 avisos visibles: el stock no entra en el contador de recepción.
+    expect(unreadCount).toBe(3);
+  });
+
+  test("sin token responde 401 UNAUTHORIZED", async () => {
+    const respuesta = await request(app).get("/api/notifications");
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.ok).toBe(false);
+    expect(respuesta.body.error.code).toBe("UNAUTHORIZED");
+  });
+});
+
+describe("Paridad con los módulos (US2, SC-002, CA-5, FR-005)", () => {
+  test("los números del centro coinciden 1:1 con dashboard y con la lista de Mantenimientos", async () => {
+    await cargarEscena();
+    // Un próximo y uno normal además del vencido, para que el cruce no sea
+    // trivial: el normal no debe aparecer en ninguna de las tres fuentes.
+    await request(app)
+      .post("/api/maintenances")
+      .set(headersAdmin)
+      .send({ vehicleId: idVehiculo, nextDueDate: fechaRelativa(10) });
+    await request(app)
+      .post("/api/maintenances")
+      .set(headersAdmin)
+      .send({ vehicleId: idVehiculo, nextDueDate: fechaRelativa(365) });
+    await crearParte({
+      codigo: "FIL-010",
+      nombre: "Filtro de aceite",
+      stock: 10,
+      min: 5,
+    });
+
+    const centro = await getNotificaciones();
+    const dashboard = await request(app)
+      .get("/api/dashboard")
+      .set(headersAdmin);
+    const lista = await request(app).get("/api/maintenances").set(headersAdmin);
+    const partes = await request(app)
+      .get("/api/parts?low=true")
+      .set(headersAdmin);
+
+    const avisos = centro.body.data.groups.find(
+      (grupo) => grupo.type === "MAINTENANCE",
+    ).items;
+    const vencidos = avisos.filter((item) => item.severity === "OVERDUE");
+    const proximos = avisos.filter((item) => item.severity === "UPCOMING");
+
+    expect(vencidos).toHaveLength(
+      dashboard.body.data.summary.overdueMaintenances,
+    );
+    expect(proximos).toHaveLength(
+      dashboard.body.data.summary.upcomingMaintenances,
+    );
+
+    const listaVencidos = lista.body.data.maintenances.filter(
+      (mantenimiento) => mantenimiento.state === "OVERDUE",
+    );
+    const listaProximos = lista.body.data.maintenances.filter(
+      (mantenimiento) => mantenimiento.state === "UPCOMING",
+    );
+    expect(vencidos.map((item) => item.key).sort()).toEqual(
+      listaVencidos.map((m) => `MAINTENANCE:${m.id}:OVERDUE`).sort(),
+    );
+    expect(proximos.map((item) => item.key).sort()).toEqual(
+      listaProximos.map((m) => `MAINTENANCE:${m.id}:UPCOMING`).sort(),
+    );
+
+    // Stock: centro = insignia del inventario = alertas del dashboard.
+    const stock = centro.body.data.groups.find(
+      (grupo) => grupo.type === "STOCK",
+    ).items;
+    expect(stock).toHaveLength(partes.body.data.parts.length);
+    expect(stock).toHaveLength(dashboard.body.data.summary.lowStockCount);
+    expect(stock.map((item) => item.key).sort()).toEqual(
+      partes.body.data.parts
+        .map(
+          (parte) =>
+            `STOCK:${parte.id}:${parte.stockCurrent === 0 ? "OUT" : "LOW"}`,
+        )
+        .sort(),
+    );
+  });
+});

@@ -31,7 +31,9 @@ const GRUPOS = [
  */
 const GRUPOS_POR_ROL = {
   ADMIN: ["MAINTENANCE", "APPOINTMENT", "STOCK", "ORDER_STOPPED"],
-  RECEPTIONIST: [],
+  // T033 (US2): recepción recibe mantenimientos, citas y órdenes
+  // detenidas —nunca stock— (CA-4, FR-004).
+  RECEPTIONIST: ["MAINTENANCE", "APPOINTMENT", "ORDER_STOPPED"],
   MECHANIC: [],
 };
 
@@ -74,7 +76,14 @@ function detalleMantenimiento(mantenimiento) {
   return `Faltan ${mantenimiento.mileageRemaining ?? 0} km`;
 }
 
-/** Avisos de mantenimiento UPCOMING/OVERDUE (RN-11: estados con sus warns). */
+/**
+ * Avisos de mantenimiento UPCOMING/OVERDUE (RN-11: estados con sus warns).
+ * T034 (US2, FR-005): el cálculo es EXACTAMENTE el de la lista y del
+ * dashboard — `listarMantenimientos()` aplica `calcularEstadoMantenimiento`
+ * —, así el indicador «Vencido»/«Próximo» y la severidad del aviso
+ * (`OVERDUE`/`UPCOMING`, contrato notifications.md) coinciden 1:1 con los
+ * módulos (SC-002, CA-5).
+ */
 async function avisosMantenimientos() {
   const { maintenances } = await listarMantenimientos();
   return maintenances

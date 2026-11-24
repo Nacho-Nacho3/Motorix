@@ -112,14 +112,14 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 ### Pruebas para US2 (primero, deben fallar)
 
-- [ ] T031 [P] [US2] Prueba de integración de recepción en `server/tests/integration/notifications.test.js`: token de recepción → grupos `MAINTENANCE`, `APPOINTMENT` y `ORDER_STOPPED` con datos y grupo `STOCK` vacío (FR-004, SC-003); sin token → 401
-- [ ] T032 [US2] Prueba de paridad en `server/tests/integration/notifications.test.js`: los números del centro coinciden 1:1 con `GET /api/dashboard` (mantenimientos próximos/vencidos) y con la lista de Mantenimientos (mismo indicador Vencido/Próximo), y el stock del centro coincide con `GET /api/parts?low=true` para administrador (SC-002, CA-5, FR-005)
+- [x] T031 [P] [US2] Prueba de integración de recepción en `server/tests/integration/notifications.test.js`: token de recepción → grupos `MAINTENANCE`, `APPOINTMENT` y `ORDER_STOPPED` con datos y grupo `STOCK` vacío (FR-004, SC-003); sin token → 401 — **ejecutada**: 2026-11-24
+- [x] T032 [US2] Prueba de paridad en `server/tests/integration/notifications.test.js`: los números del centro coinciden 1:1 con `GET /api/dashboard` (mantenimientos próximos/vencidos) y con la lista de Mantenimientos (mismo indicador Vencido/Próximo), y el stock del centro coincide con `GET /api/parts?low=true` para administrador (SC-002, CA-5, FR-005) — **ejecutada**: 2026-11-24
 
 ### Implementación de US2
 
-- [ ] T033 [US2] Agregar la fila `RECEPTIONIST` a `gruposPorRol` en `server/services/notifications.service.js`: mantenimientos, citas y órdenes detenidas; **sin stock** (CA-4, FR-004)
-- [ ] T034 [US2] Ajustar rótulos y severidades del grupo `MAINTENANCE` para reutilizar el cálculo de `server/services/maintenances.service.js` (`listarMantenimientos` / `calcularEstadoMantenimiento`) y que «Vencido»/«Próximo» coincidan con la lista (FR-005, RN-11)
-- [ ] T035 [US2] Ejecutar las pruebas de US2 y regresar verdes `server/tests/integration/dashboard.test.js` y las de mantenimientos (CA-8)
+- [x] T033 [US2] Agregar la fila `RECEPTIONIST` a `gruposPorRol` en `server/services/notifications.service.js`: mantenimientos, citas y órdenes detenidas; **sin stock** (CA-4, FR-004) — **ejecutada**: 2026-11-24
+- [x] T034 [US2] Ajustar rótulos y severidades del grupo `MAINTENANCE` para reutilizar el cálculo de `server/services/maintenances.service.js` (`listarMantenimientos` / `calcularEstadoMantenimiento`) y que «Vencido»/«Próximo» coincidan con la lista (FR-005, RN-11) — **ejecutada**: 2026-11-24, la reutilización ya venía de T014 y queda documentada; la garantiza la paridad de T032
+- [x] T035 [US2] Ejecutar las pruebas de US2 y regresar verdes `server/tests/integration/dashboard.test.js` y las de mantenimientos (CA-8) — **ejecutada**: 2026-11-24, 6 suites / 51 pruebas (notifications, dashboard y las 4 de mantenimientos)
 
 **Checkpoint**: US2 funcional; recepción cubierta con números idénticos a sus módulos
 
