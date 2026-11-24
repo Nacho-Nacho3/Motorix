@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/user.dart';
+import 'package:motorix_client/providers/notifications_provider.dart';
 import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/providers/ui_provider.dart';
 import 'package:motorix_client/providers/users_provider.dart';
@@ -106,6 +107,9 @@ Widget _shell(User usuario, _ApiUsuariosFalsa api) {
     providers: [
       ChangeNotifierProvider<SessionProvider>.value(value: sesion),
       ChangeNotifierProvider<UiProvider>(create: (_) => UiProvider()),
+      ChangeNotifierProvider<NotificationsProvider>(
+        create: (_) => NotificationsProvider(api),
+      ),
       ChangeNotifierProvider<UsersProvider>.value(value: UsersProvider(api)),
     ],
     child: MaterialApp(

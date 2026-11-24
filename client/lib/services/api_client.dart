@@ -83,6 +83,14 @@ class ApiClient {
     return _procesar(respuesta);
   }
 
+  /// T016 (Sprint 6): contador y avisos agrupados del centro de
+  /// notificaciones (contrato notifications.md); el sobre {ok,data} lo
+  /// procesa `get`.
+  Future<Map<String, dynamic>> listarNotificaciones() async {
+    final datos = await get('/notifications');
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   dynamic _procesar(http.Response respuesta) {
     Map<String, dynamic>? cuerpo;
     try {

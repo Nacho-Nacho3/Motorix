@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/user.dart';
+import 'package:motorix_client/providers/notifications_provider.dart';
 import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/providers/ui_provider.dart';
 import 'package:motorix_client/providers/vehicle_history_provider.dart';
@@ -75,6 +76,9 @@ Widget _shell(User usuario) {
     providers: [
       ChangeNotifierProvider<SessionProvider>.value(value: sesion),
       ChangeNotifierProvider<UiProvider>(create: (_) => UiProvider()),
+      ChangeNotifierProvider<NotificationsProvider>(
+        create: (_) => NotificationsProvider(_ApiHistorialFalsa()),
+      ),
     ],
     child: MaterialApp(
       theme: ThemeData(useMaterial3: true),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/notifications_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/ui_provider.dart';
 import '../screens/appointments/appointment_list_screen.dart';
@@ -10,6 +11,7 @@ import '../screens/history/vehicle_history_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/inventory/parts_list_screen.dart';
 import '../screens/maintenances/maintenance_list_screen.dart';
+import '../screens/notifications/notifications_panel.dart';
 import '../screens/orders/order_list_screen.dart';
 import '../screens/users/user_list_screen.dart';
 import '../screens/vehicles/vehicle_list_screen.dart';
@@ -61,6 +63,8 @@ class _AppShellState extends State<AppShell> {
 
   void _irASeccion(int indice) {
     setState(() => _indice = indice);
+    // T017 (D-03): al cambiar de sección se recargan los avisos.
+    context.read<NotificationsProvider>().cargar();
   }
 
   Future<void> _cerrarSesion() async {
@@ -276,12 +280,35 @@ class _Cabecera extends StatelessWidget {
             ),
           ],
           const SizedBox(width: AppSpacing.lg),
+          // T018 (US1): campana con contador, visible desde todas las
+          // secciones (CA-1); tocarla recarga y abre el panel (D-03).
+          const _BotonNotificaciones(),
           IconButton(
             tooltip: 'Cerrar sesión',
             icon: const Icon(Icons.logout),
             onPressed: onCerrarSesion,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// T018: campana con el contador de no leídos (FR-001). El Badge solo es
+/// visible cuando hay avisos sin leer; el tap recarga y abre el panel.
+class _BotonNotificaciones extends StatelessWidget {
+  const _BotonNotificaciones();
+
+  @override
+  Widget build(BuildContext context) {
+    final notificaciones = context.watch<NotificationsProvider>();
+    return IconButton(
+      tooltip: 'Notificaciones',
+      onPressed: () => abrirPanelNotificaciones(context),
+      icon: Badge(
+        isLabelVisible: notificaciones.unreadCount > 0,
+        label: Text('${notificaciones.unreadCount}'),
+        child: const Icon(Icons.notifications_outlined),
       ),
     );
   }

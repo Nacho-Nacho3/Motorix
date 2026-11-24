@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/user.dart';
 import 'package:motorix_client/providers/dashboard_provider.dart';
+import 'package:motorix_client/providers/notifications_provider.dart';
 import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/providers/ui_provider.dart';
 import 'package:motorix_client/screens/dashboard/dashboard_screen.dart';
@@ -149,6 +150,9 @@ Widget _shell(User usuario) {
     providers: [
       ChangeNotifierProvider<SessionProvider>.value(value: sesion),
       ChangeNotifierProvider<UiProvider>(create: (_) => UiProvider()),
+      ChangeNotifierProvider<NotificationsProvider>(
+        create: (_) => NotificationsProvider(_ApiPanelFalsa()),
+      ),
     ],
     child: MaterialApp(
       theme: ThemeData(useMaterial3: true),

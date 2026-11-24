@@ -5,6 +5,7 @@ import 'providers/appointments_provider.dart';
 import 'providers/clients_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/maintenances_provider.dart';
+import 'providers/notifications_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/payments_provider.dart';
 import 'providers/service_orders_provider.dart';
@@ -67,6 +68,18 @@ class MotorixApp extends StatelessWidget {
         // T058: panel de control exclusivo de ADMIN (US5).
         ChangeNotifierProvider<DashboardProvider>(
           create: (context) => DashboardProvider(context.read<ApiClient>()),
+        ),
+        // T017: centro de avisos (US1). `lazy: false` para conectar el
+        // disparo de D-03 antes del primer inicio de sesión.
+        ChangeNotifierProvider<NotificationsProvider>(
+          lazy: false,
+          create: (context) {
+            final notificaciones =
+                NotificationsProvider(context.read<ApiClient>());
+            context.read<SessionProvider>().alIniciarSesion =
+                notificaciones.cargar;
+            return notificaciones;
+          },
         ),
       ],
       child: MaterialApp(

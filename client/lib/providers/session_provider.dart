@@ -14,6 +14,11 @@ class SessionProvider extends ChangeNotifier {
   String? error;
   DateTime? expiraEn;
 
+  /// T017: recarga del centro de avisos al iniciar sesión (D-03, US1).
+  /// Lo conecta main.dart al crear los providers; sin este disparo, la
+  /// campana solo se enteraría al abrir el panel o cambiar de sección.
+  void Function()? alIniciarSesion;
+
   bool get autenticado => usuario != null;
 
   bool get sesionExpirada =>
@@ -36,6 +41,8 @@ class SessionProvider extends ChangeNotifier {
       usuario = User.fromJson(datos['user'] as Map<String, dynamic>);
       final segundos = (datos['expiresIn'] as num?)?.toInt() ?? 28800;
       expiraEn = DateTime.now().add(Duration(seconds: segundos));
+      // D-03: la campana se recarga en el mismo viaje del inicio de sesión.
+      alIniciarSesion?.call();
       return true;
     } on ApiError catch (e) {
       error = e.message;
