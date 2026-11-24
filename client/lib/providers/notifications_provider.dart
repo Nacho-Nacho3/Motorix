@@ -48,4 +48,36 @@ class NotificationsProvider extends ChangeNotifier {
 
   /// Reintenta la carga tras un error.
   Future<void> reintentar() => cargar();
+
+  /// T028 (US6, FR-006): marca la clave como leída con decremento optimista
+  /// del contador y re-sincronización con el `unreadCount` de la respuesta
+  /// (D-03). Si el backend rechaza la escritura se revierte el decremento.
+  Future<void> marcarComoLeido(String key) async {
+    final estabaNoLeida = _esNoLeida(key);
+    if (estabaNoLeida) {
+      unreadCount = unreadCount > 0 ? unreadCount - 1 : 0;
+      notifyListeners();
+    }
+
+    try {
+      final datos = await ApiClient.conRed(() => api.leerAviso(key));
+      unreadCount = (datos['unreadCount'] as num?)?.toInt() ?? unreadCount;
+      notifyListeners();
+    } catch (_) {
+      if (estabaNoLeida) {
+        unreadCount += 1;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// true si la clave corresponde a un aviso visible que aún no se leyó.
+  bool _esNoLeida(String key) {
+    for (final grupo in groups) {
+      for (final item in grupo.items) {
+        if (item.key == key) return !item.read;
+      }
+    }
+    return false;
+  }
 }

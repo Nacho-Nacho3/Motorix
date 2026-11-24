@@ -12,3 +12,13 @@ export async function listarAvisos(req, res, next) {
     next(error);
   }
 }
+
+/** T027 (US6): marca una clave como leída del usuario del token. */
+export async function leerAviso(req, res, next) {
+  try {
+    const resultado = await servicio.registrarLectura(req.user, req.body.key);
+    ok(res, resultado);
+  } catch (error) {
+    next(error);
+  }
+}

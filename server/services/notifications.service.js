@@ -2,7 +2,9 @@ import { pool } from "../config/db.js";
 import { listarMantenimientos } from "./maintenances.service.js";
 import * as partes from "../models/part.model.js";
 import * as citas from "../models/appointment.model.js";
-import { leidasDe } from "../models/notification_read.model.js";
+import { leidasDe, marcarLeido } from "../models/notification_read.model.js";
+import { notificationKeySchema } from "../validators/notifications.js";
+import { formatearError } from "../middlewares/validate.js";
 import {
   construirClave,
   esOrdenDetenida,
@@ -213,4 +215,20 @@ export async function obtenerAvisos(usuario) {
   }
 
   return { unreadCount, groups };
+}
+
+/**
+ * T026 (US6, FR-006, P-7): marca una clave como leída para el usuario del
+ * token. Valida la clave con el schema del contrato, hace el upsert
+ * idempotente y devuelve el `unreadCount` **recalculado** para que la campana
+ * se actualice en el mismo viaje (D-03). Una clave bien formada sin aviso
+ * activo se acepta (fila inocua).
+ */
+export async function registrarLectura(usuario, key) {
+  const resultado = notificationKeySchema.safeParse({ key });
+  if (!resultado.success) throw formatearError(resultado.error);
+
+  await marcarLeido(usuario.id, resultado.data.key);
+  const { unreadCount } = await obtenerAvisos(usuario);
+  return { read: true, unreadCount };
 }

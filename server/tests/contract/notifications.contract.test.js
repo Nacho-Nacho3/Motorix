@@ -30,7 +30,8 @@ beforeEach(async () => {
   headersAdmin = conToken(admin.token);
 });
 
-/** Un aviso real de cada grupo para verificar los campos del contrato. */
+/** Un aviso real de cada grupo para verificar los campos del contrato.
+ *  Devuelve la refacción creada (para marcar su clave como leída). */
 async function cargarUnAvisoPorGrupo() {
   const cliente = await clientes.crear({
     name: "Juan Pérez",
@@ -52,7 +53,7 @@ async function cargarUnAvisoPorGrupo() {
     .set(headersAdmin)
     .send({ vehicleId: vehiculo.id, nextDueDate: "2020-01-01" });
 
-  await request(app)
+  const parte = await request(app)
     .post("/api/parts")
     .set(headersAdmin)
     .send({
@@ -62,6 +63,8 @@ async function cargarUnAvisoPorGrupo() {
       stockCurrent: 4,
       stockMin: 5,
     });
+  expect(parte.status).toBe(201);
+  return parte.body.data.part;
 }
 
 describe("Contrato de GET /api/notifications", () => {
@@ -132,6 +135,59 @@ describe("Contrato de GET /api/notifications", () => {
 
   test("sin token responde 401 UNAUTHORIZED (convención compartida)", async () => {
     const respuesta = await request(app).get("/api/notifications");
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.ok).toBe(false);
+    expect(respuesta.body.error.code).toBe("UNAUTHORIZED");
+  });
+});
+
+describe("Contrato de POST /api/notifications/read", () => {
+  test("responde 200 con {read, unreadCount} al marcar una clave válida", async () => {
+    const parte = await cargarUnAvisoPorGrupo();
+
+    const respuesta = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key: `STOCK:${parte.id}:LOW` });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.ok).toBe(true);
+    expect(respuesta.body.data).toEqual({
+      read: true,
+      unreadCount: expect.any(Number),
+    });
+    // 2 avisos en escena − 1 leído = 1 no leído.
+    expect(respuesta.body.data.unreadCount).toBe(1);
+  });
+
+  test("clave mal formada responde 400 VALIDATION_ERROR con mensaje en español", async () => {
+    const respuesta = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key: "stock-3-low" });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.ok).toBe(false);
+    expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+    expect(respuesta.body.error.details[0].field).toBe("key");
+    expect(respuesta.body.error.details[0].message).toMatch(/formato/i);
+  });
+
+  test("una clave bien formada sin aviso activo se acepta (fila inocua, P-7)", async () => {
+    const respuesta = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key: "STOCK:999999:LOW" });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data).toEqual({ read: true, unreadCount: 0 });
+  });
+
+  test("sin token responde 401 UNAUTHORIZED", async () => {
+    const respuesta = await request(app)
+      .post("/api/notifications/read")
+      .send({ key: "STOCK:3:LOW" });
 
     expect(respuesta.status).toBe(401);
     expect(respuesta.body.ok).toBe(false);

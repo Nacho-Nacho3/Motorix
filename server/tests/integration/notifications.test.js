@@ -269,3 +269,78 @@ describe("Centro de avisos para administrador (US1, SC-001)", () => {
     expect(duracion).toBeLessThan(1000);
   });
 });
+
+describe("Marcar como leído (US6, FR-006, SC-004)", () => {
+  test("baja unreadCount de inmediato y persiste en una consulta posterior", async () => {
+    const { parteBaja } = await cargarEscena();
+
+    const antes = await getNotificaciones();
+    expect(antes.body.data.unreadCount).toBe(5);
+
+    const marcada = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key: `STOCK:${parteBaja.id}:LOW` });
+
+    expect(marcada.status).toBe(200);
+    expect(marcada.body.ok).toBe(true);
+    expect(marcada.body.data).toEqual({ read: true, unreadCount: 4 });
+
+    const despues = await getNotificaciones();
+    expect(despues.body.data.unreadCount).toBe(4);
+    const stock = despues.body.data.groups.find(
+      (grupo) => grupo.type === "STOCK",
+    );
+    const leido = stock.items.find(
+      (item) => item.key === `STOCK:${parteBaja.id}:LOW`,
+    );
+    expect(leido).toBeDefined();
+    expect(leido.read).toBe(true);
+  });
+
+  test("es por usuario: otro administrador sigue viéndolo no leído (SC-004)", async () => {
+    const { parteBaja } = await cargarEscena();
+    const otro = await tokenPara({
+      username: "admin2",
+      role: "ADMIN",
+      name: "Segundo Administrador",
+    });
+    const headersOtro = conToken(otro.token);
+
+    await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key: `STOCK:${parteBaja.id}:LOW` });
+
+    const vistaOtro = await getNotificaciones(headersOtro);
+    expect(vistaOtro.body.data.unreadCount).toBe(5);
+
+    const vistaPropia = await getNotificaciones();
+    expect(vistaPropia.body.data.unreadCount).toBe(4);
+  });
+
+  test("repetir la llamada es idempotente: no cambia nada ni duplica filas (FR-006)", async () => {
+    const { parteBaja } = await cargarEscena();
+    const key = `STOCK:${parteBaja.id}:LOW`;
+
+    const primera = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key });
+    const segunda = await request(app)
+      .post("/api/notifications/read")
+      .set(headersAdmin)
+      .send({ key });
+
+    expect(primera.status).toBe(200);
+    expect(segunda.status).toBe(200);
+    expect(segunda.body.data).toEqual(primera.body.data);
+    expect(segunda.body.data.unreadCount).toBe(4);
+
+    const [filas] = await poolPrueba.query(
+      "SELECT COUNT(*) AS total FROM notification_reads WHERE user_id = ? AND notification_key = ?",
+      [idAdmin, key],
+    );
+    expect(Number(filas[0].total)).toBe(1);
+  });
+});

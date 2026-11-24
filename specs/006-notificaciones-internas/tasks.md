@@ -86,19 +86,19 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 ### Pruebas para US6 (primero, deben fallar)
 
-- [ ] T021 [P] [US6] Ampliar `server/tests/unit/notification-rules.test.js`: validación de la clave (patrón y máximo 100 caracteres → 400 `VALIDATION_ERROR`) y transiciones D-04/D-05 — mismo objeto con estado nuevo (`LOW → OUT`, `UPCOMING → OVERDUE`) genera clave distinta que cuenta como no leída; mismo estado = misma clave
-- [ ] T022 [P] [US6] Prueba de integración de la lectura en `server/tests/integration/notifications.test.js`: marcar leído baja `unreadCount` de inmediato, persiste en una consulta posterior (SC-004), es por usuario (otro usuario sigue viéndolo no leído, SC-004) e idempotente (repetir la llamada no cambia nada)
-- [ ] T023 [P] [US6] Prueba de contrato de `POST /api/notifications/read` en `server/tests/contract/notifications.contract.test.js` según `contracts/notifications.md`: 200 con `{read, unreadCount}`, 400 `VALIDATION_ERROR` con clave mal formada y mensaje en español, 401 sin token
-- [ ] T024 [P] [US6] Prueba de interfaz de lectura y navegación en `client/test/notifications_panel_test.dart`: marcar leído decrementa la campana y persiste al reabrir el panel, y seleccionar un aviso navega a su pantalla relacionada (FR-007)
+- [x] T021 [P] [US6] Ampliar `server/tests/unit/notification-rules.test.js`: validación de la clave (patrón y máximo 100 caracteres → 400 `VALIDATION_ERROR`) y transiciones D-04/D-05 — mismo objeto con estado nuevo (`LOW → OUT`, `UPCOMING → OVERDUE`) genera clave distinta que cuenta como no leída; mismo estado = misma clave — **ejecutada**: 2026-11-24
+- [x] T022 [P] [US6] Prueba de integración de la lectura en `server/tests/integration/notifications.test.js`: marcar leído baja `unreadCount` de inmediato, persiste en una consulta posterior (SC-004), es por usuario (otro usuario sigue viéndolo no leído, SC-004) e idempotente (repetir la llamada no cambia nada) — **ejecutada**: 2026-11-24
+- [x] T023 [P] [US6] Prueba de contrato de `POST /api/notifications/read` en `server/tests/contract/notifications.contract.test.js` según `contracts/notifications.md`: 200 con `{read, unreadCount}`, 400 `VALIDATION_ERROR` con clave mal formada y mensaje en español, 401 sin token — **ejecutada**: 2026-11-24
+- [x] T024 [P] [US6] Prueba de interfaz de lectura y navegación en `client/test/notifications_panel_test.dart`: marcar leído decrementa la campana y persiste al reabrir el panel, y seleccionar un aviso navega a su pantalla relacionada (FR-007) — **ejecutada**: 2026-11-24
 
 ### Implementación de US6
 
-- [ ] T025 [US6] Crear `notificationKeySchema` en `server/validators/notifications.js`: patrón `^[A-Z_]+:\d+:[A-Z_]+$`, máximo 100 caracteres, mensajes en español (D-04)
-- [ ] T026 [US6] Implementar `registrarLectura(usuario, key)` en `server/services/notifications.service.js`: validación con el schema, `marcarLeido()` (upsert) y recálculo del `unreadCount` del usuario para la respuesta (P-7)
-- [ ] T027 [US6] Exponer `POST /api/notifications/read` en `server/routes/notifications.routes.js` (`authenticate`, `authorize` de los 3 roles, `validate(notificationKeySchema)`) con su controlador `leerAviso` en `server/controllers/notifications.controller.js`
-- [ ] T028 [US6] Agregar `marcarComoLeido(key)` a `client/lib/providers/notifications_provider.dart` y `POST /api/notifications/read` a `client/lib/services/api_client.dart`: decremento optimista del contador y re-sync con `unreadCount` de la respuesta (D-03)
-- [ ] T029 [US6] Conectar el tap del ítem en `client/lib/screens/notifications/notifications_panel.dart`: marcar como leído y navegar con `navigation.route` + `entityId` a la pantalla relacionada (orden, cita, vehículo o inventario, FR-007; rutas en `client/lib/utils/app_route.dart`)
-- [ ] T030 [US6] Ejecutar las pruebas de US6 (unit, integración, contrato, panel) y confirmar que la lectura de un usuario no afecta a los demás
+- [x] T025 [US6] Crear `notificationKeySchema` en `server/validators/notifications.js`: patrón `^[A-Z_]+:\d+:[A-Z_]+$`, máximo 100 caracteres, mensajes en español (D-04) — **ejecutada**: 2026-11-24
+- [x] T026 [US6] Implementar `registrarLectura(usuario, key)` en `server/services/notifications.service.js`: validación con el schema, `marcarLeido()` (upsert) y recálculo del `unreadCount` del usuario para la respuesta (P-7) — **ejecutada**: 2026-11-24
+- [x] T027 [US6] Exponer `POST /api/notifications/read` en `server/routes/notifications.routes.js` (`authenticate`, `authorize` de los 3 roles, `validate(notificationKeySchema)`) con su controlador `leerAviso` en `server/controllers/notifications.controller.js` — **ejecutada**: 2026-11-24
+- [x] T028 [US6] Agregar `marcarComoLeido(key)` a `client/lib/providers/notifications_provider.dart` y `POST /api/notifications/read` a `client/lib/services/api_client.dart`: decremento optimista del contador y re-sync con `unreadCount` de la respuesta (D-03) — **ejecutada**: 2026-11-24
+- [x] T029 [US6] Conectar el tap del ítem en `client/lib/screens/notifications/notifications_panel.dart`: marcar como leído y navegar con `navigation.route` + `entityId` a la pantalla relacionada (orden, cita, vehículo o inventario, FR-007; rutas en `client/lib/utils/app_route.dart`) — **ejecutada**: 2026-11-24, `AppRutas.seccionDeRuta` abre la sección del shell correspondiente
+- [x] T030 [US6] Ejecutar las pruebas de US6 (unit, integración, contrato, panel) y confirmar que la lectura de un usuario no afecta a los demás — **ejecutada**: 2026-11-24, backend 54 suites / 453 pruebas, frontend 134 pruebas + `flutter analyze` sin observaciones
 
 **Checkpoint**: US6 funcional; el ciclo del centro (ver → marcar → abrir) está completo
 

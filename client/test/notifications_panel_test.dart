@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/user.dart';
 import 'package:motorix_client/providers/clients_provider.dart';
+import 'package:motorix_client/providers/maintenances_provider.dart';
 import 'package:motorix_client/providers/notifications_provider.dart';
 import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/providers/ui_provider.dart';
+import 'package:motorix_client/screens/maintenances/maintenance_list_screen.dart';
 import 'package:motorix_client/screens/notifications/notifications_panel.dart';
 import 'package:motorix_client/services/api_client.dart';
 import 'package:motorix_client/widgets/app_shell.dart';
@@ -17,22 +19,61 @@ import 'package:motorix_client/widgets/states_view.dart';
 // states_view.dart (CA-9, FR-009, CA-1).
 
 class _ApiFalsa extends ApiClient {
-  _ApiFalsa({this.respuesta, this.falla});
+  _ApiFalsa({this.respuesta});
 
   final Map<String, dynamic>? respuesta;
-  final ApiError? falla;
+  final Set<String> leidas = {};
   int llamadasNotificaciones = 0;
+  int posteosLectura = 0;
+
+  /// GET con las lecturas aplicadas (recálculo en cada consulta, CA-2): los
+  /// ítems leídos quedan `read: true` y el contador baja en la respuesta.
+  Map<String, dynamic> _respuestaConLecturas() {
+    final base = respuesta ?? {'unreadCount': 0, 'groups': <dynamic>[]};
+    var noLeidos = 0;
+    final grupos = <dynamic>[];
+    for (final grupoCrudo in base['groups'] as List<dynamic>) {
+      final grupo = Map<String, dynamic>.from(grupoCrudo as Map);
+      final items = <dynamic>[];
+      for (final itemCrudo in grupo['items'] as List<dynamic>) {
+        final item = Map<String, dynamic>.from(itemCrudo as Map);
+        final leida = item['read'] == true || leidas.contains(item['key']);
+        item['read'] = leida;
+        if (!leida) noLeidos += 1;
+        items.add(item);
+      }
+      grupo['items'] = items;
+      grupos.add(grupo);
+    }
+    return {'unreadCount': noLeidos, 'groups': grupos};
+  }
 
   @override
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     if (path.contains('notifications')) {
       llamadasNotificaciones += 1;
-      if (falla != null) throw falla!;
-      return respuesta ?? {'unreadCount': 0, 'groups': <dynamic>[]};
+      return _respuestaConLecturas();
     }
     // Las demás pantallas del shell reciben listas vacías parseables.
     if (path.contains('clients')) return {'clients': <dynamic>[], 'total': 0};
     return <String, dynamic>{};
+  }
+
+  @override
+  Future<dynamic> post(String path, Object cuerpo) async {
+    if (path.contains('notifications')) {
+      leidas.add((cuerpo as Map)['key'] as String);
+      posteosLectura += 1;
+      return {
+        'read': true,
+        'unreadCount': _respuestaConLecturas()['unreadCount'],
+      };
+    }
+    throw ApiError(
+      status: 404,
+      code: 'NOT_FOUND',
+      message: 'Ruta no disponible.',
+    );
   }
 }
 
@@ -136,6 +177,10 @@ Widget _shell(_ApiFalsa api, NotificationsProvider notificaciones) {
       // La sección Clientes se construye al cambiar de sección (CA-1).
       ChangeNotifierProvider<ClientsProvider>(
         create: (_) => ClientsProvider(api),
+      ),
+      // La sección Mantenimientos se abre desde un aviso (FR-007, T029).
+      ChangeNotifierProvider<MaintenancesProvider>(
+        create: (_) => MaintenancesProvider(api),
       ),
       ChangeNotifierProvider<NotificationsProvider>.value(
         value: notificaciones,
@@ -252,5 +297,57 @@ void main() {
     expect(find.byType(ErrorView), findsOneWidget);
     expect(find.text('No se pudieron cargar los avisos.'), findsOneWidget);
     expect(find.text('Reintentar'), findsOneWidget);
+  });
+
+  testWidgets(
+      'marcar leído decrementa la campana, persiste al reabrir y abre la pantalla relacionada (FR-006/FR-007)',
+      (tester) async {
+    final api = _ApiFalsa(respuesta: _respuestaCompleta);
+    final notificaciones = _provider(api);
+    await tester.pumpWidget(_shell(api, notificaciones));
+    await tester.pump();
+
+    // Tocar la campana recarga los avisos (D-03) y abre el panel.
+    await tester.tap(find.byTooltip('Notificaciones'));
+    await tester.pumpAndSettle();
+    expect(find.text('4'), findsOneWidget, reason: 'contador antes de leer');
+
+    // Tocar el aviso: marca la lectura y abre su sección relacionada (T029).
+    await tester.tap(
+      find.text('Mantenimiento vencido — Toyota Corolla ABC1234'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(api.posteosLectura, 1);
+    expect(
+      find.byType(MaintenanceListScreen),
+      findsOneWidget,
+      reason: 'pantalla relacionada del aviso (FR-007)',
+    );
+    expect(
+      find.text('3'),
+      findsOneWidget,
+      reason: 'contador tras leer (optimista y re-sync)',
+    );
+
+    // Volver al inicio y reabrir la campana: la lectura persistió (SC-004).
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text('Inicio'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Notificaciones'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3'), findsOneWidget, reason: 'contador persistido');
+    // El aviso leído sigue visible (CA-6) y ya muestra su check.
+    expect(
+      find.text('Mantenimiento vencido — Toyota Corolla ABC1234'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.check_circle_outline), findsWidgets);
+    expect(notificaciones.unreadCount, 3);
   });
 }

@@ -91,6 +91,13 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T028 (US6): marca un aviso como leído (contrato notifications.md);
+  /// devuelve `read` y el `unreadCount` recalculado por el backend.
+  Future<Map<String, dynamic>> leerAviso(String key) async {
+    final datos = await post('/notifications/read', {'key': key});
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   dynamic _procesar(http.Response respuesta) {
     Map<String, dynamic>? cuerpo;
     try {

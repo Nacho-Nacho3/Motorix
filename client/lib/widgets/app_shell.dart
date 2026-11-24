@@ -159,6 +159,7 @@ class _AppShellState extends State<AppShell> {
                 _Cabecera(
                   titulo: _tituloSeccion(rol),
                   onCerrarSesion: _cerrarSesion,
+                  onIrASeccion: _irASeccion,
                 ),
                 const Divider(height: 1),
                 Expanded(child: _vistaSeccion(rol)),
@@ -225,10 +226,15 @@ class _Seccion {
 }
 
 class _Cabecera extends StatelessWidget {
-  const _Cabecera({required this.titulo, required this.onCerrarSesion});
+  const _Cabecera({
+    required this.titulo,
+    required this.onCerrarSesion,
+    required this.onIrASeccion,
+  });
 
   final String titulo;
   final VoidCallback onCerrarSesion;
+  final void Function(int indice) onIrASeccion;
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +288,7 @@ class _Cabecera extends StatelessWidget {
           const SizedBox(width: AppSpacing.lg),
           // T018 (US1): campana con contador, visible desde todas las
           // secciones (CA-1); tocarla recarga y abre el panel (D-03).
-          const _BotonNotificaciones(),
+          _BotonNotificaciones(onIrASeccion: onIrASeccion),
           IconButton(
             tooltip: 'Cerrar sesión',
             icon: const Icon(Icons.logout),
@@ -297,14 +303,19 @@ class _Cabecera extends StatelessWidget {
 /// T018: campana con el contador de no leídos (FR-001). El Badge solo es
 /// visible cuando hay avisos sin leer; el tap recarga y abre el panel.
 class _BotonNotificaciones extends StatelessWidget {
-  const _BotonNotificaciones();
+  const _BotonNotificaciones({required this.onIrASeccion});
+
+  final void Function(int indice) onIrASeccion;
 
   @override
   Widget build(BuildContext context) {
     final notificaciones = context.watch<NotificationsProvider>();
     return IconButton(
       tooltip: 'Notificaciones',
-      onPressed: () => abrirPanelNotificaciones(context),
+      onPressed: () => abrirPanelNotificaciones(
+        context,
+        onIrASeccion: onIrASeccion,
+      ),
       icon: Badge(
         isLabelVisible: notificaciones.unreadCount > 0,
         label: Text('${notificaciones.unreadCount}'),

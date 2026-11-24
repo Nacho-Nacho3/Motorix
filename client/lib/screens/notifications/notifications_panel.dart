@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/notification.dart';
 import '../../providers/notifications_provider.dart';
+import '../../utils/app_route.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/states_view.dart';
 
@@ -11,19 +13,27 @@ import '../../widgets/states_view.dart';
 
 /// T017/T018: recarga los avisos (D-03: apertura del panel) y abre el
 /// panel. La recarga no bloquea la apertura: el panel muestra el estado
-/// de carga hasta que llegan los datos.
-Future<void> abrirPanelNotificaciones(BuildContext context) async {
+/// de carga hasta que llegan los datos. `onIrASeccion` recibe el índice de
+/// la sección del shell que abre cada aviso (T029, FR-007).
+Future<void> abrirPanelNotificaciones(
+  BuildContext context, {
+  required void Function(int indice) onIrASeccion,
+}) async {
   final notificaciones = context.read<NotificationsProvider>();
   notificaciones.cargar();
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (context) => const NotificationsPanel(),
+    builder: (context) => NotificationsPanel(onIrASeccion: onIrASeccion),
   );
 }
 
 class NotificationsPanel extends StatelessWidget {
-  const NotificationsPanel({super.key});
+  const NotificationsPanel({super.key, this.onIrASeccion});
+
+  /// T029: navega a la sección relacionada del aviso; null cuando el panel
+  /// se renderiza aislado (pruebas de estados).
+  final void Function(int indice)? onIrASeccion;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +111,9 @@ class NotificationsPanel extends StatelessWidget {
                         .bodySmall
                         ?.copyWith(color: AppColors.textSecondary),
                   ),
-                  // T029 (US6): el tap marca como leído y navega.
+                  // T029 (US6): el tap marca como leído y abre su sección.
+                  onTap: () =>
+                      _seleccionarAviso(context, item, notificaciones),
                 ),
             ],
         ],
@@ -152,5 +164,23 @@ class NotificationsPanel extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// T029 (US6, FR-006/FR-007): cierra el panel, marca el aviso como leído
+  /// (espera al backend para no encascar la recarga de la sección) y abre
+  /// la sección relacionada. La navegación usa `navigation.route` (AppRutas);
+  /// `entityId` queda reservado para enlaces directos.
+  Future<void> _seleccionarAviso(
+    BuildContext context,
+    NotificationItem item,
+    NotificationsProvider notificaciones,
+  ) async {
+    final navigator = Navigator.of(context);
+    final seccion = AppRutas.seccionDeRuta(item.navigation.route);
+    navigator.pop(); // cerrar el panel de inmediato
+    await notificaciones.marcarComoLeido(item.key);
+    if (seccion != null && onIrASeccion != null && navigator.mounted) {
+      onIrASeccion!(seccion);
+    }
   }
 }

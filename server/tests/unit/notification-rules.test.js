@@ -4,6 +4,7 @@ import {
   severidadStock,
   DIAS_DETENIDA,
 } from "../../utils/notification-rules.js";
+import { notificationKeySchema } from "../../validators/notifications.js";
 
 // T009: construcción de la clave de lectura con formato `TIPO:id:ESTADO`
 // (D-04, P-4) para los cuatro tipos de aviso; la clave es la identidad que
@@ -87,5 +88,71 @@ describe("Criterio de orden detenida (D-01, N=2 fijo)", () => {
     expect(esOrdenDetenida({ status: "DIAGNOSIS", updatedAt: hace(2) })).toBe(
       true,
     );
+  });
+});
+
+// T021 (US6): validación de la clave con el schema del endpoint (D-04) y
+// transiciones de estado que distingue la tabla de lecturas (D-04/D-05).
+
+describe("Validación de la clave de lectura (D-04)", () => {
+  test("acepta el formato TIPO:id:ESTADO hasta 100 caracteres", () => {
+    expect(notificationKeySchema.safeParse({ key: "STOCK:3:LOW" }).success).toBe(
+      true,
+    );
+    expect(
+      notificationKeySchema.safeParse({ key: "MAINTENANCE:12:OVERDUE" })
+        .success,
+    ).toBe(true);
+    // Límite exacto: 6 + 90 + 4 = 100 caracteres.
+    const enLimite = `STOCK:${"9".repeat(90)}:LOW`;
+    expect(enLimite).toHaveLength(100);
+    expect(notificationKeySchema.safeParse({ key: enLimite }).success).toBe(
+      true,
+    );
+  });
+
+  test("rechaza claves mal formadas o pasadas de 100 caracteres", () => {
+    expect(notificationKeySchema.safeParse({ key: "stock:3:low" }).success).toBe(
+      false,
+    );
+    expect(notificationKeySchema.safeParse({ key: "STOCK-3-LOW" }).success).toBe(
+      false,
+    );
+    expect(notificationKeySchema.safeParse({ key: "STOCK:abc:LOW" }).success).toBe(
+      false,
+    );
+    expect(notificationKeySchema.safeParse({ key: "STOCK:3:" }).success).toBe(
+      false,
+    );
+    expect(notificationKeySchema.safeParse({ key: "" }).success).toBe(false);
+    expect(notificationKeySchema.safeParse({}).success).toBe(false);
+    const sobre100 = `STOCK:${"9".repeat(96)}:LOW`;
+    expect(sobre100.length).toBeGreaterThan(100);
+    expect(notificationKeySchema.safeParse({ key: sobre100 }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("Transiciones de estado y la tabla de lecturas (D-04/D-05)", () => {
+  test("mismo estado = misma clave (la lectura sigue valiendo)", () => {
+    expect(construirClave("STOCK", 3, "LOW")).toBe(
+      construirClave("STOCK", 3, "LOW"),
+    );
+    expect(construirClave("MAINTENANCE", 12, "UPCOMING")).toBe(
+      construirClave("MAINTENANCE", 12, "UPCOMING"),
+    );
+  });
+
+  test("LOW → OUT y UPCOMING → OVERDUE generan clave distinta que vuelve a contar como no leída", () => {
+    expect(construirClave("STOCK", 3, "LOW")).not.toBe(
+      construirClave("STOCK", 3, "OUT"),
+    );
+    expect(construirClave("MAINTENANCE", 12, "UPCOMING")).not.toBe(
+      construirClave("MAINTENANCE", 12, "OVERDUE"),
+    );
+    // La clave vieja (leída) no tapa la nueva: son identidades distintas.
+    const leidas = new Set([construirClave("STOCK", 3, "LOW")]);
+    expect(leidas.has(construirClave("STOCK", 3, "OUT"))).toBe(false);
   });
 });
