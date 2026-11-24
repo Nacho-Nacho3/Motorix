@@ -98,6 +98,30 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T056 (US7): clientes por avisar (contrato client-notices.md); `data`
+  /// es una lista de pendientes, uno por (cliente, hecho).
+  Future<List<dynamic>> listarClientesPorAvisar() async {
+    final datos = await get('/client-notices');
+    return List<dynamic>.from(datos as List);
+  }
+
+  /// T056 (US7): registra que se avisó al cliente por un hecho. La nota es
+  /// opcional (D-07) y solo viaja cuando tiene contenido.
+  Future<Map<String, dynamic>> registrarAvisoCliente({
+    required int clientId,
+    required String type,
+    required int sourceId,
+    String? note,
+  }) async {
+    final datos = await post('/client-notices', {
+      'clientId': clientId,
+      'type': type,
+      'sourceId': sourceId,
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   dynamic _procesar(http.Response respuesta) {
     Map<String, dynamic>? cuerpo;
     try {

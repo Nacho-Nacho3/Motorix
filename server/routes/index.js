@@ -12,6 +12,7 @@ import { rutasPayments } from "./payments.routes.js";
 import { rutasTickets } from "./tickets.routes.js";
 import { rutasDashboard } from "./dashboard.routes.js";
 import { rutasNotifications } from "./notifications.routes.js";
+import { rutasClientNotices } from "./client_notices.routes.js";
 
 // T013: registro central de rutas. Cada historia añade su router aquí.
 export const rutas = Router();
@@ -29,3 +30,4 @@ rutas.use("/service-orders", rutasPayments); // T016: total y pagos de la orden 
 rutas.use("/service-orders", rutasTickets); // T036: ticket de la orden (US3)
 rutas.use("/dashboard", rutasDashboard); // T054: panel exclusivo de ADMIN (US5)
 rutas.use("/notifications", rutasNotifications); // T015: centro de avisos (Sprint 6)
+rutas.use("/client-notices", rutasClientNotices); // T055: clientes por avisar (Sprint 6, US7)

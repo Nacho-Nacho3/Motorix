@@ -6,6 +6,7 @@ import '../providers/session_provider.dart';
 import '../providers/ui_provider.dart';
 import '../screens/appointments/appointment_list_screen.dart';
 import '../screens/clients/client_list_screen.dart';
+import '../screens/clients/client_notice_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/history/vehicle_history_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -59,6 +60,13 @@ class _AppShellState extends State<AppShell> {
     // T058: Dashboard (US5, FR-012): panel exclusivo de ADMIN. Va al final
     // para no recorrer los índices de las secciones existentes.
     _Seccion('Dashboard', Icons.dashboard_outlined, roles: {'ADMIN'}),
+    // T057 (US7, CA-10, FR-010): clientes por avisar, solo ADMIN y recepción.
+    // Va al final para no recorrer los índices de las secciones existentes.
+    _Seccion(
+      'Por avisar',
+      Icons.phone_in_talk_outlined,
+      roles: {'ADMIN', 'RECEPTIONIST'},
+    ),
   ];
 
   void _irASeccion(int indice) {
@@ -207,6 +215,8 @@ class _AppShellState extends State<AppShell> {
         return const PartsListScreen();
       case 9:
         return const DashboardScreen();
+      case 10:
+        return const ClientNoticeScreen();
       default:
         return HomeScreen(irASeccion: _irASeccion);
     }
