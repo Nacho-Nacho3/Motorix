@@ -173,14 +173,14 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 ### Pruebas para US5 (primero, deben fallar)
 
-- [ ] T044 [P] [US5] Prueba de integración del mecánico con órdenes en `server/tests/integration/notifications.test.js`: solo ítems `ORDER_STOPPED` de órdenes con `mechanic_id = usuario`; grupos `MAINTENANCE`, `APPOINTMENT` y `STOCK` vacíos; órdenes detenidas de otros mecánicos **no entregadas** en la respuesta (SC-003, D-08)
-- [ ] T045 [US5] Prueba de integración del mecánico sin órdenes en `server/tests/integration/notifications.test.js`: todos los grupos vacíos, `unreadCount 0`, respuesta 200 sin error (estado vacío, CA-9)
-- [ ] T046 [P] [US5] Prueba de interfaz con sesión de mecánico en `client/test/notifications_panel_test.dart`: la campana no muestra avisos ajenos y el panel queda en estado vacío
+- [x] T044 [P] [US5] Prueba de integración del mecánico con órdenes en `server/tests/integration/notifications.test.js`: solo ítems `ORDER_STOPPED` de órdenes con `mechanic_id = usuario`; grupos `MAINTENANCE`, `APPOINTMENT` y `STOCK` vacíos; órdenes detenidas de otros mecánicos **no entregadas** en la respuesta (SC-003, D-08) — **ejecutada**: 2026-11-24
+- [x] T045 [US5] Prueba de integración del mecánico sin órdenes en `server/tests/integration/notifications.test.js`: todos los grupos vacíos, `unreadCount 0`, respuesta 200 sin error (estado vacío, CA-9) — **ejecutada**: 2026-11-24
+- [x] T046 [P] [US5] Prueba de interfaz con sesión de mecánico en `client/test/notifications_panel_test.dart`: la campana no muestra avisos ajenos y el panel queda en estado vacío — **ejecutada**: 2026-11-24
 
 ### Implementación de US5
 
-- [ ] T047 [US5] Agregar la fila `MECHANIC` a `gruposPorRol` en `server/services/notifications.service.js`: solo `ORDER_STOPPED` filtrado por `mechanic_id = usuario`, sin mantenimientos generales ni ningún otro grupo (D-08, CA-4, RN-15)
-- [ ] T048 [US5] Ejecutar las pruebas de US5 y la regresión de las rutas que usan `authorize` (`server/tests/integration/notifications.test.js`, `contract`)
+- [x] T047 [US5] Agregar la fila `MECHANIC` a `gruposPorRol` en `server/services/notifications.service.js`: solo `ORDER_STOPPED` filtrado por `mechanic_id = usuario`, sin mantenimientos generales ni ningún otro grupo (D-08, CA-4, RN-15) — **ejecutada**: 2026-11-24
+- [x] T048 [US5] Ejecutar las pruebas de US5 y la regresión de las rutas que usan `authorize` (`server/tests/integration/notifications.test.js`, `contract`) — **ejecutada**: 2026-11-24, backend notifications + contract 21 suites / 184 pruebas, frontend 9 pruebas del panel y `flutter analyze lib` sin observaciones
 
 **Checkpoint**: las 7 historias funcionan de forma independiente; la matriz de roles está completa
 

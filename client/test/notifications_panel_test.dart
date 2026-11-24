@@ -162,14 +162,18 @@ NotificationsProvider _provider(
   return provider;
 }
 
-Widget _shell(_ApiFalsa api, NotificationsProvider notificaciones) {
+Widget _shell(
+  _ApiFalsa api,
+  NotificationsProvider notificaciones, {
+  String rol = 'ADMIN',
+}) {
   final sesion = SessionProvider(api);
-  sesion.usuario = const User(
+  sesion.usuario = User(
     id: 1,
     username: 'admin',
     name: 'Administrador',
     email: 'admin@motorix.local',
-    role: 'ADMIN',
+    role: rol,
   );
   return MultiProvider(
     providers: [
@@ -350,6 +354,91 @@ void main() {
     );
     expect(find.byIcon(Icons.check_circle_outline), findsWidgets);
     expect(notificaciones.unreadCount, 3);
+  });
+
+  // T046 (US5, D-08, CA-4): con sesión de mecánico el servidor solo entrega
+  // sus órdenes detenidas; la campana no cuenta avisos ajenos y, sin
+  // órdenes, el panel queda en estado vacío.
+  testWidgets(
+      'mecánico con una orden propia: la campana cuenta solo ese aviso y el panel no muestra otros grupos',
+      (tester) async {
+    final api = _ApiFalsa(
+      respuesta: {
+        'unreadCount': 1,
+        'groups': [
+          {'type': 'MAINTENANCE', 'label': 'Mantenimientos', 'items': []},
+          {'type': 'APPOINTMENT', 'label': 'Citas de hoy', 'items': []},
+          {'type': 'STOCK', 'label': 'Stock', 'items': []},
+          {
+            'type': 'ORDER_STOPPED',
+            'label': 'Órdenes detenidas',
+            'items': [
+              {
+                'key': 'ORDER_STOPPED:42:RECEIVED',
+                'read': false,
+                'title': 'Orden detenida — Toyota Corolla ABC1234',
+                'detail': 'Sin cambios desde hace 3 días (recibida)',
+                'severity': 'RECEIVED',
+                'navigation': {'route': '/orders', 'entityId': 42},
+              },
+            ],
+          },
+        ],
+      },
+    );
+    final notificaciones = _provider(api);
+    notificaciones.unreadCount = 1;
+    await tester.pumpWidget(_shell(api, notificaciones, rol: 'MECHANIC'));
+    await tester.pump();
+
+    expect(find.text('1'), findsOneWidget, reason: 'solo su aviso');
+
+    await tester.tap(find.byTooltip('Notificaciones'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Órdenes detenidas'), findsWidgets);
+    expect(
+      find.text('Orden detenida — Toyota Corolla ABC1234'),
+      findsOneWidget,
+    );
+    // Se acota al panel: «Mantenimientos» también es una sección del menú.
+    for (final rotulo in ['Mantenimientos', 'Citas de hoy', 'Stock']) {
+      expect(
+        find.descendant(
+          of: find.byType(NotificationsPanel),
+          matching: find.text(rotulo),
+        ),
+        findsNothing,
+        reason: 'el mecánico no recibe el grupo $rotulo',
+      );
+    }
+  });
+
+  testWidgets('mecánico sin órdenes: sin contador en la campana y panel vacío',
+      (tester) async {
+    final api = _ApiFalsa(
+      respuesta: {
+        'unreadCount': 0,
+        'groups': [
+          {'type': 'MAINTENANCE', 'label': 'Mantenimientos', 'items': []},
+          {'type': 'APPOINTMENT', 'label': 'Citas de hoy', 'items': []},
+          {'type': 'STOCK', 'label': 'Stock', 'items': []},
+          {'type': 'ORDER_STOPPED', 'label': 'Órdenes detenidas', 'items': []},
+        ],
+      },
+    );
+    final notificaciones = _provider(api);
+    await tester.pumpWidget(_shell(api, notificaciones, rol: 'MECHANIC'));
+    await tester.pump();
+
+    expect(find.byTooltip('Notificaciones'), findsOneWidget);
+    expect(find.text('0'), findsNothing, reason: 'sin insignia con 0 avisos');
+
+    await tester.tap(find.byTooltip('Notificaciones'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EmptyView), findsOneWidget);
+    expect(find.text('No hay avisos por ahora.'), findsOneWidget);
   });
 
   // T042 (US4, aceptación 3): cada ruta de aviso abre su sección del shell;

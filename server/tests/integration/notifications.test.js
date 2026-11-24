@@ -18,6 +18,7 @@ let idAdmin;
 let idCliente;
 let idVehiculo;
 let idMecanico;
+let headersMecanico;
 
 /** Fecha local con desplazamiento en días (formato YYYY-MM-DD). */
 function fechaRelativa(dias) {
@@ -53,6 +54,7 @@ beforeEach(async () => {
     name: "Mecánico Uno",
   });
   idMecanico = mec.usuario.id;
+  headersMecanico = conToken(mec.token);
 
   const cliente = await clientes.crear({
     name: "Juan Pérez",
@@ -609,5 +611,78 @@ describe("Órdenes detenidas (US4, D-01, CA-6)", () => {
     expect(items).toEqual([]);
     // Quedan los otros 4 avisos de la escena (mantenimiento, cita y stock).
     expect(respuesta.body.data.unreadCount).toBe(4);
+  });
+});
+
+describe("Mecánico solo con avisos de sus órdenes (US5, D-08, SC-003)", () => {
+  test("ve solo sus órdenes detenidas y no las de otros mecánicos ni otros grupos (T044)", async () => {
+    // La escena trae mantenimiento, cita, stock y una orden detenida del
+    // mecánico principal (idMecanico).
+    const { orden } = await cargarEscena();
+
+    // Orden detenida asignada a OTRO mecánico: no debe entregarse (D-08).
+    const otro = await tokenPara({
+      username: "mecanico_otro",
+      role: "MECHANIC",
+      name: "Mecánico Otro",
+    });
+    const ajena = await request(app)
+      .post("/api/service-orders")
+      .set(headersAdmin)
+      .send({
+        clientId: idCliente,
+        vehicleId: idVehiculo,
+        mechanicId: otro.usuario.id,
+        entryMileage: 86000,
+        reportedProblem: "Falla ajena",
+      });
+    expect(ajena.status).toBe(201);
+    await poolPrueba.query(
+      "UPDATE service_orders SET updated_at = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE id = ?",
+      [ajena.body.data.order.id],
+    );
+
+    const respuesta = await getNotificaciones(headersMecanico);
+
+    expect(respuesta.status).toBe(200);
+    const { unreadCount, groups } = respuesta.body.data;
+    // La estructura de 4 grupos no cambia para ningún rol.
+    expect(groups.map((grupo) => grupo.type)).toEqual([
+      "MAINTENANCE",
+      "APPOINTMENT",
+      "STOCK",
+      "ORDER_STOPPED",
+    ]);
+    const porTipo = Object.fromEntries(
+      groups.map((grupo) => [grupo.type, grupo.items]),
+    );
+    expect(porTipo.MAINTENANCE).toEqual([]);
+    expect(porTipo.APPOINTMENT).toEqual([]);
+    expect(porTipo.STOCK).toEqual([]);
+    expect(porTipo.ORDER_STOPPED).toHaveLength(1);
+    expect(porTipo.ORDER_STOPPED[0].navigation.entityId).toBe(orden.id);
+    expect(porTipo.ORDER_STOPPED[0].detail).not.toContain("Falla ajena");
+    expect(unreadCount).toBe(1);
+  });
+
+  test("sin órdenes asignadas devuelve todos los grupos vacíos y unreadCount 0 (T045, CA-9)", async () => {
+    // Hay avisos para otros roles, pero este mecánico no tiene órdenes.
+    await cargarEscena();
+    const sinOrdenes = await tokenPara({
+      username: "mecanico_libre",
+      role: "MECHANIC",
+      name: "Mecánico Libre",
+    });
+
+    const respuesta = await getNotificaciones(conToken(sinOrdenes.token));
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.ok).toBe(true);
+    const { unreadCount, groups } = respuesta.body.data;
+    expect(unreadCount).toBe(0);
+    expect(groups).toHaveLength(4);
+    for (const grupo of groups) {
+      expect(grupo.items).toEqual([]);
+    }
   });
 });

@@ -26,15 +26,18 @@ const GRUPOS = [
 /**
  * Matriz de rol P-6/CA-4 (D-08): qué grupos recibe cada rol. Los grupos
  * siempre están presentes (aunque vacíos) para que la UI no cambie de
- * estructura. Se abre por historia: US2 agrega RECEPTIONIST sin stock,
- * US3 confirma stock solo de ADMIN y US5 agrega MECHANIC con sus órdenes.
+ * estructura. Se abrió por historia: US2 agregó RECEPTIONIST sin stock,
+ * US3 confirmó stock solo de ADMIN y US5 agregó MECHANIC con sus órdenes.
  */
 const GRUPOS_POR_ROL = {
   ADMIN: ["MAINTENANCE", "APPOINTMENT", "STOCK", "ORDER_STOPPED"],
   // T033 (US2): recepción recibe mantenimientos, citas y órdenes
   // detenidas —nunca stock— (CA-4, FR-004).
   RECEPTIONIST: ["MAINTENANCE", "APPOINTMENT", "ORDER_STOPPED"],
-  MECHANIC: [],
+  // T047 (US5, D-08, RN-15): el mecánico solo recibe las órdenes detenidas
+  // de sus órdenes asignadas; `avisosOrdenesDetenidas` filtra por
+  // `mechanic_id`. Nunca recibe mantenimientos generales, citas ni stock.
+  MECHANIC: ["ORDER_STOPPED"],
 };
 
 /** Estados de orden en español para el detalle del aviso. */
@@ -143,8 +146,8 @@ async function avisosStock() {
 /**
  * Órdenes sin cambios por más de 2 días en estado no terminal (D-01, P-3).
  * La consulta SQL hace el prefiltrado y `esOrdenDetenida` re-aplica el mismo
- * criterio. Para MECHANIC el alcance queda acotado a sus órdenes (D-08);
- * el grupo se habilita en US5.
+ * criterio. Para MECHANIC el alcance queda acotado a sus órdenes (D-08,
+ * habilitado en US5 con la fila `MECHANIC` de la matriz de roles).
  */
 async function avisosOrdenesDetenidas(usuario) {
   const condiciones = [
