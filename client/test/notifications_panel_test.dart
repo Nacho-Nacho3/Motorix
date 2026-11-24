@@ -11,6 +11,7 @@ import 'package:motorix_client/providers/ui_provider.dart';
 import 'package:motorix_client/screens/maintenances/maintenance_list_screen.dart';
 import 'package:motorix_client/screens/notifications/notifications_panel.dart';
 import 'package:motorix_client/services/api_client.dart';
+import 'package:motorix_client/utils/app_route.dart';
 import 'package:motorix_client/widgets/app_shell.dart';
 import 'package:motorix_client/widgets/states_view.dart';
 
@@ -349,5 +350,16 @@ void main() {
     );
     expect(find.byIcon(Icons.check_circle_outline), findsWidgets);
     expect(notificaciones.unreadCount, 3);
+  });
+
+  // T042 (US4, aceptación 3): cada ruta de aviso abre su sección del shell;
+  // la orden detenida (`/orders`) lleva a la sección de Órdenes (índice 4).
+  test('las rutas de los avisos abren su sección del shell (T042)', () {
+    expect(AppRutas.seccionDeRuta(AppRutas.orden), 4);
+    expect(AppRutas.seccionDeRuta(AppRutas.mantenimiento), 7);
+    expect(AppRutas.seccionDeRuta(AppRutas.cita), 3);
+    expect(AppRutas.seccionDeRuta(AppRutas.inventario), 8);
+    // Una ruta desconocida no navega (entityId queda reservado).
+    expect(AppRutas.seccionDeRuta('/clientes'), isNull);
   });
 }

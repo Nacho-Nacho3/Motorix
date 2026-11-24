@@ -89,6 +89,26 @@ describe("Criterio de orden detenida (D-01, N=2 fijo)", () => {
       true,
     );
   });
+
+  test("acepta updated_at como cadena de la base (YYYY-MM-DD HH:MM:SS)", () => {
+    const aCadenaLocal = (fecha) => {
+      const rellena = (n) => String(n).padStart(2, "0");
+      return `${fecha.getFullYear()}-${rellena(fecha.getMonth() + 1)}-${rellena(
+        fecha.getDate(),
+      )} ${rellena(fecha.getHours())}:${rellena(fecha.getMinutes())}:${rellena(
+        fecha.getSeconds(),
+      )}`;
+    };
+    expect(
+      esOrdenDetenida({
+        status: "WAITING_PART",
+        updatedAt: aCadenaLocal(hace(3)),
+      }),
+    ).toBe(true);
+    expect(
+      esOrdenDetenida({ status: "IN_REPAIR", updatedAt: aCadenaLocal(hace(1)) }),
+    ).toBe(false);
+  });
 });
 
 // T021 (US6): validación de la clave con el schema del endpoint (D-04) y

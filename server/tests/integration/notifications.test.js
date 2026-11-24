@@ -560,3 +560,54 @@ describe("Convivencia con la insignia del inventario (US3, CA-8, FR-008)", () =>
     expect(insignia).toHaveLength(3);
   });
 });
+
+describe("Órdenes detenidas (US4, D-01, CA-6)", () => {
+  test("la detenida es visible para admin y recepción e identifica cliente, vehículo y problema", async () => {
+    const { orden } = await cargarEscena();
+    // Una orden activa reciente no puede aparecer como detenida (D-01).
+    await crearOrden();
+
+    const recepcion = await tokenPara({
+      username: "recepcion",
+      role: "RECEPTIONIST",
+      name: "Recepción",
+    });
+
+    for (const headers of [headersAdmin, conToken(recepcion.token)]) {
+      const respuesta = await getNotificaciones(headers);
+      expect(respuesta.status).toBe(200);
+
+      const items = respuesta.body.data.groups.find(
+        (grupo) => grupo.type === "ORDER_STOPPED",
+      ).items;
+      expect(items).toHaveLength(1);
+
+      const aviso = items[0];
+      expect(aviso.navigation.entityId).toBe(orden.id);
+      // Aceptación 1 de US4: la orden queda identificable con estos datos.
+      expect(aviso.title).toContain("Toyota Corolla ABC1234");
+      expect(aviso.detail).toContain("Juan Pérez");
+      expect(aviso.detail).toContain("Ruido al frenar");
+      expect(aviso.detail).toContain("hace 3 días");
+    }
+  });
+
+  test("al pasar a FINISHED el aviso desaparece del centro (CA-6)", async () => {
+    const { orden } = await cargarEscena();
+
+    await poolPrueba.query(
+      "UPDATE service_orders SET status = 'FINISHED', updated_at = NOW() WHERE id = ?",
+      [orden.id],
+    );
+
+    const respuesta = await getNotificaciones();
+
+    expect(respuesta.status).toBe(200);
+    const items = respuesta.body.data.groups.find(
+      (grupo) => grupo.type === "ORDER_STOPPED",
+    ).items;
+    expect(items).toEqual([]);
+    // Quedan los otros 4 avisos de la escena (mantenimiento, cita y stock).
+    expect(respuesta.body.data.unreadCount).toBe(4);
+  });
+});

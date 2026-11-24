@@ -159,9 +159,12 @@ async function avisosOrdenesDetenidas(usuario) {
 
   const [filas] = await pool.query(
     `SELECT so.id, so.status, so.updated_at AS updatedAt,
-            CONCAT(v.brand, ' ', v.model, ' ', v.license_plate) AS vehicleLabel
+            CONCAT(v.brand, ' ', v.model, ' ', v.license_plate) AS vehicleLabel,
+            c.name AS clientName,
+            so.reported_problem AS reportedProblem
        FROM service_orders so
        JOIN vehicles v ON v.id = so.vehicle_id
+       JOIN clients c ON c.id = so.client_id
       WHERE ${condiciones.join(" AND ")}
       ORDER BY so.updated_at ASC`,
     parametros,
@@ -174,11 +177,22 @@ async function avisosOrdenesDetenidas(usuario) {
       const dias = Math.floor(
         (ahora.getTime() - new Date(fila.updatedAt).getTime()) / 86400000,
       );
+      // T041 (US4, aceptación 1): la orden queda identificable con el
+      // vehículo en el rótulo y el cliente más el problema en el detalle.
+      const detalle = [
+        `Sin cambios desde hace ${dias} días (${
+          ESTADOS_ORDEN[fila.status] ?? fila.status
+        })`,
+        fila.clientName,
+        fila.reportedProblem ? `«${fila.reportedProblem}»` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
       return {
         key: construirClave("ORDER_STOPPED", fila.id, fila.status),
         read: false,
         title: `Orden detenida — ${fila.vehicleLabel}`,
-        detail: `Sin cambios desde hace ${dias} días (${ESTADOS_ORDEN[fila.status] ?? fila.status})`,
+        detail: detalle,
         severity: fila.status,
         navigation: { route: "/orders", entityId: fila.id },
       };

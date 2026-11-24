@@ -153,13 +153,13 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 ### Pruebas para US4 (primero, deben fallar)
 
-- [ ] T040 [P] [US4] Prueba unitaria del criterio D-01 en `server/tests/unit/notification-rules.test.js`: orden no terminal con `updated_at` de 3 días → detenida; orden de 1 día → no aparece; estados `FINISHED` y `DELIVERED` → nunca (N = 2 fijo, sin configuración)
-- [ ] T041 [P] [US4] Prueba de integración de órdenes detenidas en `server/tests/integration/notifications.test.js`: visible para administrador y recepción con la orden identificable (cliente/vehículo/problema reportado); una orden activa reciente no aparece; al pasar a `FINISHED` desaparece del centro (CA-6)
+- [x] T040 [P] [US4] Prueba unitaria del criterio D-01 en `server/tests/unit/notification-rules.test.js`: orden no terminal con `updated_at` de 3 días → detenida; orden de 1 día → no aparece; estados `FINISHED` y `DELIVERED` → nunca (N = 2 fijo, sin configuración) — **ejecutada**: 2026-11-24, los casos ya estaban de US1 y se añadió el soporte de `updated_at` como cadena de la base
+- [x] T041 [P] [US4] Prueba de integración de órdenes detenidas en `server/tests/integration/notifications.test.js`: visible para administrador y recepción con la orden identificable (cliente/vehículo/problema reportado); una orden activa reciente no aparece; al pasar a `FINISHED` desaparece del centro (CA-6) — **ejecutada**: 2026-11-24, falló primero por el detalle incompleto y el aviso quedó con cliente y problema reportado
 
 ### Implementación de US4
 
-- [ ] T042 [US4] Verificar y completar el mapeo de navegación del aviso `ORDER_STOPPED` hacia el detalle de la orden en `client/lib/screens/notifications/notifications_panel.dart` con la ruta de `client/lib/utils/app_route.dart` (aceptación 3 de US4)
-- [ ] T043 [US4] Ejecutar las pruebas de US4 (unit + integración + navegación)
+- [x] T042 [US4] Verificar y completar el mapeo de navegación del aviso `ORDER_STOPPED` hacia el detalle de la orden en `client/lib/screens/notifications/notifications_panel.dart` con la ruta de `client/lib/utils/app_route.dart` (aceptación 3 de US4) — **ejecutada**: 2026-11-24, `/orders` → sección 4 verificada con test en `notifications_panel_test.dart`
+- [x] T043 [US4] Ejecutar las pruebas de US4 (unit + integración + navegación) — **ejecutada**: 2026-11-24, backend 2 suites / 31 pruebas, frontend 7 pruebas
 
 **Checkpoint**: US4 funcional; el criterio de orden detenida queda fijado por pruebas
 
