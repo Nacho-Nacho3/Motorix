@@ -216,12 +216,12 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 **Propósito**: documentación, convivencia, regresión y entregables del sprint
 
-- [ ] T059 [P] Actualizar `docs/project-context.md` (sección 6.12) con el comportamiento entregado (campana, matriz de rol, lectura por usuario, lista de clientes por avisar, claves D-04) y revisar `docs/design-system.md` solo si cambia un token (FR-014)
-- [ ] T060 [P] Verificar la convivencia CA-8/FR-008: suites `dashboard`, `parts-catalog`/inventario y de mantenimientos en verde con la insignia y las alertas originales intactas
-- [ ] T061 Regresión completa del backend: `cd server && npm.cmd test` con todas las suites de la línea base en verde más las nuevas (SC-007)
-- [ ] T062 Regresión completa del frontend: `cd client && flutter analyze lib` sin problemas y `flutter test` en verde (SC-007)
+- [x] T059 [P] Actualizar `docs/project-context.md` (sección 6.12) con el comportamiento entregado (campana, matriz de rol, lectura por usuario, lista de clientes por avisar, claves D-04) y revisar `docs/design-system.md` solo si cambia un token (FR-014) — **ejecutada**: 2026-11-24, sección 6.12 de `docs/project-context.md` reescrita (campana, tipos, matriz de rol, lectura por usuario, claves D-04, clientes por avisar); `docs/design-system.md` sin cambios porque no se agregó ningún token
+- [x] T060 [P] Verificar la convivencia CA-8/FR-008: suites `dashboard`, `parts-catalog`/inventario y de mantenimientos en verde con la insignia y las alertas originales intactas — **ejecutada**: 2026-11-24, suites `dashboard`, `parts-catalog`, `parts-alerts` y `maintenances`: 7 suites / 57 pruebas en verde
+- [x] T061 Regresión completa del backend: `cd server && npm.cmd test` con todas las suites de la línea base en verde más las nuevas (SC-007) — **ejecutada**: 2026-11-24, 56 suites / 479 pruebas en verde (línea base 51 / 423; +5 suites y +56 pruebas)
+- [x] T062 Regresión completa del frontend: `cd client && flutter analyze lib` sin problemas y `flutter test` en verde (SC-007) — **ejecutada**: 2026-11-24, `flutter analyze lib` sin observaciones y `flutter test` con 145 pruebas en verde (línea base 128)
 - [ ] T063 Recorrido manual de extremo a extremo siguiendo `specs/006-notificaciones-internas/quickstart.md` (V1 a V10, SC-008) y dejar las capturas en `docs/evidencias/sprint-6/` (crear la carpeta; la acomodación final de las evidencias se acuerda con el usuario al cerrar el sprint)
-- [ ] T064 Completar `docs/aseguramiento-calidad-sprint-6.md`: trazabilidad de CA con tareas y pruebas, línea base y regresión con conteos, y anexo de evidencias
+- [ ] T064 Completar `docs/aseguramiento-calidad-sprint-6.md`: trazabilidad de CA con tareas y pruebas, línea base y regresión con conteos, y anexo de evidencias — **parcial (2026-11-24)**: trazabilidad CA-1 a CA-14, puertas, decisiones, riesgos, hallazgos, línea base y regresión (56/479 y 145) ya completados; **falta el anexo de evidencias y la aprobación**, que dependen de T063
 
 ---
 

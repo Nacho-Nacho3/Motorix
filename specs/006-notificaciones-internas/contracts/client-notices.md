@@ -33,13 +33,14 @@ Módulo nuevo (`server/routes/client-notices.routes.js`): no hay contrato previo
 
 | Campo | Tipo | Reglas |
 |-------|------|--------|
+| `id` | number | posición (desde 1) del pendiente en esta respuesta; la lista es calculada y el pendiente aún no tiene fila propia. La identidad real del pendiente es `(clientId, motive, sourceId)` |
 | `clientId` / `clientName` / `phone` | number / string / string | teléfono solo a estos dos roles (mismos que hoy acceden a `GET /api/clients`) |
 | `motive` | string | `ORDER_READY`, `APPOINTMENT_TOMORROW`, `MAINTENANCE_UPCOMING`, `MAINTENANCE_OVERDUE` (P-9) |
 | `motiveLabel` | string | rótulo en español (ej. «Orden terminada sin entregar», «Cita de mañana», «Mantenimiento por vencer», «Mantenimiento vencido») |
 | `sourceId` | number | id del hecho: orden, cita o mantenimiento |
 | `detail` | string | contexto para la llamada (un renglón, español) |
 | `note` | string \| null | nota guardada con el aviso (D-07); en la lista siempre `null` (la nota se guarda al registrar) |
-| `createdAt` | ISO-8601 | `notified_at` de `client_notices` |
+| `createdAt` | ISO-8601 | fecha del hecho pendiente: `updated_at` de la orden o del mantenimiento y `created_at` de la cita (el pendiente aún no tiene fila en `client_notices`, así que no hay `notified_at`) |
 
 **Reglas de la lista (P-8)**: solo aparece un hecho **sin aviso registrado**; si el mismo cliente tiene dos motivos, aparece en dos filas (CA-11 es «una vez por hecho», no por cliente). Orden: por `motive` y luego por nombre.
 

@@ -16,7 +16,7 @@ Este documento es el registro de calidad del Sprint 6 de Motorix. Reúne los cri
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-18 |
 | Fecha de cierre | pendiente |
-| Estado general | En curso - criterios de entrada en cumplimiento |
+| Estado general | En curso - implementación y regresión en verde; faltan el recorrido manual (T063) y la aprobación |
 
 ## 1. Objetivo y alcance
 
@@ -40,31 +40,85 @@ Estado real al 2026-11-18. Los criterios se completan a lo largo del sprint; `[x
 
 **Criterios de salida (para cerrar el sprint):**
 
-- [ ] Los 7 criterios de aceptación del spec están Aprobados con evidencia (sección 6 y `docs/evidencias/sprint-6/`).
-- [ ] Todas las pruebas de los sprints 1 a 5 siguen pasando (regresión al cierre, sección 8; SC-007).
-- [ ] No hay defectos críticos ni altos abiertos (sección 7).
-- [ ] La matriz de calidad final está completa, con evidencia (sección 9).
-- [ ] Reporte, análisis y matriz no se contradicen (sección 10).
+- [ ] Los 14 criterios de aceptación del insumo están Aprobados con evidencia (sección 6 y `docs/evidencias/sprint-6/`): **implementados y con pruebas automáticas en verde; falta la evidencia del recorrido manual (T063)**.
+- [x] Todas las pruebas de los sprints 1 a 5 siguen pasando (regresión al cierre, sección 8; SC-007): 56 suites / 479 pruebas de backend y 145 de Flutter en verde, sin regresiones.
+- [x] No hay defectos críticos ni altos abiertos (sección 7).
+- [ ] La matriz de calidad final está completa, con evidencia (sección 9): **pruebas automáticas ejecutadas; faltan las capturas del recorrido manual**.
+- [ ] Reporte, análisis y matriz no se contradicen (sección 10): **se confirma al cerrar, tras T063**.
 
 ## 3. Puertas de calidad
 
-Pendiente: se completa al cierre con el estado de G-01 a G-08 del sprint (T064).
+Estado al 2026-11-24. Solo se marca como realizada la puerta que tiene evidencia en el repositorio; las demás se dejan como están.
+
+| ID | Puerta | Estado | Evidencia |
+|:--:|---|---|---|
+| G-01 | Insumo del sprint revisado contra el código | Sin registro | El insumo [`docs/sprints/sprint-6-notificaciones-internas.md`](sprints/sprint-6-notificaciones-internas.md) está en el commit `7d78735`, pero no hay un registro de la revisión contra el código. Las suposiciones del insumo que no coincidían con el código (por ejemplo, que no existe `order_status_history`) quedaron corregidas en [`research.md`](../specs/006-notificaciones-internas/research.md) P-3 |
+| G-02 | Especificación (`/speckit.specify`) | Realizada | [`spec.md`](../specs/006-notificaciones-internas/spec.md), commit `a06e485` |
+| G-03 | Aclaraciones (`/speckit.clarify`) | Realizada | Sesión del 2026-11-05 en `spec.md` (`### Session 2026-11-05`), commit `be2ad7d` (sección 4) |
+| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada | [`checklists/requirements.md`](../specs/006-notificaciones-internas/checklists/requirements.md): 16 de 16 marcados |
+| G-05 | Plan (`/speckit.plan`) | Realizada | [`plan.md`](../specs/006-notificaciones-internas/plan.md), commit `528b405`; 7 de 8 puertas de la constitución en PASS y la puerta I resuelta con la enmienda 1.2.0 (commit `eb22526`) |
+| G-06 | Tareas (`/speckit.tasks`) | Realizada | [`tasks.md`](../specs/006-notificaciones-internas/tasks.md), commit `39c27e1`: 64 tareas en 10 fases |
+| G-07 | Consistencia (`/speckit.analyze`) | **No consta** | No hay registro de que se haya ejecutado el análisis entre `tasks.md` y la implementación. Se puede correr antes del cierre |
+| G-08 | Pruebas planeadas y línea base | Aprobada | Línea base del 2026-11-22 (sección 8); las pruebas se escribieron antes de cada implementación y fallaron primero (T010 a T013, T044, T049 a T051) |
 
 ## 4. Decisiones de aclaración
 
-Pendiente: D-01 a D-08 con su estado (sesión clarify 2026-11-05: 5 resueltas, D-05 derivada, D-06 y D-07 diferidas con default) — se documenta al cierre (T064).
+La sesión de `/speckit.clarify` del 2026-11-05 resolvió 5 preguntas; D-05 se derivó de D-04; D-06 y D-07 quedaron diferidas con un valor por defecto documentado en [`research.md`](../specs/006-notificaciones-internas/research.md) (P-14).
+
+| ID | Decisión | Estado | Cómo quedó en el código |
+|:--:|---|---|---|
+| D-01 | Qué es una orden detenida | Resuelta: más de 2 días sin cambio de estado, en estado no terminal | `esOrdenDetenida` en `server/utils/notification-rules.js`; `unit/notification-rules.test.js` |
+| D-02 | Qué es una cita del día | Resuelta: fecha de hoy sin importar su estado; la cita de mañana es motivo de la lista por avisar | `avisosCitas` en `notifications.service.js`; `pendientesCitas` en `client_notice.model.js` |
+| D-03 | Cuándo se actualiza el contador | Resuelta: al iniciar sesión, al abrir el panel y al navegar; sin polling | `notifications_provider.dart` y `app_shell.dart` |
+| D-04 | Identidad de un aviso para la lectura | Resuelta: tipo, hecho y estado (`TIPO:id:ESTADO`) | `construirClave`; `notification_reads` con clave única |
+| D-05 | Aviso leído que empeora | Derivada de D-04: la clave cambia y vuelve a no leído | `unit/notification-rules.test.js` (transiciones) |
+| D-06 | Antelación del mantenimiento próximo | Diferida con default: el `warn_days`/`warn_km` de cada registro (RN-11) | `calcularEstadoMantenimiento`, el mismo de la lista y el dashboard |
+| D-07 | Aviso al cliente una sola vez por hecho y con nota | Diferida con default: una fila por `(cliente, tipo, hecho)` y nota opcional de hasta 300 caracteres | `client_notices` con `uq_client_notices_source`; `integration/client-notices.test.js` |
+| D-08 | Avisos del mecánico | Resuelta: solo sus órdenes asignadas | `MECHANIC: ["ORDER_STOPPED"]` filtrado por `mechanic_id`; T044 y T045 |
 
 ## 5. Riesgos y mitigaciones
 
-Pendiente: se completa al cierre (T064).
+| ID | Riesgo | Impacto | Mitigación | Prueba que lo cubre | Estado |
+|:--:|---|---|---|---|---|
+| R-01 | Los avisos calculan distinto que el dashboard, la lista de Mantenimientos o la insignia de Inventario y se contradicen | Alto: números distintos entre pantallas | Reutilizar `listarMantenimientos()`, `partes.listar({ low: true })` y `calcularEstadoMantenimiento`; no duplicar reglas | `integration/notifications.test.js`: «los números del centro coinciden 1:1 con dashboard y con la lista de Mantenimientos» y «el stock del centro es idéntico a la insignia y a las alertas del dashboard» | Mitigado |
+| R-02 | El stock llega a recepción o al mecánico | Alto: fuga de información de inventario | Matriz de rol en el backend y guarda explícita de stock solo ADMIN | `integration/notifications.test.js`: «recepción ve mantenimientos, citas y órdenes, y nunca stock» y «el stock no sale del administrador» | Mitigado |
+| R-03 | El mecánico recibe avisos de órdenes de otros mecánicos o accede a la lista de clientes | Alto: información ajena | Filtro por `mechanic_id` y `authorize("ADMIN","RECEPTIONIST")` en `/api/client-notices` | `integration/notifications.test.js` (US5, T044 y T045); `integration/client-notices.test.js` y `contract/client-notices.contract.test.js` (403) | Mitigado |
+| R-04 | El cálculo en cada consulta hace lenta la campana | Medio | Consultas acotadas sobre datos existentes, sin tabla de avisos | `integration/notifications.test.js`: respuesta en menos de 1000 ms (CA-13) | Mitigado en prueba; falta la medición de panel < 2 s del recorrido (V10) |
+| R-05 | Un cliente queda avisado dos veces por el mismo hecho | Medio: avisos repetidos | Clave única `(client_id, notice_type, source_id)` e `INSERT IGNORE` dentro de una transacción | `integration/client-notices.test.js`: «201 la primera vez … 200 al repetir sin duplicar ni pisar». No hay prueba de dos peticiones simultáneas; la garantía es estructural (clave única) | Mitigado |
+| R-06 | La migración nueva altera tablas existentes o rompe el control de checksums | Medio | `015_notifications.sql` aditiva, sin tocar migraciones previas | Aplicación en la base principal y en `motorix_test` (T006) y regresión completa en verde | Mitigado (ver H-01) |
+| R-07 | La documentación queda desfasada de lo entregado | Bajo | Actualizar `project-context.md` 6.12 en el mismo sprint (CA-14) | Revisión del diff de T059 | Mitigado |
 
 ## 6. Trazabilidad
 
-Pendiente: trazabilidad CA → tarea → prueba de los criterios de aceptación del spec (CA-1 a CA-13) — se completa al cierre (T064).
+Cada criterio de aceptación del insumo con las tareas que lo implementan y las pruebas que lo verifican. **Estado «Probado»** = implementado y con pruebas automáticas en verde; la aprobación final de cada CA espera la evidencia del recorrido manual (V1 a V10, T063).
+
+| CA | Criterio (resumen) | Tareas | Pruebas | Recorrido | Estado |
+|:--:|---|---|---|:--:|---|
+| CA-1 | Campana con total de no leídos y panel agrupado por tipo | T014 a T019 | `client/test/notifications_panel_test.dart` (campana y panel); `integration/notifications.test.js` | V1, V3 | Probado |
+| CA-2 | Avisos calculados al consultar; solo se guarda la lectura | T014, T004 | `integration/notifications.test.js`: «cada consulta recalcula los avisos: no hay caché» | V2 | Probado |
+| CA-3 | Tipos: mantenimientos, citas del día, stock, órdenes detenidas | T014, T034, T041 | `integration/notifications.test.js` (4 casos sembrados); `unit/notification-rules.test.js` | V3 | Probado |
+| CA-4 | Cada rol recibe solo sus avisos; el stock solo para ADMIN | T033, T038, T047 | `integration/notifications.test.js` (recepción, stock solo admin, mecánico con y sin órdenes); `client/test/notifications_panel_test.dart` (mecánico) | V1 | Probado |
+| CA-5 | Mismo cálculo que dashboard, mantenimientos y stock | T032, T034, T037 | `integration/notifications.test.js`: paridad con módulos y convivencia con la insignia | V4 | Probado |
+| CA-6 | Lectura por usuario; reaparece si cambia el estado | T021 a T030 | `unit/notification-rules.test.js`; `integration/notifications.test.js` (lectura por usuario e idempotencia); `contract/notifications.contract.test.js` | V5, V6 | Probado |
+| CA-7 | Cada aviso abre su pantalla relacionada | T029, T042 | `client/test/notifications_panel_test.dart`: «marcar leído … abre la pantalla relacionada» y «las rutas de los avisos abren su sección» | V3 | Probado |
+| CA-8 | La insignia de Inventario y el aviso de inicio siguen funcionando | T020, T035, T039, T060 | Suites `dashboard`, `parts-catalog`, `parts-alerts` y `maintenances`: 7 suites / 57 pruebas en verde | V4 | Probado |
+| CA-9 | Estados de carga, vacío y error | T019 | `client/test/notifications_panel_test.dart` (LoadingView, EmptyView, ErrorView); `client/test/client_notices_test.dart` | V3 | Probado |
+| CA-10 | La lista de clientes por avisar es solo ADMIN y recepción; el mecánico no accede | T049 a T058 | `integration/client-notices.test.js`; `contract/client-notices.contract.test.js` (403); `client/test/client_notices_test.dart` (sección solo para ADMIN y recepción) | V7 | Probado |
+| CA-11 | Avisar guarda quién y cuándo, quita la fila y no repite el hecho | T052, T053, T057 | `integration/client-notices.test.js` (201/200, nota, un hecho por vez); `client/test/client_notices_test.dart` | V8, V9 | Probado |
+| CA-12 | Seeds con al menos un caso por tipo, idempotentes | T008 | Doble pasada de `npm.cmd run seed` con 0 registros nuevos (T008) | V3 | Verificado |
+| CA-13 | Pruebas de cálculo, permisos, lectura y rendimiento | T010 a T013, T021 a T024, T031 a T041, T044 a T046, T049 a T051 | Las suites anteriores; rendimiento < 1000 ms | V10 | Probado |
+| CA-14 | `project-context.md` 6.12 y `design-system.md` actualizados | T059 | Sección 6.12 reescrita con el comportamiento entregado; `design-system.md` no cambia porque no se agregó ningún token (solo se usaron `AppColors`, `AppSpacing` y `AppRadii` existentes) | — | Cumplido |
 
 ## 7. Hallazgos y defectos
 
-Pendiente: se completa al cierre (T064).
+| ID | Descripción | Severidad | Origen | Estado | Resolución |
+|:--:|---|---|---|---|---|
+| H-01 | El backend arrancó en rojo en la línea base: el checksum de `014_order_parts_price.sql` no coincidía porque el archivo tenía fin de línea CRLF y `schema_migrations` guardaba el hash de la versión LF | Media | T003 (línea base) | Resuelto | Se restauraron los bytes LF originales (contenido SQL idéntico, `git diff` vacío); la línea base quedó en verde |
+| H-02 | La cabecera de la lista de Mantenimientos se desbordaba con títulos largos | Baja | Implementación de US1 | Resuelto | Commit `536987f`: se evitó el desbordamiento de la cabecera con títulos largos |
+| H-03 | El contrato de `GET /api/client-notices` pedía `id` y `createdAt = notified_at`, pero un pendiente aún no tiene fila en `client_notices` | Baja | US7 (T052 y T053) | Resuelto | `id` es la posición del pendiente en la respuesta y `createdAt` es la fecha del hecho; el contrato [`client-notices.md`](../specs/006-notificaciones-internas/contracts/client-notices.md) quedó actualizado y la pantalla identifica cada fila por `(clientId, motive, sourceId)` |
+| H-04 | No consta la ejecución de `/speckit.analyze` (G-07) | Baja | Cierre | Abierto | Ejecutarla antes del cierre o registrar la decisión de omitirla |
+
+No hay defectos críticos ni altos abiertos.
 
 ## 8. Línea base de regresión
 
@@ -76,18 +130,66 @@ Pendiente: se completa al cierre (T064).
 | `flutter test` (en `client/`) | **128 pruebas**, todas en verde |
 | `flutter analyze lib` (en `client/`) | sin observaciones |
 
-Nota de la primera corrida (hallazgo, se documenta en la sección 7 al cierre): el backend arrancó en rojo porque el checksum registrado de `014_order_parts_price.sql` ya no coincidía con el archivo — el script tenía fin de línea CRLF en disco mientras `schema_migrations` guardaba el hash de la versión LF (el guardián de inmutabilidad lo marcó). Se restauraron los bytes LF originales (contenido SQL idéntico, solo cambia el fin de línea; `git diff` vacío) y la línea base quedó en verde.
+Nota de la primera corrida: el backend arrancó en rojo por el checksum de `014_order_parts_price.sql` (hallazgo H-01 de la sección 7). Se restauraron los bytes LF originales (contenido SQL idéntico) y la línea base quedó en verde.
 
-**Regresión de cierre:** pendiente al final del sprint (T063/T064).
+**Regresión de cierre, medida el 2026-11-24 con las 64 tareas implementadas salvo el recorrido manual:**
+
+| Comando | Resultado | Diferencia con la línea base |
+|---|---|---|
+| `cd server && npm.cmd test` | **56 suites y 479 pruebas**, todas en verde | +5 suites y +56 pruebas |
+| `flutter test` (en `client/`) | **145 pruebas**, todas en verde | +17 pruebas |
+| `flutter analyze lib` (en `client/`) | sin observaciones | sin cambio |
+
+Ninguna prueba que estaba en verde en la línea base falló (SC-007: 0 regresiones). Las suites de convivencia (CA-8) por separado: `dashboard`, `parts-catalog`, `parts-alerts` y `maintenances`, 7 suites y 57 pruebas en verde.
 
 ## 9. Control de calidad final
 
-Pendiente: se completa al cierre (T064).
+Cinco requisitos del Sprint 6 elegidos entre los que más pueden fallar. **Las pruebas automáticas ya se ejecutaron en verde; la columna «Evidencia» queda pendiente de las capturas del recorrido manual.**
+
+| ID | Requisito | Criterio de Aceptación | Prueba ejecutada | Resultado | Evidencia / defecto |
+|:--:|---|---|---|---|---|
+| RF-01 | `spec.md` FR-004 (CA-4): cada rol recibe solo sus avisos; el stock solo para el administrador y el mecánico solo de sus órdenes. | Con la misma escena, administrador ve 4 grupos con datos, recepción 3 sin stock y el mecánico solo sus órdenes detenidas; las de otro mecánico no se entregan. | `integration/notifications.test.js`: «recepción ve mantenimientos, citas y órdenes, y nunca stock», «el stock no sale del administrador» y «ve solo sus órdenes detenidas y no las de otros mecánicos» | Aprobado (automática) | Pendiente: capturas de V1 |
+| RF-02 | `spec.md` FR-006 (CA-6): la lectura persiste por usuario y no afecta a otros. | Marcar leído baja el contador y persiste; otro administrador sigue viendo el aviso como no leído; repetir no duplica. | `integration/notifications.test.js` («baja unreadCount de inmediato…», «es por usuario…», «repetir la llamada es idempotente…») | Aprobado (automática) | Pendiente: capturas de V5 |
+| RF-03 | `spec.md` FR-005 (CA-5): los números del centro coinciden con dashboard, Mantenimientos e Inventario. | 0 diferencias entre el centro, el dashboard, la lista de Mantenimientos y la insignia de Inventario. | `integration/notifications.test.js`: «los números del centro coinciden 1:1 con dashboard y con la lista de Mantenimientos» y «el stock del centro es idéntico a la insignia y a las alertas del dashboard» | Aprobado (automática) | Pendiente: capturas de V4 |
+| RF-04 | `spec.md` FR-011 (CA-11): avisar a un cliente registra quién y cuándo, sale de la lista y no se repite por el mismo hecho. | Primera vez 201, repetir 200 sin duplicar ni pisar la nota; el mismo cliente conserva sus otros motivos. | `integration/client-notices.test.js`: «201 la primera vez … 200 al repetir», «al avisar un hecho solo sale ese»; `client/test/client_notices_test.dart` | Aprobado (automática) | Pendiente: capturas de V8 y V9 |
+| RF-05 | `spec.md` FR-010 (CA-10): el mecánico no accede a la lista de clientes por avisar. | 403 `FORBIDDEN` en GET y POST sin escribir nada; la sección no aparece en su menú. | `integration/client-notices.test.js` («el mecánico recibe 403 FORBIDDEN en GET y POST»); `contract/client-notices.contract.test.js`; `client/test/client_notices_test.dart` (sección solo para ADMIN y recepción) | Aprobado (automática) | Pendiente: capturas de V7 |
 
 ## 10. Cierre
 
-Pendiente: se completa al cierre (T064).
+Registro del cierre técnico (2026-11-24). **El sprint no se da por cerrado hasta completar el recorrido manual (T063) y la aprobación del responsable.**
+
+| Campo | Valor |
+|---|---|
+| Criterios de salida cumplidos | 2 de 5 (regresión en verde y sin defectos críticos ni altos). Los otros 3 dependen de la evidencia del recorrido manual (sección 2) |
+| Defectos abiertos | Ninguno de implementación. Queda H-04 (no consta `/speckit.analyze`), de severidad baja |
+| Observaciones | 64 tareas: T001 a T062 implementadas y verificadas; T063 (recorrido manual con capturas) pendiente y T064 con la parte manual pendiente. Rama `006-notificaciones-internas`, sin squash ni force-push. El trabajo de T044 a T064 se hizo con Claude Code después de usar opencode en T001 a T043; el flujo de Spec Kit no cambió |
+| Aprobado por | Pendiente: lo aprueba Ignacio Joaquín Trejo al cerrar el sprint |
+| Fecha | Pendiente |
 
 # Anexo de evidencias
 
-Pendiente: E-01 en adelante con recorrido V1 a V10 y capturas (T063).
+## E-00 Corrida automática del cierre (2026-11-24)
+
+| Comando | Resultado |
+|---|---|
+| `cd server && npm.cmd test` | `Test Suites: 56 passed, 56 total` / `Tests: 479 passed, 479 total` |
+| `cd server && npm.cmd test -- dashboard parts-catalog parts-alerts maintenances` | `Test Suites: 7 passed, 7 total` / `Tests: 57 passed, 57 total` |
+| `cd client && flutter test` | `All tests passed!` (145 pruebas) |
+| `cd client && flutter analyze lib` | `No issues found!` |
+
+## Recorrido manual V1 a V10 (T063)
+
+Pendiente: se sigue [`quickstart.md`](../specs/006-notificaciones-internas/quickstart.md) y las capturas se guardan en `docs/evidencias/sprint-6/`.
+
+| Recorrido | Escenario | Captura | Resultado |
+|:--:|---|---|---|
+| V1 | Campana por rol (CA-4) | Pendiente | Pendiente |
+| V2 | Contador sin polling (D-03) | Pendiente | Pendiente |
+| V3 | Aviso por tipo (CA-3, CA-12) | Pendiente | Pendiente |
+| V4 | Coincidencia con módulos (CA-5) | Pendiente | Pendiente |
+| V5 | Lectura individual (D-04) | Pendiente | Pendiente |
+| V6 | Reaparición por empeoramiento (CA-6) | Pendiente | Pendiente |
+| V7 | Lista por avisar y acceso del mecánico (CA-10) | Pendiente | Pendiente |
+| V8 | Registro idempotente (CA-11) | Pendiente | Pendiente |
+| V9 | Una vez por hecho (CA-11, D-07) | Pendiente | Pendiente |
+| V10 | Rendimiento (CA-13, SC-006) | Pendiente | Pendiente |

@@ -378,9 +378,68 @@ duplicar datos solo para estadísticas.
 
 ## 6.12 Notificaciones internas
 
-Debe contemplar avisos relacionados con: - Mantenimientos próximos. -
-Mantenimientos vencidos. - Citas. - Stock bajo. - Órdenes que requieran
-atención.
+Entregado en el Sprint 6 (rama `006-notificaciones-internas`). El centro de
+avisos **se calcula en cada consulta** con datos reales (RN-10): no hay tabla
+de avisos ni caché; lo único que se guarda es la lectura por usuario y el
+registro de «cliente ya avisado».
+
+### Campana y centro de avisos
+
+- El encabezado muestra una campana con el total de avisos **no leídos** del
+  usuario, visible desde todas las secciones. Al tocarla se abre un panel con
+  los avisos agrupados por tipo.
+- El contador se actualiza al iniciar sesión, al abrir el panel y al cambiar
+  de sección (D-03); no hay consulta automática en segundo plano.
+- Los grupos siempre están presentes aunque vacíos (`MAINTENANCE`,
+  `APPOINTMENT`, `STOCK`, `ORDER_STOPPED`) para que la estructura no cambie
+  por rol. El panel usa los estados de carga, vacío y error de
+  `states_view.dart`.
+- Cada aviso abre su pantalla relacionada: mantenimiento, cita, inventario u
+  orden.
+
+### Tipos de aviso
+
+| Tipo | Condición |
+|------|-----------|
+| Mantenimiento próximo o vencido | Mismo cálculo que la lista de Mantenimientos y el dashboard (`calcularEstadoMantenimiento`): estados `UPCOMING` y `OVERDUE` |
+| Cita de hoy | Citas con `appointment_date` de hoy, sin importar su estado (D-02) |
+| Stock bajo o agotado | `stock_current <= stock_min` (`LOW`) o `stock_current = 0` (`OUT`); mismo conjunto que la insignia de Inventario y las alertas del dashboard |
+| Orden detenida | Orden en estado no terminal (no `FINISHED` ni `DELIVERED`) sin cambio de estado por más de 2 días (D-01) |
+
+### Matriz de rol (se aplica en el backend, RN-15)
+
+| Rol | Avisos que recibe |
+|-----|-------------------|
+| `ADMIN` | Todos los grupos |
+| `RECEPTIONIST` | Mantenimientos, citas de hoy y órdenes detenidas; **nunca stock** |
+| `MECHANIC` | Solo órdenes detenidas de sus órdenes asignadas (`mechanic_id`); sin mantenimientos generales, citas ni stock (D-08) |
+
+### Lectura por usuario
+
+- Cada aviso tiene una clave estable `TIPO:id:ESTADO` (D-04), por ejemplo
+  `MAINTENANCE:12:OVERDUE`, `STOCK:3:LOW` u `ORDER_STOPPED:42:RECEIVED`. La
+  tabla `notification_reads` guarda una fila por usuario y clave
+  (`UNIQUE (user_id, notification_key)`).
+- Marcar como leído (`POST /api/notifications/read`) es idempotente y siempre
+  escribe para el usuario del token. Un aviso leído sigue visible hasta que el
+  hecho desaparezca.
+- Si el estado empeora (Próximo → Vencido, `LOW` → `OUT`) la clave es otra y el
+  aviso vuelve a contar como no leído (D-05).
+
+### Clientes por avisar
+
+- Pantalla «Por avisar» (solo `ADMIN` y `RECEPTIONIST`; el mecánico recibe
+  403 en la API y no ve la sección). Lista el nombre, el teléfono, el motivo y
+  el contexto de cada hecho pendiente.
+- Motivos: orden terminada sin entregar (`ORDER_READY`), cita de mañana
+  (`APPOINTMENT_TOMORROW`), mantenimiento por vencer
+  (`MAINTENANCE_UPCOMING`) y mantenimiento vencido (`MAINTENANCE_OVERDUE`).
+- El sistema **no envía mensajes**: «Ya lo hablé» registra quién avisó, cuándo
+  y una nota opcional de hasta 300 caracteres (`POST /api/client-notices`).
+  El registro es una vez por hecho (`UNIQUE (client_id, notice_type,
+  source_id)`): repetirlo devuelve 200 sin duplicar. Si el mismo cliente tiene
+  dos motivos, aparece en dos filas y avisar uno no quita el otro; un hecho
+  nuevo vuelve a mostrarlo.
 
 ------------------------------------------------------------------------
 
