@@ -81,9 +81,15 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
           children: [
             Row(
               children: [
-                Text(
-                  'Mantenimientos registrados',
-                  style: Theme.of(context).textTheme.titleMedium,
+                // Título elíptico: en pantallas angostas o con fuente de
+                // prueba ancha el texto no desborda (el total queda fijo).
+                Expanded(
+                  child: Text(
+                    'Mantenimientos registrados',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Text(
