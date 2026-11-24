@@ -133,13 +133,13 @@ description: "Lista de tareas del sprint 6: notificaciones internas"
 
 ### Pruebas para US3 (primero, deben fallar)
 
-- [ ] T036 [P] [US3] Prueba de integración de stock en `server/tests/integration/notifications.test.js`: refacción `LOW` y refacción `OUT` visibles para administrador con claves distintas; grupo `STOCK` vacío para recepción y para mecánico **validado en backend**; refacción sobre su mínimo sin aviso (SC-003, CA-4)
-- [ ] T037 [US3] Prueba de convivencia CA-8/FR-008 en `server/tests/integration/notifications.test.js`: el stock del centro es idéntico (0 diferencias) a la insignia del inventario y a las alertas del dashboard con los mismos datos
+- [x] T036 [P] [US3] Prueba de integración de stock en `server/tests/integration/notifications.test.js`: refacción `LOW` y refacción `OUT` visibles para administrador con claves distintas; grupo `STOCK` vacío para recepción y para mecánico **validado en backend**; refacción sobre su mínimo sin aviso (SC-003, CA-4) — **ejecutada**: 2026-11-24, pasó sin cambios: la matriz de US2 ya garantizaba el comportamiento
+- [x] T037 [US3] Prueba de convivencia CA-8/FR-008 en `server/tests/integration/notifications.test.js`: el stock del centro es idéntico (0 diferencias) a la insignia del inventario y a las alertas del dashboard con los mismos datos — **ejecutada**: 2026-11-24, mismo conjunto de claves en las tres fuentes
 
 ### Implementación de US3
 
-- [ ] T038 [US3] Agregar guarda explícita de stock solo ADMIN en `server/services/notifications.service.js` (defensa en profundidad además de la matriz de roles; FR-004/RN-15)
-- [ ] T039 [US3] Ejecutar las pruebas de US3 y verificar que `server/tests/integration/parts-catalog.test.js`/inventario y `dashboard` siguen verdes con su insignia y sus alertas originales intactas (FR-008)
+- [x] T038 [US3] Agregar guarda explícita de stock solo ADMIN en `server/services/notifications.service.js` (defensa en profundidad además de la matriz de roles; FR-004/RN-15) — **ejecutada**: 2026-11-24
+- [x] T039 [US3] Ejecutar las pruebas de US3 y verificar que `server/tests/integration/parts-catalog.test.js`/inventario y `dashboard` siguen verdes con su insignia y sus alertas originales intactas (FR-008) — **ejecutada**: 2026-11-24, 5 suites / 52 pruebas (notifications, parts-catalog, parts-alerts, dashboard, inventory contract)
 
 **Checkpoint**: US3 funcional; el stock no sale del administrador en ninguna consulta
 

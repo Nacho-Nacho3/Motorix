@@ -457,3 +457,106 @@ describe("Paridad con los módulos (US2, SC-002, CA-5, FR-005)", () => {
     );
   });
 });
+
+describe("Stock solo del administrador (US3, FR-004, SC-003, CA-4)", () => {
+  test("LOW y OUT visibles para admin con claves distintas; sobre el mínimo no hay aviso", async () => {
+    await cargarEscena();
+    await crearParte({
+      codigo: "FIL-010",
+      nombre: "Filtro de aceite",
+      stock: 10,
+      min: 5,
+    });
+
+    const respuesta = await getNotificaciones();
+    const stock = respuesta.body.data.groups.find(
+      (grupo) => grupo.type === "STOCK",
+    ).items;
+
+    // LOW y OUT son avisos distintos con claves distintas (D-04).
+    expect(stock).toHaveLength(2);
+    expect(stock.map((item) => item.severity).sort()).toEqual(["LOW", "OUT"]);
+    expect(new Set(stock.map((item) => item.key)).size).toBe(2);
+    for (const item of stock) {
+      expect(item.key).toMatch(/^STOCK:\d+:(LOW|OUT)$/);
+    }
+
+    // La parte sobre su mínimo (10 > 5) no genera ningún aviso.
+    const [sana] = await poolPrueba.query(
+      "SELECT id FROM parts WHERE part_code = ?",
+      ["FIL-010"],
+    );
+    expect(
+      stock.some((item) => item.key === `STOCK:${sana[0].id}:LOW`),
+    ).toBe(false);
+  });
+
+  test("el stock no sale del administrador: vacío para recepción y mecánico (FR-004, RN-15)", async () => {
+    await cargarEscena();
+    const recepcion = await tokenPara({
+      username: "recepcion",
+      role: "RECEPTIONIST",
+      name: "Recepción",
+    });
+    const mecanico = await tokenPara({
+      username: "mecanico2",
+      role: "MECHANIC",
+      name: "Mecánico Dos",
+    });
+
+    for (const headers of [
+      conToken(recepcion.token),
+      conToken(mecanico.token),
+    ]) {
+      const respuesta = await getNotificaciones(headers);
+      expect(respuesta.status).toBe(200);
+      const stock = respuesta.body.data.groups.find(
+        (grupo) => grupo.type === "STOCK",
+      );
+      expect(stock.items).toEqual([]);
+    }
+  });
+});
+
+describe("Convivencia con la insignia del inventario (US3, CA-8, FR-008)", () => {
+  test("el stock del centro es idéntico (0 diferencias) a la insignia y a las alertas del dashboard", async () => {
+    await cargarEscena();
+    await crearParte({
+      codigo: "TRA-009",
+      nombre: "Trabilla de rueda",
+      stock: 1,
+      min: 3,
+    });
+    await crearParte({
+      codigo: "FIL-010",
+      nombre: "Filtro de aceite",
+      stock: 10,
+      min: 5,
+    });
+
+    const centro = await getNotificaciones();
+    const inventario = await request(app)
+      .get("/api/parts?low=true")
+      .set(headersAdmin);
+    const dashboard = await request(app)
+      .get("/api/dashboard")
+      .set(headersAdmin);
+
+    const stock = centro.body.data.groups.find(
+      (grupo) => grupo.type === "STOCK",
+    ).items;
+    const insignia = inventario.body.data.parts;
+    const alertas = dashboard.body.data.lowStockParts;
+
+    const aClave = (parte) =>
+      `STOCK:${parte.id}:${parte.stockCurrent === 0 ? "OUT" : "LOW"}`;
+    const clavesCentro = stock.map((item) => item.key).sort();
+
+    // Las tres fuentes son el mismo conjunto, sin altas ni bajas.
+    expect(clavesCentro).toEqual(insignia.map(aClave).sort());
+    expect(clavesCentro).toEqual(alertas.map(aClave).sort());
+    expect(stock).toHaveLength(inventario.body.data.lowStockCount);
+    expect(stock).toHaveLength(dashboard.body.data.summary.lowStockCount);
+    expect(insignia).toHaveLength(3);
+  });
+});

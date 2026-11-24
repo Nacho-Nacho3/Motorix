@@ -192,6 +192,9 @@ async function construirItems(tipo, usuario) {
     case "APPOINTMENT":
       return avisosCitas();
     case "STOCK":
+      // T038 (US3, FR-004/RN-15): defensa en profundidad — además de la
+      // matriz de roles, el stock solo se construye para ADMIN.
+      if (usuario.role !== "ADMIN") return [];
       return avisosStock();
     case "ORDER_STOPPED":
       return avisosOrdenesDetenidas(usuario);
