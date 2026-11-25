@@ -89,7 +89,7 @@ Solo inserción (P-13).
 | `maintenance` | `warn_days` y `warn_km` pasan a `INT UNSIGNED NULL` sin valor por omisión (los `CHECK >= 0` se conservan) | `NULL` = «usar el valor del taller» (P-3, D-16) | Se ponen en `NULL` las filas cuyo valor es 30 (días) o 500 (km), el predeterminado histórico; las demás se conservan |
 | `order_services` | `service_type_id INT UNSIGNED NULL`, FK → `service_types.id`, índice `idx_order_services_type` | enlace opcional al catálogo (P-4, D-04) | Quedan en `NULL` |
 | `order_parts` | `unit_cost DECIMAL(10,2) NULL` con `CHECK (unit_cost IS NULL OR (unit_cost >= 0 AND unit_cost <= 99999.99))` | costo congelado por línea (P-8, D-05) | `parts.purchase_price` actual si es > 0; `NULL` si es 0 |
-| `service_orders` | `finished_at DATETIME NULL`, índice `idx_service_orders_finished_at` | fecha estable de terminación (P-7, D-19) | Órdenes `FINISHED` o `DELIVERED`: su `updated_at`; el resto `NULL` |
+| `service_orders` | `finished_at DATETIME NULL`, `finished_at_estimated TINYINT(1) NOT NULL DEFAULT 0`, índice `idx_service_orders_finished_at` | fecha estable de terminación y marca de que es una aproximación (P-7, D-19) | Órdenes `FINISHED` o `DELIVERED`: `finished_at` = su `updated_at` y `finished_at_estimated = 1`; el resto `NULL` y `0` |
 | `tickets` | `workshop_name VARCHAR(100) NOT NULL DEFAULT 'Motorix'`, `workshop_address VARCHAR(200) NULL`, `workshop_phone VARCHAR(30) NULL`, `next_service_date DATE NULL`, `next_service_mileage INT UNSIGNED NULL` | instantánea al emitir (P-6, D-03) y próximo servicio (P-5) | `Motorix`, sin dirección ni teléfono y sin próximo servicio: lo que mostraban |
 | `users` | `last_activity_at DATETIME NULL` | cierre por inactividad en el backend (P-12) | `NULL` (se trata como activo) |
 
@@ -109,7 +109,7 @@ Solo inserción (P-13).
 
 ## Transiciones y reglas de estado
 
-- **Orden de servicio**: `cambiarEstado` escribe `finished_at = NOW()` solo en la transición hacia `FINISHED` (incluye la vuelta desde `WAITING_PART`) si todavía es `NULL`; `DELIVERED` no lo modifica. Reabrir una orden no existe en el flujo actual.
+- **Orden de servicio**: `cambiarEstado` escribe `finished_at = NOW()` y `finished_at_estimated = 0` solo en la transición hacia `FINISHED` (incluye la vuelta desde `WAITING_PART`) si todavía es `NULL`; `DELIVERED` no lo modifica. Reabrir una orden no existe en el flujo actual.
 - **Tipo de servicio**: `active` 1 ↔ 0 libremente; un tipo inactivo no aparece en el selector pero se sigue mostrando en las líneas que ya lo usan.
 - **Términos**: una versión nueva se vuelve la vigente al insertarse; los usuarios con aceptación de una versión anterior quedan «sin aceptación vigente» hasta aceptar la nueva.
 - **Sesión**: `last_activity_at` se fija en `login` y se refresca como máximo una vez por minuto; pasados `idleMinutes` sin actividad el siguiente uso responde `401 SESSION_IDLE`.

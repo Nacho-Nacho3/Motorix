@@ -61,7 +61,7 @@ CSV: `Tipo de servicio,Cantidad,Importe`.
 }
 ```
 
-`approximateDates` es el número de órdenes del rango cuya fecha de terminación es la aproximación de la migración (D-19); la pantalla lo muestra como nota. CSV: `Mecánico,Órdenes terminadas,Mano de obra`.
+`approximateDates` es el número de órdenes del rango con `finished_at_estimated = 1`, es decir, cuya fecha de terminación es la aproximación de la migración (D-19); la pantalla lo muestra como nota. CSV: `Mecánico,Órdenes terminadas,Mano de obra`.
 
 ## `GET /api/reports/parts-margin` — costo y margen de refacciones
 

@@ -49,4 +49,4 @@ Parámetros: `?version=<n>` (por omisión la vigente) y `?page=1&pageSize=50` (m
 
 ## Bloqueo en el backend (CA-19)
 
-Sin aceptación vigente, **toda** ruta autenticada responde 403 `TERMS_NOT_ACCEPTED` salvo las cuatro exentas (ver el README de contratos). El mensaje, en español, indica que debe aceptar los términos; el cliente muestra la pantalla de aceptación.
+Sin aceptación vigente, **toda** ruta autenticada responde 403 `TERMS_NOT_ACCEPTED` salvo las cuatro exentas (ver el README de contratos). El mensaje, en español, indica que debe aceptar los términos; el cliente muestra la pantalla de aceptación. Esto aplica también a mitad de una sesión: si se publica una versión nueva, la siguiente operación del usuario recibe este 403 y el cliente muestra la pantalla de aceptación sin cerrar la sesión.

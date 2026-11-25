@@ -6,7 +6,7 @@ Fase 0 de `/speckit.plan`. No quedan `NEEDS CLARIFICATION` en el Contexto técni
 
 ## P-1. Una sola migración nueva: `016_settings_reports_security.sql`
 
-**Decisión**: la siguiente migración numerada es la `016` (tras la `015_notifications.sql` del Sprint 6) y reúne todo el esquema del sprint: 5 tablas nuevas (`settings`, `service_types`, `terms_versions`, `terms_acceptances`, `audit_log`) y 11 columnas nuevas o modificadas en 6 tablas existentes (`maintenance`, `order_services`, `order_parts`, `service_orders`, `tickets` y `users`; P-3, P-4, P-6, P-7, P-8 y P-12).
+**Decisión**: la siguiente migración numerada es la `016` (tras la `015_notifications.sql` del Sprint 6) y reúne todo el esquema del sprint: 5 tablas nuevas (`settings`, `service_types`, `terms_versions`, `terms_acceptances`, `audit_log`) y 12 columnas nuevas o modificadas en 6 tablas existentes (`maintenance`, `order_services`, `order_parts`, `service_orders`, `tickets` y `users`; P-3, P-4, P-6, P-7, P-8 y P-12).
 
 **Justificación**: el insumo menciona `007_...sql`, pero 001–015 ya están ocupadas (mismo hallazgo que H-05 del Sprint 5 y el Sprint 6). El proyecto aplica una migración por sprint y sus partes dependen unas de otras (el ticket usa el tipo de servicio y la configuración), así que se validan juntas. Los cambios sobre tablas existentes son aditivos (columnas nuevas, una columna que pasa a admitir `NULL`) y siguen el precedente de la `014`.
 
@@ -58,7 +58,7 @@ Fase 0 de `/speckit.plan`. No quedan `NEEDS CLARIFICATION` en el Contexto técni
 
 ## P-7. Fecha de terminación `service_orders.finished_at` (D-19)
 
-**Decisión**: columna `finished_at DATETIME NULL`. La escribe `cambiarEstado` en el momento en que la orden pasa a `FINISHED` (y no se vuelve a tocar al pasar a `DELIVERED`). La migración la rellena para las órdenes ya `FINISHED` o `DELIVERED` con su `updated_at` como aproximación, que los reportes documentan (caso límite de la spec).
+**Decisión**: columnas `finished_at DATETIME NULL` y `finished_at_estimated TINYINT(1) NOT NULL DEFAULT 0`. `cambiarEstado` escribe `finished_at` y deja `finished_at_estimated = 0` en el momento en que la orden pasa a `FINISHED` (y no se vuelven a tocar al pasar a `DELIVERED`). La migración rellena `finished_at` para las órdenes ya `FINISHED` o `DELIVERED` con su `updated_at` y pone `finished_at_estimated = 1`: sin esa marca no habría forma de distinguir una fecha aproximada de una real, y el reporte de productividad necesita contarlas para avisarlo (caso límite de la spec).
 
 **Justificación**: la orden solo tiene `created_at` y `updated_at`, y este último cambia con cualquier edición; «órdenes terminadas en el periodo» (D-07) y la imputación de servicios y refacciones a un periodo necesitan una fecha estable. Una columna es lo más simple y no exige una tabla de historial (mismo razonamiento que P-3 del Sprint 6).
 

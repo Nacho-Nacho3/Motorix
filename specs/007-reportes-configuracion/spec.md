@@ -100,6 +100,7 @@ Como usuario del taller, quiero leer y aceptar los términos y condiciones y el 
 6. **Dado** un administrador, **Cuando** consulta los términos, **Entonces** ve la versión vigente y la lista de aceptaciones (usuario, versión y fecha).
 7. **Dado** un administrador que edita el texto de los términos o del aviso de privacidad, **Cuando** lo publica, **Entonces** se crea una versión nueva (las anteriores no se modifican), se vuelve la vigente y la publicación queda en la bitácora; un texto vacío se rechaza con un mensaje claro.
 8. **Dado** un recepcionista o un mecánico, **Cuando** intenta publicar una versión de los términos, **Entonces** el backend lo rechaza.
+9. **Dado** un usuario con la sesión abierta y la versión vigente aceptada, **Cuando** el administrador publica una versión nueva y el usuario hace su siguiente operación, **Entonces** la operación se rechaza por falta de aceptación, la aplicación muestra la pantalla de aceptación sin cerrar la sesión y, al aceptar, el usuario continúa.
 
 ---
 
@@ -204,7 +205,7 @@ Como administrador, quiero exportar cada reporte para compartirlo o archivarlo.
 - **Cambio de huso horario o día de corte**: el corte diario sigue la hora local del taller (ver Clarificaciones, D-06).
 - **Publicación de una versión nueva con texto vacío o idéntico a la vigente**: se rechaza con un mensaje claro y no se crea la versión.
 - **Usuario que acepta los términos y su sesión expira antes de entrar**: debe iniciar sesión de nuevo; la aceptación guardada se conserva.
-- **Usuario con aceptación vigente cuando se publica una versión nueva a mitad de su sesión**: se le pide aceptar en el siguiente inicio de sesión o la siguiente operación, según se acuerde.
+- **Usuario con aceptación vigente cuando se publica una versión nueva a mitad de su sesión**: su siguiente operación se rechaza por falta de aceptación y la aplicación le muestra de inmediato la pantalla de aceptación, sin cerrar su sesión; al aceptar continúa.
 - **Cuenta bloqueada por intentos fallidos**: el bloqueo y el intento fallido quedan en la bitácora.
 - **Bitácora sin resultados para el filtro**: se muestra el estado vacío, no un error.
 - **Sesión que expira por inactividad con un formulario sin guardar**: se cierra la sesión y se avisa claramente; no se guarda nada a medias.
@@ -235,7 +236,7 @@ Como administrador, quiero exportar cada reporte para compartirlo o archivarlo.
 - **FR-014**: Cada reporte DEBE poder exportarse a un archivo CSV cuyo contenido coincida con la pantalla para los mismos filtros, con encabezados en español y que se abra correctamente en una hoja de cálculo con acentos y eñes (CA-9, D-01).
 - **FR-015**: Los reportes DEBEN ser exclusivos del administrador, validado en el backend; recepción y mecánico reciben acceso denegado (CA-10, D-09).
 - **FR-016**: Los reportes con muchos datos DEBEN responder en un tiempo razonable y limitar o paginar el rango (CA-11).
-- **FR-017**: Toda pantalla nueva DEBE manejar los estados de carga, vacío y error conforme a `docs/design-system.md`, con mensajes claros en español.
+- **FR-017**: Toda pantalla nueva DEBE manejar los estados de carga, vacío y error conforme a `docs/design-system.md`, con mensajes claros en español, y todo formulario nuevo (configuración, tipos de servicio y términos) DEBE pedir confirmación antes de salir con cambios sin guardar.
 
 **Términos y condiciones (US9)**
 
@@ -353,7 +354,7 @@ Decisiones pendientes y resueltas:
   - D-05: RESUELTA en Clarificaciones (Session 2026-11-24): la línea sin precio de compra se excluye del cálculo del margen y se marca «sin costo registrado»; sus ventas se muestran aparte y nunca cuenta como utilidad completa.
   - D-06: periodo por rango libre de fechas con atajos (hoy, semana, mes); la hora local del taller define el corte diario y el rango máximo es de un año.
   - D-07: RESUELTA en Clarificaciones (Session 2026-11-24): productividad = órdenes terminadas por mecánico en el periodo y el importe de mano de obra de esas órdenes; el tiempo promedio queda fuera.
-  - D-19 (derivada de D-07): una orden «terminada en el periodo» se determina por la fecha en que pasó a terminada. Hoy la orden solo guarda fecha de creación y de última modificación (que cambia con cualquier edición), por lo que esa fecha no es confiable. Valor por omisión: guardar la fecha de terminación al momento del cambio de estado, y para las órdenes ya terminadas usar su última modificación como aproximación documentada. Se confirma en el plan.
+  - D-19 (derivada de D-07): una orden «terminada en el periodo» se determina por la fecha en que pasó a terminada. Hoy la orden solo guarda fecha de creación y de última modificación (que cambia con cualquier edición), por lo que esa fecha no es confiable. Valor por omisión: guardar la fecha de terminación al momento del cambio de estado, y para las órdenes ya terminadas usar su última modificación como aproximación documentada y marcada como estimada para poder contarlas en el reporte. Se confirma en el plan.
   - D-08: rotación = unidades salidas en el periodo entre la existencia promedio del periodo.
   - D-09: los reportes son solo del administrador (coherente con CA-10); sin versión reducida para recepción.
   - D-10: PARCIALMENTE RESUELTA en Clarificaciones (Session 2026-11-24): el administrador publica versiones nuevas desde la aplicación. Valores por omisión de lo demás: el texto inicial es una plantilla en español redactada por el equipo y se acepta una sola vez por versión.
