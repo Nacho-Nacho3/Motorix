@@ -147,29 +147,27 @@ export async function productividad({ from, to }) {
 export async function margenRefacciones({ from, to }) {
   const grupos = await modelo.margenRefacciones({ from, to });
 
-  const fila = (grupo) => {
-    const ventasConCosto = grupo.salesCents - grupo.salesWithoutCostCents;
-    return {
-      partId: grupo.partId,
-      partCode: grupo.partCode,
-      name: grupo.name,
-      units: grupo.units,
-      salesAmount: aCadena(grupo.salesCents),
-      costAmount: aCadena(grupo.costCents),
-      marginAmount: aCadena(ventasConCosto - grupo.costCents),
-      unitsWithoutCost: grupo.unitsWithoutCost,
-      salesWithoutCost: aCadena(grupo.salesWithoutCostCents),
-    };
-  };
+  // Importes de una fila o de los totales (mismas relaciones del contrato).
+  const montos = (grupo) => ({
+    units: grupo.units,
+    salesAmount: aCadena(grupo.salesCents),
+    costAmount: aCadena(grupo.costCents),
+    marginAmount: aCadena(grupo.salesCents - grupo.salesWithoutCostCents - grupo.costCents),
+    unitsWithoutCost: grupo.unitsWithoutCost,
+    salesWithoutCost: aCadena(grupo.salesWithoutCostCents),
+  });
+  const fila = (grupo) => ({
+    partId: grupo.partId,
+    partCode: grupo.partCode,
+    name: grupo.name,
+    ...montos(grupo),
+  });
 
   const ordenados = [...grupos].sort(
     (a, b) => b.salesCents - a.salesCents || a.partCode.localeCompare(b.partCode, "es"),
   );
-  const total = grupos.reduce(
+  const totales = grupos.reduce(
     (suma, g) => ({
-      partId: 0,
-      partCode: "",
-      name: "",
       units: suma.units + g.units,
       salesCents: suma.salesCents + g.salesCents,
       costCents: suma.costCents + g.costCents,
@@ -178,18 +176,12 @@ export async function margenRefacciones({ from, to }) {
     }),
     { units: 0, salesCents: 0, costCents: 0, unitsWithoutCost: 0, salesWithoutCostCents: 0 },
   );
-  const { partId, partCode, name, ...totales } = fila({
-    partId: 0,
-    partCode: "",
-    name: "",
-    ...total,
-  });
 
   return {
     from,
     to,
     rows: ordenados.slice(0, MAX_FILAS).map(fila),
-    totals: totales,
+    totals: montos(totales),
     truncated: ordenados.length > MAX_FILAS,
   };
 }
