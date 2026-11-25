@@ -10,6 +10,7 @@ import 'providers/notifications_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/payments_provider.dart';
 import 'providers/service_orders_provider.dart';
+import 'providers/service_types_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/session_provider.dart';
 import 'providers/ui_provider.dart';
@@ -70,6 +71,10 @@ class MotorixApp extends StatelessWidget {
         // T058: panel de control exclusivo de ADMIN (US5).
         ChangeNotifierProvider<DashboardProvider>(
           create: (context) => DashboardProvider(context.read<ApiClient>()),
+        ),
+        // T051 (Sprint 7, US3): catálogo de tipos de servicio.
+        ChangeNotifierProvider<ServiceTypesProvider>(
+          create: (context) => ServiceTypesProvider(context.read<ApiClient>()),
         ),
         // T028 (Sprint 7, US1): configuración del taller, solo ADMIN.
         ChangeNotifierProvider<SettingsProvider>(

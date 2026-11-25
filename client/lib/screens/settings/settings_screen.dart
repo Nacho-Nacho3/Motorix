@@ -6,6 +6,7 @@ import '../../providers/settings_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/states_view.dart';
+import 'service_types_section.dart';
 
 /// Configuración del taller (Sprint 7, US1, FR-001, FR-017). Solo ADMIN.
 ///
@@ -112,6 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 config: config,
                 onCambios: (sucia) => _marcar('margenes', sucia),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              const ServiceTypesSection(),
             ],
           ),
         ),

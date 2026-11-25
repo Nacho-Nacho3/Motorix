@@ -82,6 +82,14 @@ export const workUpdateSchema = z
   });
 
 export const serviceCreateSchema = z.object({
+  // Sprint 7 (D-04): tipo del catálogo, opcional; el servicio valida que exista
+  // y esté activo.
+  serviceTypeId: z
+    .number({ invalid_type_error: "El tipo de servicio indicado no es válido." })
+    .int("El tipo de servicio indicado no es válido.")
+    .positive("El tipo de servicio indicado no es válido.")
+    .optional()
+    .nullable(),
   description: z
     .string({
       required_error: "La descripción del servicio es obligatoria.",

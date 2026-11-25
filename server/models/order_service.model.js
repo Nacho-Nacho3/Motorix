@@ -2,9 +2,16 @@ import { pool } from "../config/db.js";
 
 // T055: modelo de servicios realizados por orden (order_services).
 
+// Sprint 7 (D-04): `service_type_id` enlaza la línea con el catálogo; las
+// líneas anteriores quedan en NULL. El LEFT JOIN conserva el nombre aunque el
+// tipo se desactive.
 const CAMPOS =
-  "id, order_id AS orderId, description, unit_price AS unitPrice, " +
-  "created_at AS createdAt";
+  "os.id, os.order_id AS orderId, os.description, os.unit_price AS unitPrice, " +
+  "os.created_at AS createdAt, os.service_type_id AS serviceTypeId, " +
+  "st.name AS serviceTypeName";
+
+const TABLA =
+  "FROM order_services os LEFT JOIN service_types st ON st.id = os.service_type_id";
 
 function aServicio(fila) {
   if (!fila) return null;
@@ -14,25 +21,27 @@ function aServicio(fila) {
     description: fila.description,
     unitPrice: Number(fila.unitPrice),
     createdAt: fila.createdAt ? fila.createdAt.replace(" ", "T") : null,
+    serviceTypeId: fila.serviceTypeId === null ? null : Number(fila.serviceTypeId),
+    serviceTypeName: fila.serviceTypeName ?? null,
   };
 }
 
 export async function listarPorOrden(orderId) {
   const [filas] = await pool.query(
-    `SELECT ${CAMPOS} FROM order_services WHERE order_id = ? ORDER BY id`,
+    `SELECT ${CAMPOS} ${TABLA} WHERE os.order_id = ? ORDER BY os.id`,
     [orderId],
   );
   return filas.map(aServicio);
 }
 
-export async function insertar({ orderId, description, unitPrice }) {
+export async function insertar({ orderId, description, unitPrice, serviceTypeId }) {
   const [resultado] = await pool.query(
-    `INSERT INTO order_services (order_id, description, unit_price)
-     VALUES (?, ?, ?)`,
-    [orderId, description, unitPrice ?? 0],
+    `INSERT INTO order_services (order_id, description, unit_price, service_type_id)
+     VALUES (?, ?, ?, ?)`,
+    [orderId, description, unitPrice ?? 0, serviceTypeId ?? null],
   );
   const [filas] = await pool.query(
-    `SELECT ${CAMPOS} FROM order_services WHERE id = ?`,
+    `SELECT ${CAMPOS} ${TABLA} WHERE os.id = ?`,
     [resultado.insertId],
   );
   return aServicio(filas[0]);

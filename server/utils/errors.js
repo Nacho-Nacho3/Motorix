@@ -29,6 +29,12 @@ export const errores = {
     new AppError(403, "ACCOUNT_DISABLED", "La cuenta está desactivada. Contacta al administrador."),
   notFound: (code, message) => new AppError(404, code, message),
   conflict: (code, message) => new AppError(409, code, message),
+  serviceTypeNameTaken: () =>
+    new AppError(
+      409,
+      "SERVICE_TYPE_NAME_TAKEN",
+      "Ya existe un tipo de servicio con ese nombre.",
+    ),
   locked: (retryAfterMinutes) =>
     new AppError(
       423,

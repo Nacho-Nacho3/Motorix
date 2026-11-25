@@ -98,6 +98,9 @@ describe("Contrato de services y labor (US5)", () => {
       createdAt: expect.stringMatching(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
       ),
+      // Sprint 7 (D-04): campos aditivos; null cuando la línea no tiene tipo.
+      serviceTypeId: null,
+      serviceTypeName: null,
     });
   });
 

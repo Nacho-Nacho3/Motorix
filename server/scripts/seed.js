@@ -721,6 +721,47 @@ export async function crearConfiguracionDeEjemplo(adminId) {
   return { creadas, omitidas: valores.length - creadas };
 }
 
+/**
+ * Sprint 7 (US3, T054, CA-12): tipos de servicio de demostración, idempotentes
+ * por nombre, y enlace de algunas líneas de servicio de las órdenes de ejemplo
+ * (las demás quedan sin tipo, como las anteriores al sprint). Solo enlaza
+ * líneas que aún no tienen tipo.
+ */
+export async function crearTiposDeServicioDeEjemplo(adminId) {
+  const tipos = [
+    { name: "Cambio de aceite", intervalDays: 180, intervalKm: 5000 },
+    { name: "Afinación", intervalDays: 365, intervalKm: 10000 },
+    { name: "Revisión de frenos", intervalDays: 180, intervalKm: null },
+  ];
+  let creados = 0;
+  for (const tipo of tipos) {
+    const [resultado] = await pool.query(
+      `INSERT INTO service_types (name, interval_days, interval_km, created_by)
+       SELECT ?, ?, ?, ? FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM service_types WHERE name = ?)`,
+      [tipo.name, tipo.intervalDays, tipo.intervalKm, adminId, tipo.name],
+    );
+    creados += resultado.affectedRows;
+  }
+
+  const enlaces = [
+    ["Cambio de pastillas delanteras", "Revisión de frenos"],
+    ["Servicio de mantenimiento programado", "Afinación"],
+  ];
+  let enlazadas = 0;
+  for (const [descripcion, tipo] of enlaces) {
+    const [resultado] = await pool.query(
+      `UPDATE order_services os
+         JOIN service_types st ON st.name = ?
+          SET os.service_type_id = st.id
+        WHERE os.description = ? AND os.service_type_id IS NULL`,
+      [tipo, descripcion],
+    );
+    enlazadas += resultado.affectedRows;
+  }
+  return { creados, omitidos: tipos.length - creados, enlazadas };
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -740,6 +781,10 @@ export async function ejecutarSeed() {
   const configuracion = admin
     ? await crearConfiguracionDeEjemplo(admin)
     : { creadas: 0, omitidas: 0 };
+  // Sprint 7 (T054): tipos de servicio y enlace de líneas de ejemplo.
+  const tiposDeServicio = admin
+    ? await crearTiposDeServicioDeEjemplo(admin)
+    : { creados: 0, omitidos: 0, enlazadas: 0 };
   // Después del uso de refacciones: el ticket de ejemplo ya la incluye (CA-4).
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
@@ -773,6 +818,7 @@ export async function ejecutarSeed() {
     mantenimientos: mantenimientosDeEjemplo,
     usosDeOrden: usoDeOrden,
     configuracion,
+    tiposDeServicio,
     pagoYTicket,
     escenariosDePrecios,
     escenariosNotificaciones,
@@ -820,6 +866,11 @@ if (esEjecucionDirecta) {
   console.log(
     `  - Configuración del taller: ${resumen.configuracion.creadas} creadas, ` +
       `${resumen.configuracion.omitidas} ya existentes`,
+  );
+  console.log(
+    `  - Tipos de servicio: ${resumen.tiposDeServicio.creados} creados, ` +
+      `${resumen.tiposDeServicio.omitidos} ya existentes, ` +
+      `${resumen.tiposDeServicio.enlazadas} líneas enlazadas`,
   );
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +

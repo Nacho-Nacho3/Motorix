@@ -8,6 +8,7 @@ import '../../models/service_order.dart';
 import '../../providers/parts_provider.dart';
 import '../../providers/payments_provider.dart';
 import '../../providers/service_orders_provider.dart';
+import '../../providers/service_types_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../utils/app_route.dart';
 import '../../utils/app_theme.dart';
@@ -47,6 +48,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   bool _mostrarFormDiagnostico = false;
   bool _mostrarFormServicio = false;
+
+  /// Sprint 7 (US3): tipo elegido para el servicio nuevo (opcional).
+  int? _tipoServicioId;
   bool _mostrarFormManoDeObra = false;
   bool _mostrarFormNotas = false;
   bool _guardando = false;
@@ -960,6 +964,37 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     _aviso('Notas guardadas');
   }
 
+  /// Proveedor del catálogo; `null` si la pantalla se monta sin él (el servicio
+  /// se registra sin tipo, como antes del Sprint 7).
+  ServiceTypesProvider? _tipos({required bool escuchar}) {
+    try {
+      return Provider.of<ServiceTypesProvider>(context, listen: escuchar);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  /// Selector opcional del tipo de servicio (US3, D-04): solo tipos activos.
+  /// Si el catálogo no está disponible no se muestra y el servicio se registra
+  /// sin tipo, como antes.
+  Widget _selectorTipoServicio() {
+    final activos = _tipos(escuchar: true)?.activos ?? const [];
+    if (activos.isEmpty) return const SizedBox.shrink();
+    return DropdownButtonFormField<int?>(
+      key: const Key('selector-tipo-servicio'),
+      initialValue: _tipoServicioId,
+      decoration: const InputDecoration(
+        labelText: 'Tipo de servicio (opcional)',
+      ),
+      items: [
+        const DropdownMenuItem<int?>(value: null, child: Text('Sin tipo')),
+        for (final tipo in activos)
+          DropdownMenuItem<int?>(value: tipo.id, child: Text(tipo.name)),
+      ],
+      onChanged: (valor) => setState(() => _tipoServicioId = valor),
+    );
+  }
+
   Widget _tarjetaServicios(
     ServiceOrder orden,
     List<ServiceOrderItem> servicios,
@@ -991,6 +1026,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               if (_mostrarFormServicio) {
                                 _descripcionCtrl.clear();
                                 _precioCtrl.clear();
+                                _tipoServicioId = null;
+                                _tipos(escuchar: false)?.lookup();
                               }
                             }),
                     icon: const Icon(Icons.add),
@@ -1007,8 +1044,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          '${servicio.description} · \$${servicio.unitPrice.toStringAsFixed(2)}',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${servicio.description} · \$${servicio.unitPrice.toStringAsFixed(2)}',
+                            ),
+                            if (servicio.serviceTypeName != null)
+                              Text(
+                                'Tipo: ${servicio.serviceTypeName}',
+                                key: Key('tipo-servicio-${servicio.id}'),
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: AppFontSizes.small,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       if (puedeTrabajar)
@@ -1046,6 +1097,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    _selectorTipoServicio(),
                     const SizedBox(height: AppSpacing.md),
                     TextFormField(
                       controller: _precioCtrl,
@@ -1295,6 +1348,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           orden.id,
           description: _descripcionCtrl.text.trim(),
           unitPrice: textoPrecio.isEmpty ? null : double.parse(textoPrecio),
+          serviceTypeId: _tipoServicioId,
         );
     if (!mounted) return;
     setState(() {

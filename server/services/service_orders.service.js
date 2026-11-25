@@ -5,6 +5,7 @@ import * as clientes from "../models/client.model.js";
 import * as vehiculos from "../models/vehicle.model.js";
 import * as usuarios from "../models/user.model.js";
 import { AppError, errores } from "../utils/errors.js";
+import { verificarTipoActivo } from "./service-types.service.js";
 
 // T027/T057: lógica de negocio de órdenes (VS-02 a VS-07, RN-2 a RN-4, Q2).
 
@@ -227,10 +228,15 @@ export async function registrarTrabajo(id, datos, usuario) {
 
 export async function agregarServicio(id, datos, usuario) {
   const orden = await verificarTrabajador(id, usuario);
+  // Sprint 7 (D-04): si viene un tipo debe existir y estar activo.
+  if (datos.serviceTypeId != null) {
+    await verificarTipoActivo(datos.serviceTypeId);
+  }
   return servicios.insertar({
     orderId: orden.id,
     description: datos.description,
     unitPrice: datos.unitPrice ?? 0,
+    serviceTypeId: datos.serviceTypeId ?? null,
   });
 }
 

@@ -157,12 +157,15 @@ class ServiceOrdersProvider extends ChangeNotifier {
     int orderId, {
     required String description,
     double? unitPrice,
+    int? serviceTypeId,
   }) async {
     try {
       await ApiClient.conRed(
         () => api.post('/service-orders/$orderId/services', {
           'description': description,
           'unitPrice': ?unitPrice,
+          // Sprint 7 (D-04): tipo opcional del catálogo.
+          'serviceTypeId': ?serviceTypeId,
         }),
       );
       await cargarDetalle(orderId);

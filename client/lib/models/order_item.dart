@@ -7,6 +7,8 @@ class ServiceOrderItem {
     required this.description,
     this.unitPrice = 0,
     this.createdAt,
+    this.serviceTypeId,
+    this.serviceTypeName,
   });
 
   final int id;
@@ -15,6 +17,10 @@ class ServiceOrderItem {
   final double unitPrice;
   final String? createdAt;
 
+  /// Sprint 7 (D-04): tipo del catálogo; null en las líneas sin tipo.
+  final int? serviceTypeId;
+  final String? serviceTypeName;
+
   factory ServiceOrderItem.fromJson(Map<String, dynamic> json) =>
       ServiceOrderItem(
         id: (json['id'] as num).toInt(),
@@ -22,6 +28,8 @@ class ServiceOrderItem {
         description: json['description'] as String? ?? '',
         unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
         createdAt: json['createdAt'] as String?,
+        serviceTypeId: (json['serviceTypeId'] as num?)?.toInt(),
+        serviceTypeName: json['serviceTypeName'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -30,6 +38,7 @@ class ServiceOrderItem {
         'description': description,
         'unitPrice': unitPrice,
         if (createdAt != null) 'createdAt': createdAt,
+        if (serviceTypeId != null) 'serviceTypeId': serviceTypeId,
       };
 }
 

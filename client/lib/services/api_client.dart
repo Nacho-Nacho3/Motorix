@@ -136,6 +136,34 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T051 (Sprint 7, US3): catálogo de tipos de servicio
+  /// (contracts/service-types.md). El listado es solo ADMIN.
+  Future<List<dynamic>> listarTiposDeServicio() async {
+    final datos = await get('/service-types');
+    return List<dynamic>.from(datos as List);
+  }
+
+  /// Solo tipos activos, para el selector del formulario de servicio.
+  Future<List<dynamic>> lookupTiposDeServicio() async {
+    final datos = await get('/service-types/lookup');
+    return List<dynamic>.from(datos as List);
+  }
+
+  Future<Map<String, dynamic>> crearTipoDeServicio(
+    Map<String, dynamic> cuerpo,
+  ) async {
+    final datos = await post('/service-types', cuerpo);
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  Future<Map<String, dynamic>> actualizarTipoDeServicio(
+    int id,
+    Map<String, dynamic> cuerpo,
+  ) async {
+    final datos = await patch('/service-types/$id', cuerpo);
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   dynamic _procesar(http.Response respuesta) {
     Map<String, dynamic>? cuerpo;
     try {

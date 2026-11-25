@@ -14,6 +14,7 @@ import { rutasDashboard } from "./dashboard.routes.js";
 import { rutasNotifications } from "./notifications.routes.js";
 import { rutasClientNotices } from "./client_notices.routes.js";
 import { rutasSettings } from "./settings.routes.js";
+import { rutasServiceTypes } from "./service_types.routes.js";
 
 // T013: registro central de rutas. Cada historia añade su router aquí.
 export const rutas = Router();
@@ -33,3 +34,4 @@ rutas.use("/dashboard", rutasDashboard); // T054: panel exclusivo de ADMIN (US5)
 rutas.use("/notifications", rutasNotifications); // T015: centro de avisos (Sprint 6)
 rutas.use("/client-notices", rutasClientNotices); // T055: clientes por avisar (Sprint 6, US7)
 rutas.use("/settings", rutasSettings); // T026: configuración del taller (Sprint 7, US1)
+rutas.use("/service-types", rutasServiceTypes); // T049: catálogo de tipos de servicio (Sprint 7, US3)
