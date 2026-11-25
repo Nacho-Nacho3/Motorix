@@ -146,6 +146,20 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T100 (Sprint 7, US4): un reporte del periodo (`income`, `services`,
+  /// `productivity`, `parts-margin` o `inventory-rotation`; solo ADMIN).
+  Future<Map<String, dynamic>> obtenerReporte(
+    String nombre, {
+    required String desde,
+    required String hasta,
+  }) async {
+    final datos = await get(
+      '/reports/$nombre',
+      query: {'from': desde, 'to': hasta},
+    );
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   /// T091 (Sprint 7, US10): consulta de la bitácora (solo ADMIN).
   Future<Map<String, dynamic>> listarBitacora({
     String? from,

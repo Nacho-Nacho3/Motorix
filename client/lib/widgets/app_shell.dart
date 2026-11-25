@@ -15,6 +15,7 @@ import '../screens/inventory/parts_list_screen.dart';
 import '../screens/maintenances/maintenance_list_screen.dart';
 import '../screens/notifications/notifications_panel.dart';
 import '../screens/orders/order_list_screen.dart';
+import '../screens/reports/reports_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/users/user_list_screen.dart';
 import '../screens/vehicles/vehicle_list_screen.dart';
@@ -67,6 +68,8 @@ class _AppShellState extends State<AppShell> {
     // T092 (Sprint 7, US10, CA-20): bitácora de solo lectura, solo ADMIN. Índice 12;
     // «Reportes» (US4) será el 13.
     _Seccion('Bitácora', Icons.fact_check_outlined, roles: {'ADMIN'}),
+    // T101 (Sprint 7, US4): reportes de solo lectura, solo ADMIN. Índice 13.
+    _Seccion('Reportes', Icons.bar_chart_outlined, roles: {'ADMIN'}),
   ];
 
   void _irASeccion(int indice) {
@@ -234,6 +237,8 @@ class _AppShellState extends State<AppShell> {
         return const SettingsScreen();
       case 12:
         return const AuditLogScreen();
+      case 13:
+        return const ReportsScreen();
       default:
         return HomeScreen(irASeccion: _irASeccion);
     }

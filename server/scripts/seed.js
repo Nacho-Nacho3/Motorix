@@ -768,6 +768,75 @@ export async function crearTiposDeServicioDeEjemplo(adminId) {
   return { creados, omitidos: tipos.length - creados, enlazadas };
 }
 
+/**
+ * Sprint 7 (US4, T102, CA-12): pagos `PAID` de ejemplo repartidos entre el mes
+ * en curso y el anterior, para que el reporte de Ingresos muestre datos. No
+ * toca los pagos existentes: cuelgan de una orden entregada propia (marcador
+ * `reportedProblem`) para no alterar el ticket ni el cobro de las órdenes de
+ * demostración. Idempotente por `external_reference`.
+ */
+const MARCADOR_HISTORICO = "Histórico de ejemplo para reportes";
+
+export async function crearIngresosDeEjemplo(adminId) {
+  const [mecanicos] = await pool.query(
+    "SELECT id FROM users WHERE role = 'MECHANIC' AND active = 1 ORDER BY id LIMIT 1",
+  );
+  const existente = await buscarPorPlaca("ABC1234");
+  if (mecanicos.length === 0 || !existente) return { creados: 0, omitidos: 0 };
+  const vehiculo = await buscarVehiculo(existente.id);
+  if (!vehiculo) return { creados: 0, omitidos: 0 };
+
+  let [filasOrden] = await pool.query(
+    "SELECT id FROM service_orders WHERE reported_problem = ? LIMIT 1",
+    [MARCADOR_HISTORICO],
+  );
+  if (filasOrden.length === 0) {
+    const orden = await ordenes.insertar({
+      clientId: vehiculo.clientId,
+      vehicleId: vehiculo.id,
+      mechanicId: mecanicos[0].id,
+      entryMileage: vehiculo.currentMileage ?? 0,
+      reportedProblem: MARCADOR_HISTORICO,
+    });
+    await ordenes.actualizar(orden.id, { status: "DELIVERED", finishedAt: new Date() });
+    filasOrden = [{ id: orden.id }];
+  }
+
+  const hoy = new Date();
+  const fecha = (mesesAtras, dia) => {
+    const base = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras, 1);
+    const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    // En el mes en curso no se pasa de hoy.
+    const tope = mesesAtras === 0 ? hoy.getDate() : ultimo;
+    const d = Math.min(dia, tope);
+    return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")} 10:30:00`;
+  };
+  const pagos = [
+    ["SEED-ING-01", "1250.00", "CASH", fecha(0, 1)],
+    ["SEED-ING-02", "890.50", "CARD", fecha(0, 2)],
+    ["SEED-ING-03", "2300.00", "TRANSFER", fecha(0, 3)],
+    ["SEED-ING-04", "450.00", "CASH", fecha(0, 3)],
+    ["SEED-ING-05", "1780.75", "MERCADO_PAGO", fecha(0, 4)],
+    ["SEED-ING-06", "620.00", "CASH", fecha(1, 5)],
+    ["SEED-ING-07", "3150.00", "CARD", fecha(1, 12)],
+    ["SEED-ING-08", "980.25", "TRANSFER", fecha(1, 12)],
+    ["SEED-ING-09", "1420.00", "CASH", fecha(1, 20)],
+  ];
+
+  let creados = 0;
+  for (const [referencia, monto, metodo, cuando] of pagos) {
+    const [resultado] = await pool.query(
+      `INSERT INTO payments (order_id, amount, method, status, external_reference,
+                             created_by, created_at, updated_at)
+       SELECT ?, ?, ?, 'PAID', ?, ?, ?, ? FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM payments WHERE external_reference = ?)`,
+      [filasOrden[0].id, monto, metodo, referencia, adminId, cuando, cuando, referencia],
+    );
+    creados += resultado.affectedRows;
+  }
+  return { creados, omitidos: pagos.length - creados };
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -791,6 +860,10 @@ export async function ejecutarSeed() {
   const tiposDeServicio = admin
     ? await crearTiposDeServicioDeEjemplo(admin)
     : { creados: 0, omitidos: 0, enlazadas: 0 };
+  // Sprint 7 (T102): pagos de ejemplo para el reporte de ingresos.
+  const ingresos = admin
+    ? await crearIngresosDeEjemplo(admin)
+    : { creados: 0, omitidos: 0 };
   // Después del uso de refacciones: el ticket de ejemplo ya la incluye (CA-4).
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
@@ -825,6 +898,7 @@ export async function ejecutarSeed() {
     usosDeOrden: usoDeOrden,
     configuracion,
     tiposDeServicio,
+    ingresos,
     pagoYTicket,
     escenariosDePrecios,
     escenariosNotificaciones,
@@ -877,6 +951,10 @@ if (esEjecucionDirecta) {
     `  - Tipos de servicio: ${resumen.tiposDeServicio.creados} creados, ` +
       `${resumen.tiposDeServicio.omitidos} ya existentes, ` +
       `${resumen.tiposDeServicio.enlazadas} líneas enlazadas`,
+  );
+  console.log(
+    `  - Ingresos de ejemplo: ${resumen.ingresos.creados} creados, ` +
+      `${resumen.ingresos.omitidos} ya existentes`,
   );
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +

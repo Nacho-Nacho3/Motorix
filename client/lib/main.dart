@@ -10,6 +10,7 @@ import 'providers/maintenances_provider.dart';
 import 'providers/notifications_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/payments_provider.dart';
+import 'providers/reports_provider.dart';
 import 'providers/service_orders_provider.dart';
 import 'providers/service_types_provider.dart';
 import 'providers/settings_provider.dart';
@@ -75,6 +76,10 @@ class MotorixApp extends StatelessWidget {
         // T058: panel de control exclusivo de ADMIN (US5).
         ChangeNotifierProvider<DashboardProvider>(
           create: (context) => DashboardProvider(context.read<ApiClient>()),
+        ),
+        // T100 (Sprint 7, US4): reportes de solo lectura, solo ADMIN.
+        ChangeNotifierProvider<ReportsProvider>(
+          create: (context) => ReportsProvider(context.read<ApiClient>()),
         ),
         // T091 (Sprint 7, US10): bitácora de solo lectura.
         ChangeNotifierProvider<AuditProvider>(

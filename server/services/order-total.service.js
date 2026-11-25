@@ -10,14 +10,14 @@ import { errores } from "../utils/errors.js";
 // 2 decimales: sin errores de coma flotante y con el formato del contrato.
 
 /** Convierte un importe a centavos enteros (null/inválido → 0). */
-function aCentavos(valor) {
+export function aCentavos(valor) {
   const numero = Number(valor ?? 0);
   if (!Number.isFinite(numero)) return 0;
   return Math.round(numero * 100);
 }
 
 /** Centavos → cadena con exactamente 2 decimales. */
-function aCadena(centavos) {
+export function aCadena(centavos) {
   return (centavos / 100).toFixed(2);
 }
 
