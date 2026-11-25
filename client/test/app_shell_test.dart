@@ -80,6 +80,12 @@ void main() {
 
   testWidgets('el botón del sidebar contrae y expande el menú lateral',
       (tester) async {
+    // Sprint 7: con 12 secciones el menú del ADMIN es desplazable; se usa una
+    // ventana alta para que el botón de contraer quede a la vista.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1600, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(_shell(_administrador));
     await tester.pump();
 

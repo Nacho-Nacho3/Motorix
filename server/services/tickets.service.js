@@ -1,8 +1,8 @@
 import { pool } from "../config/db.js";
 import { errores } from "../utils/errors.js";
-import { taller } from "../config/taller.js";
 import * as ticketsModel from "../models/ticket.model.js";
 import { sumarTotales } from "./order-total.service.js";
+import { obtenerConfiguracion } from "./settings.service.js";
 
 // T035: generación y lectura del ticket (US3, CA-4/CA-5, FR-009 a FR-011,
 // R-05, RN-10). El contenido NUNCA se almacena: cada lectura se recalcula
@@ -148,7 +148,12 @@ async function armarTicket(filaTicket) {
     issuedBy: filaTicket.issuedBy,
     issuedByName: filaTicket.issuedByName,
     createdAt: filaTicket.createdAt,
-    workshop: { name: taller.name, address: taller.address, phone: taller.phone },
+    // Sprint 7 (D-03): el encabezado sale de la instantánea guardada al emitir.
+    workshop: {
+      name: filaTicket.workshopName,
+      address: filaTicket.workshopAddress,
+      phone: filaTicket.workshopPhone,
+    },
     client: contexto.client,
     vehicle: contexto.vehicle,
     services: trabajo.services,
@@ -172,9 +177,13 @@ export async function generarTicket(orderId, usuario) {
     throw errores.orderNotFinished();
   }
 
+  const { shop } = await obtenerConfiguracion();
   const { creado } = await ticketsModel.crear({
     orderId,
     issuedBy: usuario.id,
+    workshopName: shop.name,
+    workshopAddress: shop.address,
+    workshopPhone: shop.phone,
   });
   const fila = await ticketsModel.buscarPorOrden(orderId);
   return { ticket: await armarTicket(fila), creado };

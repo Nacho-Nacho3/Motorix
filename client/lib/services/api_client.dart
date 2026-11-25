@@ -122,6 +122,20 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T029 (Sprint 7, US1): configuración del taller (contracts/settings.md).
+  Future<Map<String, dynamic>> obtenerConfiguracion() async {
+    final datos = await get('/settings');
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  /// T029: actualización parcial; devuelve la configuración completa.
+  Future<Map<String, dynamic>> actualizarConfiguracion(
+    Map<String, dynamic> cambios,
+  ) async {
+    final datos = await patch('/settings', cambios);
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   dynamic _procesar(http.Response respuesta) {
     Map<String, dynamic>? cuerpo;
     try {

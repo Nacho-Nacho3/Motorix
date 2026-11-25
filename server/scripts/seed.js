@@ -695,6 +695,29 @@ export async function crearEscenariosNotificacionesDeEjemplo() {
   return resultado;
 }
 
+/**
+ * Sprint 7 (US1, T032, CA-12): datos de demostración del taller en la
+ * configuración, para que el ticket de ejemplo muestre un encabezado real.
+ * `INSERT IGNORE` por clave: idempotente y nunca pisa lo que el administrador
+ * ya haya guardado. `updated_by` es el primer administrador (A1).
+ */
+export async function crearConfiguracionDeEjemplo(adminId) {
+  const valores = [
+    ["shop.name", "Taller Motorix"],
+    ["shop.address", "Av. Principal 123, Centro"],
+    ["shop.phone", "5512345678"],
+  ];
+  let creadas = 0;
+  for (const [clave, valor] of valores) {
+    const [resultado] = await pool.query(
+      "INSERT IGNORE INTO settings (setting_key, setting_value, updated_by) VALUES (?, ?, ?)",
+      [clave, valor, adminId],
+    );
+    creadas += resultado.affectedRows;
+  }
+  return { creadas, omitidas: valores.length - creadas };
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -710,6 +733,10 @@ export async function ejecutarSeed() {
     ? await crearMantenimientosDeEjemplo(admin)
     : { creados: 0, omitidos: 0 };
   const usoDeOrden = await crearUsoDeOrdenDeEjemplo();
+  // Sprint 7 (T032): antes del ticket de ejemplo, que copia el encabezado.
+  const configuracion = admin
+    ? await crearConfiguracionDeEjemplo(admin)
+    : { creadas: 0, omitidas: 0 };
   // Después del uso de refacciones: el ticket de ejemplo ya la incluye (CA-4).
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
@@ -742,6 +769,7 @@ export async function ejecutarSeed() {
     refacciones: partesDeEjemplo,
     mantenimientos: mantenimientosDeEjemplo,
     usosDeOrden: usoDeOrden,
+    configuracion,
     pagoYTicket,
     escenariosDePrecios,
     escenariosNotificaciones,
@@ -785,6 +813,10 @@ if (esEjecucionDirecta) {
   console.log(
     `  - Usos de orden: ${resumen.usosDeOrden.creados} creados, ` +
       `${resumen.usosDeOrden.omitidos} ya existentes`,
+  );
+  console.log(
+    `  - Configuración del taller: ${resumen.configuracion.creadas} creadas, ` +
+      `${resumen.configuracion.omitidas} ya existentes`,
   );
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +

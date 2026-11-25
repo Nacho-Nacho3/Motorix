@@ -30,6 +30,9 @@ class AppRutas {
   /// T057 (US7): lista de clientes por avisar (solo ADMIN y recepción).
   static const clientesPorAvisar = '/client-notices';
 
+  /// T031 (Sprint 7, US1): configuración del taller (solo ADMIN).
+  static const configuracion = '/settings';
+
   /// Índice de la sección del shell para cada ruta de aviso (espejo de
   /// `_vistaSeccion` en app_shell.dart); null si la ruta es desconocida.
   static int? seccionDeRuta(String ruta) {
@@ -44,6 +47,8 @@ class AppRutas {
         return 4;
       case clientesPorAvisar:
         return 10;
+      case configuracion:
+        return 11;
       default:
         return null;
     }

@@ -14,6 +14,7 @@ import '../screens/inventory/parts_list_screen.dart';
 import '../screens/maintenances/maintenance_list_screen.dart';
 import '../screens/notifications/notifications_panel.dart';
 import '../screens/orders/order_list_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../screens/users/user_list_screen.dart';
 import '../screens/vehicles/vehicle_list_screen.dart';
 import '../utils/app_theme.dart';
@@ -44,19 +45,11 @@ class _AppShellState extends State<AppShell> {
     _Seccion('Órdenes', Icons.assignment_outlined),
     _Seccion('Usuarios', Icons.supervisor_account_outlined, roles: {'ADMIN'}),
     // T019: Historial (R-11): solo ADMIN y MECHANIC; RECEPTIONIST no lo ve.
-    _Seccion(
-      'Historial',
-      Icons.history,
-      roles: {'ADMIN', 'MECHANIC'},
-    ),
+    _Seccion('Historial', Icons.history, roles: {'ADMIN', 'MECHANIC'}),
     // T035: Mantenimientos (R-11): visible para los tres roles.
     _Seccion('Mantenimientos', Icons.build_outlined),
     // T054: Inventario (R-07): lectura y escritura exclusivas de ADMIN.
-    _Seccion(
-      'Inventario',
-      Icons.inventory_2_outlined,
-      roles: {'ADMIN'},
-    ),
+    _Seccion('Inventario', Icons.inventory_2_outlined, roles: {'ADMIN'}),
     // T058: Dashboard (US5, FR-012): panel exclusivo de ADMIN. Va al final
     // para no recorrer los índices de las secciones existentes.
     _Seccion('Dashboard', Icons.dashboard_outlined, roles: {'ADMIN'}),
@@ -67,6 +60,9 @@ class _AppShellState extends State<AppShell> {
       Icons.phone_in_talk_outlined,
       roles: {'ADMIN', 'RECEPTIONIST'},
     ),
+    // T031 (Sprint 7, US1, FR-001): configuración del taller, solo ADMIN.
+    // Índice 11, al final, para no recorrer los índices existentes.
+    _Seccion('Configuración', Icons.settings_outlined, roles: {'ADMIN'}),
   ];
 
   void _irASeccion(int indice) {
@@ -116,49 +112,62 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            extended: ui.sidebarExpandido,
-            selectedIndex: posicionSeleccionado,
-            // Collapsed: ~72 px, solo íconos (sección 7).
-            minWidth: 72,
-            backgroundColor: AppColors.sidebar,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: AnimatedScale(
-                // 32 px expandido, 24 px colapsado, sin salto brusco (6.4).
-                scale: ui.sidebarExpandido ? 1 : 0.75,
-                duration: AppDurations.element,
-                curve: AppDurations.curve,
-                child: const Icon(
-                  Icons.directions_car_filled,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-            ),
-            trailing: Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: IconButton(
-                    tooltip: ui.sidebarExpandido
-                        ? 'Contraer menú lateral'
-                        : 'Expandir menú lateral',
-                    color: Colors.white,
-                    icon: Icon(
-                      ui.sidebarExpandido
-                          ? Icons.chevron_left
-                          : Icons.chevron_right,
+          // Con 12 secciones (ADMIN) el menú puede no caber en ventanas bajas:
+          // se vuelve desplazable sin cambiar su aspecto cuando sí cabe.
+          LayoutBuilder(
+            builder: (context, restricciones) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: restricciones.maxHeight),
+                child: IntrinsicHeight(
+                  child: NavigationRail(
+                    extended: ui.sidebarExpandido,
+                    selectedIndex: posicionSeleccionado,
+                    // Collapsed: ~72 px, solo íconos (sección 7).
+                    minWidth: 72,
+                    backgroundColor: AppColors.sidebar,
+                    leading: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md,
+                      ),
+                      child: AnimatedScale(
+                        // 32 px expandido, 24 px colapsado, sin salto brusco (6.4).
+                        scale: ui.sidebarExpandido ? 1 : 0.75,
+                        duration: AppDurations.element,
+                        curve: AppDurations.curve,
+                        child: const Icon(
+                          Icons.directions_car_filled,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
                     ),
-                    onPressed: ui.alternarSidebar,
+                    trailing: Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                          child: IconButton(
+                            tooltip: ui.sidebarExpandido
+                                ? 'Contraer menú lateral'
+                                : 'Expandir menú lateral',
+                            color: Colors.white,
+                            icon: Icon(
+                              ui.sidebarExpandido
+                                  ? Icons.chevron_left
+                                  : Icons.chevron_right,
+                            ),
+                            onPressed: ui.alternarSidebar,
+                          ),
+                        ),
+                      ),
+                    ),
+                    onDestinationSelected: (destino) =>
+                        _irASeccion(visibles[destino]),
+                    destinations: destinos,
                   ),
                 ),
               ),
             ),
-            onDestinationSelected: (destino) =>
-                _irASeccion(visibles[destino]),
-            destinations: destinos,
           ),
           const VerticalDivider(width: 1, thickness: 1),
           Expanded(
@@ -217,6 +226,8 @@ class _AppShellState extends State<AppShell> {
         return const DashboardScreen();
       case 10:
         return const ClientNoticeScreen();
+      case 11:
+        return const SettingsScreen();
       default:
         return HomeScreen(irASeccion: _irASeccion);
     }
@@ -232,7 +243,8 @@ class _Seccion {
   /// Roles que ven la sección; `null` = todos los roles.
   final Set<String>? roles;
 
-  bool visiblePara(String? rol) => roles == null || (rol != null && roles!.contains(rol));
+  bool visiblePara(String? rol) =>
+      roles == null || (rol != null && roles!.contains(rol));
 }
 
 class _Cabecera extends StatelessWidget {
@@ -322,10 +334,8 @@ class _BotonNotificaciones extends StatelessWidget {
     final notificaciones = context.watch<NotificationsProvider>();
     return IconButton(
       tooltip: 'Notificaciones',
-      onPressed: () => abrirPanelNotificaciones(
-        context,
-        onIrASeccion: onIrASeccion,
-      ),
+      onPressed: () =>
+          abrirPanelNotificaciones(context, onIrASeccion: onIrASeccion),
       icon: Badge(
         isLabelVisible: notificaciones.unreadCount > 0,
         label: Text('${notificaciones.unreadCount}'),

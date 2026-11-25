@@ -8,7 +8,9 @@ import { pool } from "../config/db.js";
 
 const CAMPOS =
   "t.id, t.order_id AS orderId, t.issued_by AS issuedBy, " +
-  "u.name AS issuedByName, t.created_at AS createdAt";
+  "u.name AS issuedByName, t.created_at AS createdAt, " +
+  "t.workshop_name AS workshopName, t.workshop_address AS workshopAddress, " +
+  "t.workshop_phone AS workshopPhone";
 
 /** Normaliza la fila al objeto base del ticket (sin contenido calculado). */
 export function aTicket(fila) {
@@ -19,6 +21,10 @@ export function aTicket(fila) {
     issuedBy: Number(fila.issuedBy),
     issuedByName: fila.issuedByName,
     createdAt: fila.createdAt ? fila.createdAt.replace(" ", "T") : null,
+    // Sprint 7 (D-03): instantánea del encabezado al emitir el ticket.
+    workshopName: fila.workshopName,
+    workshopAddress: fila.workshopAddress ?? null,
+    workshopPhone: fila.workshopPhone ?? null,
   };
 }
 
@@ -42,14 +48,19 @@ export async function buscarPorOrden(orderId, conexion = pool) {
  *
  * @returns {Promise<{id: number, creado: boolean}>}
  */
-export async function crear({ orderId, issuedBy }, conexion = pool) {
+export async function crear(
+  { orderId, issuedBy, workshopName, workshopAddress = null, workshopPhone = null },
+  conexion = pool,
+) {
   const existente = await buscarPorOrden(orderId, conexion);
   if (existente) return { id: existente.id, creado: false };
 
   try {
     const [resultado] = await conexion.query(
-      "INSERT INTO tickets (order_id, issued_by) VALUES (?, ?)",
-      [orderId, issuedBy],
+      `INSERT INTO tickets
+         (order_id, issued_by, workshop_name, workshop_address, workshop_phone)
+       VALUES (?, ?, ?, ?, ?)`,
+      [orderId, issuedBy, workshopName, workshopAddress, workshopPhone],
     );
     return { id: Number(resultado.insertId), creado: true };
   } catch (error) {
