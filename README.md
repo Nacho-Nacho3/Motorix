@@ -10,6 +10,7 @@ de servicio. Este repositorio contiene:
 - **Sprint 4** (pagos, tickets y panel de control) según `specs/004-pagos-tickets-dashboard/`.
 - **Sprint 5** (precios de refacciones y cobro completo) según `specs/005-precios-refacciones-cobro/`.
 - **Sprint 6** (notificaciones internas) según `specs/006-notificaciones-internas/`.
+- **Sprint 7** (reportes, configuración, términos y seguridad) según `specs/007-reportes-configuracion/`.
 
 ## Stack
 
@@ -86,12 +87,28 @@ Los avisos se filtran por rol en el backend: el administrador recibe todos
 los grupos, recepción todos menos stock y el mecánico solo las órdenes
 detenidas de sus órdenes. El sistema **no envía mensajes** a los clientes.
 
+### Sprint 7 — reportes, configuración, términos y seguridad
+
+| Módulo | Pantallas | Backend |
+|--------|-----------|---------|
+| Configuración (solo ADMIN) | `settings/settings_screen.dart` — datos del taller, márgenes de «Próximo», catálogo de tipos de servicio y términos, con «Cambios sin guardar» y «Restablecer» | `GET/PATCH /api/settings` — valores de respaldo en código; el ticket congela los datos del taller al emitirse |
+| Tipos de servicio | sección en Configuración y selector opcional en el servicio de la orden (`orders/order_detail_screen.dart`) | `GET/POST/PATCH /api/service-types` y `GET /lookup` — sin borrado, se desactiva |
+| Próximo servicio | línea «Próximo servicio» en el ticket (pantalla y PDF) y propuesta editable en el formulario de mantenimiento | `nextService` guardado al emitir el ticket y `GET /api/maintenances/suggestion` |
+| Reportes (solo ADMIN) | `reports/reports_screen.dart` — periodo (hoy, semana, mes y rango libre de hasta 366 días), pestañas Ingresos, Servicios, Productividad, Margen de refacciones y Rotación, y «Exportar CSV» | `GET /api/reports/{income,services,productivity,parts-margin,inventory-rotation}` con `?format=csv`; calculados en cada consulta, importes en centavos |
+| Términos y condiciones | `terms/terms_acceptance_screen.dart` (pantalla completa tras iniciar sesión o a mitad de la sesión) y sección en Configuración para publicar versiones | `GET /api/terms/current`, `POST /accept`, `POST /` y `GET /acceptances`; bloqueo `403 TERMS_NOT_ACCEPTED` en todas las rutas salvo cuatro |
+| Seguridad | `audit/audit_log_screen.dart` — Bitácora con filtros; cierre de sesión por inactividad (30 minutos) | `GET /api/audit-log` (solo lectura), contraseñas de 8 a 64 caracteres y `401 SESSION_IDLE` |
+
+La migración `016_settings_reports_security.sql` es aditiva (5 tablas y 12
+columnas). Los datos del taller y los márgenes ya **no** se configuran por
+variables de entorno: viven en la aplicación.
+
 Las rutas, permisos por rol y códigos de error de cada endpoint están en
 `specs/002-citas-ordenes-servicio/contracts/`,
 `specs/003-historial-mantenimiento-inventario/contracts/`,
 `specs/004-pagos-tickets-dashboard/contracts/`,
 `specs/005-precios-refacciones-cobro/contracts/` y
-`specs/006-notificaciones-internas/contracts/`.
+`specs/006-notificaciones-internas/contracts/` y
+`specs/007-reportes-configuracion/contracts/`.
 
 ## Requisitos
 
@@ -181,7 +198,7 @@ Las pruebas del backend usan **siempre** `motorix_test` con el usuario dedicado
 - `specs/003-historial-mantenimiento-inventario/` — especificación del Sprint 3: `spec.md`, `plan.md`, `tasks.md`, `contracts/`, `quickstart.md`.
 - `specs/004-pagos-tickets-dashboard/`, `specs/005-precios-refacciones-cobro/` y `specs/006-notificaciones-internas/` — especificación de los sprints 4, 5 y 6 con la misma estructura.
 - `docs/sprints/` — insumo de cada sprint y la propuesta de los posteriores al MVP.
-- `docs/aseguramiento-calidad-sprint-5.md` y `docs/aseguramiento-calidad-sprint-6.md` — documentos de calidad de los sprints 5 y 6.
+- `docs/aseguramiento-calidad-sprint-5.md`, `docs/aseguramiento-calidad-sprint-6.md` y `docs/aseguramiento-calidad-sprint-7.md` — documentos de calidad de los sprints 5, 6 y 7.
 - `database/README.md` — esquema, migraciones y scripts de entorno.
 
 ## Seguridad

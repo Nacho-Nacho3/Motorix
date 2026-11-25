@@ -5,7 +5,7 @@
 > **Nombre formal del proyecto:** Sistema de Gestión para Taller
 > Mecánico\
 > **Nombre provisional del software:** Motorix\
-> **Estado:** MVP (sprints 1 a 4) y sprints 5 y 6 entregados; sprint 7 en planeación\
+> **Estado:** MVP (sprints 1 a 4) y sprints 5 y 6 entregados; sprint 7 implementado (cierre pendiente de aprobación)\
 > **Tipo:** Proyecto académico de Ingeniería en Sistemas Computacionales
 
 ------------------------------------------------------------------------
@@ -440,6 +440,97 @@ registro de «cliente ya avisado».
   source_id)`): repetirlo devuelve 200 sin duplicar. Si el mismo cliente tiene
   dos motivos, aparece en dos filas y avisar uno no quita el otro; un hecho
   nuevo vuelve a mostrarlo.
+
+## 6.13 Reportes, configuración, términos y seguridad
+
+Entregado en el Sprint 7 (rama `007-reportes-configuracion`). Los datos del
+taller y los márgenes de mantenimiento **viven en la aplicación** (tabla
+`settings`) con valores de respaldo en código (`config/taller.js`: «Motorix»,
+30 días y 500 km): una instalación sin valores guardados sigue funcionando
+igual que antes, y ya no se configuran por variables de entorno.
+
+### Configuración del taller (solo `ADMIN`)
+
+- Sección «Configuración» con tres bloques: **Taller** (nombre, dirección y
+  teléfono), **Márgenes de «Próximo»** (días, 0 a 365, y kilómetros, 0 a 20,000)
+  y **Tipos de servicio**; más **Términos y condiciones**. Cada formulario pide
+  «Cambios sin guardar» al salir y ofrece «Restablecer».
+- `GET/PATCH /api/settings`: actualización parcial y estricta; cada cambio real
+  se registra en la bitácora (`SETTINGS_UPDATED`).
+- El ticket **congela al emitirse** el nombre, la dirección y el teléfono del
+  taller: cambiar la configuración después no altera tickets ya emitidos.
+- `maintenance.warn_days` y `warn_km` admiten `NULL`, que significa «usar el
+  valor del taller» (D-16); un número capturado a mano se conserva. La lista de
+  Mantenimientos, el dashboard, el centro de avisos y «clientes por avisar»
+  resuelven los márgenes con la misma función, por lo que coinciden.
+
+### Tipos de servicio y próximo servicio
+
+- Catálogo con nombre único (sin distinguir mayúsculas) e intervalo en días,
+  en kilómetros o en ambos (≤ 3,650 días, ≤ 1,000,000 km). **No existe borrado:**
+  un tipo se desactiva. Las líneas de servicio de la orden pueden enlazarse a un
+  tipo activo (`serviceTypeId`, opcional).
+- `GET /api/service-types/lookup` (los tres roles) alimenta el selector del
+  formulario de servicio de la orden.
+- El ticket guarda al emitirse `nextService` (`{date, mileage}` o `null`): el
+  intervalo más corto de los tipos de la orden, desde la fecha de emisión y el
+  kilometraje de entrada. `GET /api/maintenances/suggestion?vehicleId=` propone
+  fecha y kilometraje a partir de la última orden terminada del vehículo.
+
+### Fecha de terminación y costo congelado
+
+- `service_orders.finished_at` se escribe una sola vez, al pasar a `FINISHED`.
+  Las órdenes terminadas antes del sprint conservan su última modificación como
+  aproximación y quedan marcadas (`finished_at_estimated = 1`); el reporte de
+  productividad avisa cuántas hay (D-19).
+- `order_parts.unit_cost` congela el precio de compra al agregar la refacción;
+  `NULL` significa «sin costo registrado» y esa línea no entra al margen (D-05).
+  El costo nunca sale en una respuesta de la API.
+
+### Reportes (solo `ADMIN`, calculados en cada consulta)
+
+| Reporte | Endpoint | Contenido |
+|---------|----------|-----------|
+| Ingresos | `GET /api/reports/income` | pagos `PAID` por día de pago y método |
+| Servicios frecuentes | `GET /api/reports/services` | líneas de órdenes terminadas por tipo |
+| Productividad | `GET /api/reports/productivity` | órdenes terminadas y mano de obra por mecánico |
+| Costo y margen | `GET /api/reports/parts-margin` | ventas, costo y margen por refacción |
+| Rotación | `GET /api/reports/inventory-rotation` | unidades salidas ÷ existencia promedio |
+
+- Periodo con atajos (hoy, semana, mes) o rango libre; **máximo 366 días**; por
+  omisión el mes en curso. Los importes se operan en centavos enteros y se
+  devuelven con 2 decimales. Los listados tienen tope de 500 filas.
+- `?format=csv` exporta el mismo contenido (BOM UTF-8, coma, punto decimal,
+  encabezados en español y neutralización de fórmulas). La aplicación lo guarda
+  en `Documentos\Motorix\reportes`.
+
+### Términos y condiciones
+
+- Todo usuario debe aceptar la versión vigente de los términos y del aviso de
+  privacidad. El bloqueo vive en el **backend**: `authenticate` responde
+  `403 TERMS_NOT_ACCEPTED` en toda ruta salvo `GET /api/terms/current`,
+  `POST /api/terms/accept`, `GET /api/auth/me` y `POST /api/auth/logout`.
+- Login y `me` devuelven `termsAccepted`. Si se publica una versión nueva a
+  mitad de una sesión, la siguiente operación recibe el 403 y la aplicación
+  muestra la pantalla de aceptación sin cerrar la sesión.
+- `POST /api/terms` (ADMIN) publica la versión `MAX + 1`; una versión publicada
+  no se edita. `GET /api/terms/acceptances` lista aceptaciones y pendientes.
+
+### Seguridad
+
+- **Bitácora** (`audit_log`, solo inserción; `GET /api/audit-log` solo ADMIN)
+  con un catálogo cerrado de acciones: inicios fallidos y bloqueos, altas y
+  cambios de rol o estado de usuarios, configuración, precios de refacciones y
+  de líneas, pagos cancelados y términos publicados. El `detail` se arma con una
+  lista blanca: nunca contraseñas, hashes, tokens ni datos de tarjeta.
+- **Contraseñas** de 8 a 64 caracteres (mayúscula, minúscula y número); el login
+  acota la contraseña a 128. Siguen guardándose solo con hash.
+- **Inactividad:** 30 minutos sin actividad responden `401 SESSION_IDLE` (reloj
+  en el backend, refrescado como máximo una vez por minuto); la aplicación
+  también lo detecta y cierra la sesión con aviso.
+- Una prueba recorre los endpoints de usuarios, refacciones, órdenes, pagos y
+  tickets con cada rol y verifica que no exponen `password`, hashes ni tokens, y
+  que los precios de compra y costos solo llegan a ADMIN.
 
 ------------------------------------------------------------------------
 
@@ -1159,9 +1250,12 @@ Campana con contador por rol
 
 ## Sprint 7 --- Reportes, configuración, términos y seguridad
 
-Sprint posterior al MVP, **en planeación** (borrador sin `/speckit.specify`).
-Insumo: `docs/sprints/sprint-7-reportes-configuracion.md`; propuesta de
-origen: `docs/sprints/propuesta-sprints-post-mvp.md`.
+Sprint posterior al MVP, entregado en la rama `007-reportes-configuracion`
+(cierre pendiente de aprobación). Insumo:
+`docs/sprints/sprint-7-reportes-configuracion.md`; especificación en
+`specs/007-reportes-configuracion/`; calidad en
+`docs/aseguramiento-calidad-sprint-7.md`. El comportamiento entregado está en
+la sección 6.13.
 
 ### Objetivo
 
@@ -1171,18 +1265,28 @@ consulte y exporte reportes; y que la información quede protegida con
 términos y condiciones, bitácora, política de contraseñas y cierre de
 sesión por inactividad.
 
-### Alcance
+### Historias
 
--   Configuración del taller (datos del ticket y márgenes de «Próximo»).
--   Catálogo de tipos de servicio con intervalo en días y kilómetros, y
-    el ticket con el próximo servicio.
--   Reportes de ingresos, servicios frecuentes, productividad por
-    mecánico, rotación de inventario y costeo, con exportación.
--   Términos y condiciones al ingresar, bitácora, política de
-    contraseñas y cierre por inactividad.
+-   Como administrador edito el nombre, la dirección y el teléfono del taller
+    y los tickets nuevos los usan.
+-   Como administrador ajusto los márgenes de «Próximo» del mantenimiento.
+-   Como administrador mantengo un catálogo de tipos de servicio con
+    intervalos y el ticket muestra el próximo servicio.
+-   Como usuario acepto los términos y el aviso de privacidad antes de usar el
+    sistema; el administrador publica versiones nuevas.
+-   Como administrador consulto la bitácora de acciones sensibles.
+-   Como administrador consulto reportes de ingresos, servicios, productividad,
+    costo y margen y rotación, y los exporto a CSV.
 
-Si el tiempo no alcanza, se divide en dos entregas: configuración,
-términos y seguridad primero, y reportes después.
+### Resultado esperado
+
+``` text
+Configuración del taller y márgenes
+→ tipos de servicio → ticket con «Próximo servicio»
+→ términos y condiciones (bloqueo en el backend)
+→ bitácora, contraseñas e inactividad
+→ reportes por periodo → exportar CSV
+```
 
 ------------------------------------------------------------------------
 

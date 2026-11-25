@@ -123,7 +123,16 @@ Ninguna prueba de la línea base falló (SC-014: 0 regresiones). El bloqueo por 
 
 Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
 
-**Regresión de cierre:** pendiente (se mide al cierre, tras el pulido).
+**Regresión de cierre (T129), medida el 2026-11-25 con todas las historias y el pulido de pruebas y documentación (faltan el recorrido manual y el cierre del documento):**
+
+| Comando | Resultado | Diferencia con la línea base |
+|---|---|---|
+| `cd server && npm.cmd test` | 90 suites y **942 pruebas**, todas en verde | +34 suites y +463 pruebas |
+| `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa (`order-parts.test.js`) | sin cambio |
+| `cd client && flutter test` | **251 pruebas**, todas en verde | +106 pruebas |
+| `cd client && flutter analyze` | sin observaciones | sin cambio |
+
+Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
 
 ## 9. Control de calidad final
 
