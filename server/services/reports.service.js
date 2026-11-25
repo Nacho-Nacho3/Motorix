@@ -1,4 +1,5 @@
 import * as modelo from "../models/report.model.js";
+import { filasACsv } from "../utils/csv.js";
 import { calcularRotacion } from "../utils/inventory-rotation.js";
 import { aCadena, centavosManoDeObra } from "./order-total.service.js";
 
@@ -230,5 +231,84 @@ export async function rotacionInventario({ from, to }) {
     rows: filas.slice(0, MAX_FILAS),
     totals: { unitsOut: filas.reduce((suma, f) => suma + f.unitsOut, 0) },
     truncated: filas.length > MAX_FILAS,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Exportación CSV (US7, P-10): sale de la MISMA estructura de filas que el JSON,
+// así que ambos no pueden divergir (CA-9, SC-007). Los encabezados van en español.
+// ---------------------------------------------------------------------------
+
+const METODOS = {
+  CASH: "Efectivo",
+  CARD: "Tarjeta",
+  TRANSFER: "Transferencia",
+  MERCADO_PAGO: "Mercado Pago",
+};
+
+/** Encabezados y celdas de cada reporte, a partir de su resultado JSON. */
+const EXPORTACIONES = {
+  income: {
+    encabezados: ["Fecha", "Método", "Pagos", "Importe"],
+    filas: ({ rows, totals }) => [
+      ...rows.map((r) => [r.date, METODOS[r.method] ?? r.method, r.count, r.total]),
+      ["TOTAL", "", totals.count, totals.total],
+    ],
+  },
+  services: {
+    encabezados: ["Tipo de servicio", "Cantidad", "Importe"],
+    filas: ({ rows }) => rows.map((r) => [r.serviceType, r.count, r.amount]),
+  },
+  productivity: {
+    encabezados: ["Mecánico", "Órdenes terminadas", "Mano de obra"],
+    filas: ({ rows }) => rows.map((r) => [r.mechanicName, r.ordersFinished, r.laborAmount]),
+  },
+  "parts-margin": {
+    encabezados: [
+      "Código",
+      "Refacción",
+      "Unidades",
+      "Ventas",
+      "Costo",
+      "Margen",
+      "Unidades sin costo",
+      "Ventas sin costo",
+    ],
+    filas: ({ rows }) =>
+      rows.map((r) => [
+        r.partCode,
+        r.name,
+        r.units,
+        r.salesAmount,
+        r.costAmount,
+        r.marginAmount,
+        r.unitsWithoutCost,
+        r.salesWithoutCost,
+      ]),
+  },
+  "inventory-rotation": {
+    encabezados: ["Código", "Refacción", "Unidades salidas", "Existencia promedio", "Rotación"],
+    filas: ({ rows }) =>
+      rows.map((r) => [
+        r.partCode,
+        r.name,
+        r.unitsOut,
+        r.averageStock,
+        r.rotation === null ? "Sin existencia" : r.rotation,
+      ]),
+  },
+};
+
+/**
+ * Archivo CSV de un reporte ya calculado.
+ * @param {keyof typeof EXPORTACIONES} nombre
+ * @param {{from: string, to: string, rows: object[], totals: object}} datos resultado del reporte
+ * @returns {{ contenido: string, nombreArchivo: string }}
+ */
+export function exportarCsv(nombre, datos) {
+  const definicion = EXPORTACIONES[nombre];
+  return {
+    contenido: filasACsv({ encabezados: definicion.encabezados, filas: definicion.filas(datos) }),
+    nombreArchivo: `reporte-${nombre}-${datos.from}-${datos.to}.csv`,
   };
 }

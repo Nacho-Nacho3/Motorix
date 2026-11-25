@@ -160,6 +160,29 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T124 (Sprint 7, US7): descarga el CSV de un reporte del periodo (solo
+  /// ADMIN). Devuelve el contenido completo (con BOM UTF-8); un error del
+  /// backend llega como [ApiError], igual que el resto de las llamadas.
+  Future<String> descargarReporteCsv(
+    String nombre, {
+    required String desde,
+    required String hasta,
+  }) async {
+    final respuesta = await http
+        .get(
+          _uri('/reports/$nombre', {'from': desde, 'to': hasta, 'format': 'csv'}),
+          headers: _encabezados(incluirJson: false),
+        )
+        .timeout(_tiempoEspera);
+    if (respuesta.statusCode == 200) return utf8.decode(respuesta.bodyBytes);
+    _procesar(respuesta); // lanza el ApiError del sobre {ok:false,...}
+    throw ApiError(
+      status: respuesta.statusCode,
+      code: 'BAD_RESPONSE',
+      message: 'Respuesta inesperada del servidor.',
+    );
+  }
+
   /// T091 (Sprint 7, US10): consulta de la bitácora (solo ADMIN).
   Future<Map<String, dynamic>> listarBitacora({
     String? from,

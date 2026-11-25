@@ -112,7 +112,18 @@ Se llena al cierre (T132) con los 26 criterios CA-1 a CA-26.
 
 Ninguna prueba de la línea base falló (SC-014: 0 regresiones). El bloqueo por términos activo no obligó a corregir ninguna suite existente.
 
-**Regresión de cierre:** pendiente (se mide al cierre, con el bloque B).
+**Checkpoint del bloque B (reportes y exportación, US4 a US7), medido el 2026-11-25:**
+
+| Comando | Resultado | Diferencia con la línea base |
+|---|---|---|
+| `cd server && npm.cmd test` | 88 suites y **922 pruebas**, todas en verde | +32 suites y +443 pruebas |
+| `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa | sin cambio |
+| `cd client && flutter test` | **251 pruebas**, todas en verde | +106 pruebas |
+| `cd client && flutter analyze` | sin observaciones | sin cambio |
+
+Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
+
+**Regresión de cierre:** pendiente (se mide al cierre, tras el pulido).
 
 ## 9. Control de calidad final
 

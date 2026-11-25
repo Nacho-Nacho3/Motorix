@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +28,25 @@ class _ApiFalsa extends ApiClient {
   final int sinCosto;
   final List<Map<String, String>> consultas = [];
   final List<String> rutas = [];
+  final List<String> descargas = [];
+  bool fallaDescarga = false;
+
+  @override
+  Future<String> descargarReporteCsv(
+    String nombre, {
+    required String desde,
+    required String hasta,
+  }) async {
+    descargas.add('$nombre|$desde|$hasta');
+    if (fallaDescarga) {
+      throw ApiError(
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'No tienes permisos para realizar esta acción.',
+      );
+    }
+    return '\uFEFFFecha,Método,Pagos,Importe\r\n2026-11-03,Efectivo,2,1850.00\r\n';
+  }
 
   @override
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
@@ -498,6 +519,150 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No hay existencias ni movimientos de inventario en este periodo.'), findsOneWidget);
+    });
+  });
+
+  group('Exportación a CSV (US7, FR-014)', () {
+    late Directory carpeta;
+
+    setUp(() {
+      carpeta = Directory.systemTemp.createTempSync('motorix_reportes_');
+    });
+
+    tearDown(() {
+      if (carpeta.existsSync()) carpeta.deleteSync(recursive: true);
+    });
+
+    test('escribe el archivo con el reporte y el periodo en el nombre', () async {
+      final api = _ApiFalsa();
+      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+
+      final ruta = await proveedor.exportar('income');
+
+      expect(ruta, isNotNull);
+      expect(ruta!.endsWith('reporte-income-2026-11-01-2026-11-25.csv'), isTrue);
+      // El BOM UTF-8 (EF BB BF) debe quedar en el archivo para que Excel muestre acentos.
+      final bytes = File(ruta).readAsBytesSync();
+      expect(bytes.take(3), [0xEF, 0xBB, 0xBF]);
+      final contenido = File(ruta).readAsStringSync();
+      expect(contenido, startsWith('Fecha,Método'));
+      expect(contenido, contains('2026-11-03,Efectivo,2,1850.00'));
+      expect(api.descargas.single, 'income|2026-11-01|2026-11-25');
+      expect(proveedor.mensajeExportacion, 'Archivo guardado en $ruta');
+      expect(proveedor.exportacionConError, isFalse);
+    });
+
+    test('crea la carpeta si no existe y vuelve a escribir sobre el mismo archivo', () async {
+      final destino = Directory('${carpeta.path}${Platform.pathSeparator}Motorix${Platform.pathSeparator}reportes');
+      final proveedor = ReportsProvider(_ApiFalsa(), ahora: _hoy, carpetaReportes: () => destino);
+
+      final primera = await proveedor.exportar('services');
+      final segunda = await proveedor.exportar('services');
+
+      expect(destino.existsSync(), isTrue);
+      expect(primera, segunda);
+      expect(destino.listSync(), hasLength(1));
+    });
+
+    test('el periodo del archivo es el vigente del selector', () async {
+      final api = _ApiFalsa();
+      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+      proveedor.aplicarAtajo(AtajoPeriodo.hoy);
+
+      final ruta = await proveedor.exportar('productivity');
+
+      expect(ruta!.endsWith('reporte-productivity-2026-11-25-2026-11-25.csv'), isTrue);
+      expect(api.descargas.single, 'productivity|2026-11-25|2026-11-25');
+    });
+
+    test('un error de escritura da un mensaje claro y no devuelve ruta', () async {
+      // La «carpeta» es en realidad un archivo: no se puede crear ni escribir dentro.
+      final archivo = File('${carpeta.path}${Platform.pathSeparator}ocupado')..writeAsStringSync('x');
+      final proveedor = ReportsProvider(
+        _ApiFalsa(),
+        ahora: _hoy,
+        carpetaReportes: () => Directory(archivo.path),
+      );
+
+      final ruta = await proveedor.exportar('income');
+
+      expect(ruta, isNull);
+      expect(proveedor.exportacionConError, isTrue);
+      expect(proveedor.mensajeExportacion, startsWith('No se pudo guardar el archivo'));
+    });
+
+    test('un error del backend se muestra tal cual y no escribe nada', () async {
+      final api = _ApiFalsa()..fallaDescarga = true;
+      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+
+      final ruta = await proveedor.exportar('income');
+
+      expect(ruta, isNull);
+      expect(proveedor.exportacionConError, isTrue);
+      expect(proveedor.mensajeExportacion, 'No tienes permisos para realizar esta acción.');
+      expect(carpeta.listSync(), isEmpty);
+    });
+
+    test('la carpeta por omisión es Documentos\\Motorix\\reportes del usuario', () {
+      final ruta = ReportsProvider.carpetaPorOmision().path;
+
+      expect(ruta, contains('Documents'));
+      expect(ruta, endsWith('reportes'));
+      expect(ruta, contains('Motorix'));
+    });
+
+    testWidgets('el botón «Exportar CSV» exporta la pestaña visible y muestra la ruta', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ReportsProvider>(
+              create: (_) => ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta),
+            ),
+          ],
+          child: MaterialApp(theme: ThemeData(useMaterial3: true), home: const ReportsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Servicios'));
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('boton-exportar-csv')));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(api.descargas.single, 'services|2026-11-01|2026-11-25');
+      expect(find.textContaining('Archivo guardado en'), findsOneWidget);
+      expect(find.textContaining('reporte-services-2026-11-01-2026-11-25.csv'), findsOneWidget);
+    });
+
+    testWidgets('un error de la descarga se muestra en el mensaje', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa()..fallaDescarga = true;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ReportsProvider>(
+              create: (_) => ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta),
+            ),
+          ],
+          child: MaterialApp(theme: ThemeData(useMaterial3: true), home: const ReportsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('boton-exportar-csv')));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('No tienes permisos para realizar esta acción.'), findsOneWidget);
     });
   });
 

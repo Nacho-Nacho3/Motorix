@@ -184,6 +184,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ],
               ),
             ],
+            const SizedBox(height: AppSpacing.sm),
+            const _BotonExportar(),
             if (proveedor.errorPeriodo != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -640,6 +642,51 @@ class PestanaRotacion extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Reportes en el orden de las pestañas, para saber cuál exportar.
+const List<String> _nombresDeReporte = [
+  'income',
+  'services',
+  'productivity',
+  'parts-margin',
+  'inventory-rotation',
+];
+
+/// Botón «Exportar CSV» (US7, FR-014): exporta la pestaña visible con el periodo
+/// vigente y muestra la ruta del archivo o el error en un mensaje.
+class _BotonExportar extends StatelessWidget {
+  const _BotonExportar();
+
+  Future<void> _exportar(BuildContext context) async {
+    final proveedor = context.read<ReportsProvider>();
+    final mensajero = ScaffoldMessenger.of(context);
+    final nombre = _nombresDeReporte[DefaultTabController.of(context).index];
+    await proveedor.exportar(nombre);
+    final mensaje = proveedor.mensajeExportacion;
+    if (mensaje == null) return;
+    mensajero.showSnackBar(
+      SnackBar(
+        key: const Key('mensaje-exportacion'),
+        content: Text(mensaje),
+        backgroundColor: proveedor.exportacionConError ? AppColors.danger : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exportando = context.select<ReportsProvider, bool>((p) => p.exportando);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        key: const Key('boton-exportar-csv'),
+        onPressed: exportando ? null : () => _exportar(context),
+        icon: const Icon(Icons.file_download_outlined),
+        label: Text(exportando ? 'Exportando…' : 'Exportar CSV'),
       ),
     );
   }

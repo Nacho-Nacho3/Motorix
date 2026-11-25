@@ -13,47 +13,39 @@ function leerConsulta(req) {
   return consulta.data;
 }
 
-export async function getIngresos(req, res, next) {
-  try {
-    const { from, to } = leerConsulta(req);
-    ok(res, await servicio.ingresos({ from, to }));
-  } catch (error) {
-    next(error);
-  }
+/**
+ * Responde un reporte en JSON o, con `?format=csv`, como archivo CSV de la misma
+ * estructura (Sprint 7, US7, CA-9). Un error de validación siempre es JSON.
+ */
+function reporte(nombre, calcular) {
+  return async (req, res, next) => {
+    try {
+      const { from, to, format } = leerConsulta(req);
+      const datos = await calcular({ from, to });
+      if (format === "csv") {
+        const { contenido, nombreArchivo } = servicio.exportarCsv(nombre, datos);
+        res
+          .status(200)
+          .set({
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": `attachment; filename="${nombreArchivo}"`,
+          })
+          .send(contenido);
+        return;
+      }
+      ok(res, datos);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
-export async function getServicios(req, res, next) {
-  try {
-    const { from, to } = leerConsulta(req);
-    ok(res, await servicio.servicios({ from, to }));
-  } catch (error) {
-    next(error);
-  }
-}
+export const getIngresos = reporte("income", servicio.ingresos);
+export const getServicios = reporte("services", servicio.servicios);
+export const getProductividad = reporte("productivity", servicio.productividad);
 
-export async function getProductividad(req, res, next) {
-  try {
-    const { from, to } = leerConsulta(req);
-    ok(res, await servicio.productividad({ from, to }));
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getMargenRefacciones(req, res, next) {
-  try {
-    const { from, to } = leerConsulta(req);
-    ok(res, await servicio.margenRefacciones({ from, to }));
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getRotacionInventario(req, res, next) {
-  try {
-    const { from, to } = leerConsulta(req);
-    ok(res, await servicio.rotacionInventario({ from, to }));
-  } catch (error) {
-    next(error);
-  }
-}
+export const getMargenRefacciones = reporte("parts-margin", servicio.margenRefacciones);
+export const getRotacionInventario = reporte(
+  "inventory-rotation",
+  servicio.rotacionInventario,
+);
