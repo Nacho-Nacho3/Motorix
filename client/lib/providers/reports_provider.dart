@@ -117,4 +117,6 @@ class ReportsProvider extends ChangeNotifier {
   }
 
   Future<void> cargarIngresos() => cargar('income');
+  Future<void> cargarServicios() => cargar('services');
+  Future<void> cargarProductividad() => cargar('productivity');
 }

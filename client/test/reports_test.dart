@@ -18,14 +18,52 @@ import 'package:motorix_client/widgets/states_view.dart';
 // tabla y totales; estados de carga, vacío y error; sección solo para ADMIN.
 
 class _ApiFalsa extends ApiClient {
-  _ApiFalsa({this.vacio = false, this.falla = false});
+  _ApiFalsa({this.vacio = false, this.falla = false, this.aproximadas = 0});
 
   final bool vacio;
   final bool falla;
+  final int aproximadas;
   final List<Map<String, String>> consultas = [];
+  final List<String> rutas = [];
 
   @override
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
+    if (path.startsWith('/reports/')) rutas.add(path);
+    if (path == '/reports/services') {
+      if (falla) {
+        throw ApiError(status: 500, code: 'INTERNAL_ERROR', message: 'No se pudo calcular el reporte.');
+      }
+      return {
+        'from': query?['from'],
+        'to': query?['to'],
+        'rows': vacio
+            ? <dynamic>[]
+            : [
+                {'serviceTypeId': 1, 'serviceType': 'Cambio de aceite', 'count': 12, 'amount': '7200.00'},
+                {'serviceTypeId': null, 'serviceType': 'Sin tipo de servicio', 'count': 30, 'amount': '9100.00'},
+              ],
+        'totals': {'count': vacio ? 0 : 42, 'amount': vacio ? '0.00' : '16300.00'},
+        'truncated': false,
+      };
+    }
+    if (path == '/reports/productivity') {
+      if (falla) {
+        throw ApiError(status: 500, code: 'INTERNAL_ERROR', message: 'No se pudo calcular el reporte.');
+      }
+      return {
+        'from': query?['from'],
+        'to': query?['to'],
+        'rows': vacio
+            ? <dynamic>[]
+            : [
+                {'mechanicId': 3, 'mechanicName': 'Mecánico Uno', 'ordersFinished': 5, 'laborAmount': '2400.00'},
+                {'mechanicId': 4, 'mechanicName': 'Mecánico Dos', 'ordersFinished': 4, 'laborAmount': '1750.00'},
+              ],
+        'totals': {'ordersFinished': vacio ? 0 : 9, 'laborAmount': vacio ? '0.00' : '4150.00'},
+        'approximateDates': aproximadas,
+        'truncated': false,
+      };
+    }
     if (path == '/reports/income') {
       consultas.add(Map<String, String>.from(query ?? {}));
       if (falla) {
@@ -205,6 +243,102 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.consultas.length, greaterThan(consultasAntes));
       expect(find.byKey(const Key('error-periodo')), findsNothing);
+    });
+  });
+
+  group('Pestaña de servicios', () {
+    testWidgets('muestra el total y el ranking con el renglón sin tipo', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Servicios'));
+      await tester.pumpAndSettle();
+
+      expect(api.rutas, contains('/reports/services'));
+      expect(find.byKey(const Key('total-servicios')), findsOneWidget);
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('Importe: \$16300.00'), findsOneWidget);
+      expect(find.text('Cambio de aceite'), findsOneWidget);
+      expect(find.text('Sin tipo de servicio'), findsOneWidget);
+    });
+
+    testWidgets('sin datos muestra el estado vacío', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(vacio: true)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Servicios'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No hay servicios en órdenes terminadas en este periodo.'), findsOneWidget);
+    });
+
+    testWidgets('si falla muestra el error', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(falla: true)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Servicios'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No se pudo calcular el reporte.'), findsWidgets);
+    });
+  });
+
+  group('Pestaña de productividad', () {
+    testWidgets('muestra órdenes y mano de obra por mecánico', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Productividad'));
+      await tester.pumpAndSettle();
+
+      expect(api.rutas, contains('/reports/productivity'));
+      expect(find.text('9'), findsOneWidget);
+      expect(find.text('Mano de obra: \$4150.00'), findsOneWidget);
+      expect(find.text('Mecánico Uno'), findsOneWidget);
+      expect(find.text('\$1750.00'), findsOneWidget);
+      expect(find.byKey(const Key('nota-fechas-aproximadas')), findsNothing);
+    });
+
+    testWidgets('avisa cuántas órdenes tienen fecha aproximada', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(aproximadas: 2)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Productividad'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('nota-fechas-aproximadas')), findsOneWidget);
+      expect(find.textContaining('2 órdenes tienen una fecha de terminación aproximada'), findsOneWidget);
+    });
+
+    testWidgets('con una sola orden aproximada usa el singular', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(aproximadas: 1)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Productividad'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('1 orden tiene una fecha de terminación aproximada'), findsOneWidget);
+    });
+
+    testWidgets('cambiar el periodo recarga también las pestañas ya abiertas', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Productividad'));
+      await tester.pumpAndSettle();
+      final antes = api.rutas.where((r) => r == '/reports/productivity').length;
+
+      await tester.tap(find.byKey(const Key('periodo-hoy')));
+      await tester.pumpAndSettle();
+
+      expect(api.rutas.where((r) => r == '/reports/productivity').length, greaterThan(antes));
     });
   });
 

@@ -837,6 +837,41 @@ export async function crearIngresosDeEjemplo(adminId) {
   return { creados, omitidos: pagos.length - creados };
 }
 
+export async function ajustarTerminacionesDeEjemplo() {
+  const marcadores = [
+    ...ORDENES_EJEMPLO.filter(
+      (ejemplo) => ejemplo.status === "FINISHED" || ejemplo.status === "DELIVERED",
+    ).map((ejemplo) => ejemplo.reportedProblem),
+    MARCADOR_HISTORICO,
+  ];
+  const hoy = new Date();
+  const texto = (mesesAtras, dia) => {
+    const base = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras, 1);
+    const tope =
+      mesesAtras === 0
+        ? hoy.getDate()
+        : new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    const d = Math.min(dia, tope);
+    return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")} 16:00:00`;
+  };
+  // Se reparten en orden entre el mes en curso y el anterior.
+  const fechas = [texto(0, 2), texto(1, 15), texto(0, 1), texto(1, 8)];
+
+  let ajustadas = 0;
+  for (const [indice, problema] of marcadores.entries()) {
+    const [resultado] = await pool.query(
+      `UPDATE service_orders
+          SET finished_at = ?, finished_at_estimated = 0
+        WHERE reported_problem = ?
+          AND status IN ('FINISHED', 'DELIVERED')
+          AND (finished_at IS NULL OR finished_at_estimated = 1)`,
+      [fechas[indice % fechas.length], problema],
+    );
+    ajustadas += resultado.affectedRows;
+  }
+  return { ajustadas };
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -864,6 +899,9 @@ export async function ejecutarSeed() {
   const ingresos = admin
     ? await crearIngresosDeEjemplo(admin)
     : { creados: 0, omitidos: 0 };
+  // Sprint 7 (US5, T108): fechas de terminación reales en las órdenes de ejemplo
+  // (solo si siguen ausentes o aproximadas, D-19: idempotente).
+  const terminaciones = await ajustarTerminacionesDeEjemplo();
   // Después del uso de refacciones: el ticket de ejemplo ya la incluye (CA-4).
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
@@ -899,6 +937,7 @@ export async function ejecutarSeed() {
     configuracion,
     tiposDeServicio,
     ingresos,
+    terminaciones,
     pagoYTicket,
     escenariosDePrecios,
     escenariosNotificaciones,
@@ -955,6 +994,9 @@ if (esEjecucionDirecta) {
   console.log(
     `  - Ingresos de ejemplo: ${resumen.ingresos.creados} creados, ` +
       `${resumen.ingresos.omitidos} ya existentes`,
+  );
+  console.log(
+    `  - Fechas de terminación ajustadas: ${resumen.terminaciones.ajustadas}`,
   );
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +

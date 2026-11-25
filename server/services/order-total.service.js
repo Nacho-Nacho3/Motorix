@@ -22,6 +22,15 @@ export function aCadena(centavos) {
 }
 
 /**
+ * Mano de obra de una línea en centavos: horas × tarifa, todo en centavos y
+ * redondeado al entero más cercano. Es LA regla de la mano de obra: el total de
+ * la orden, el ticket y el reporte de productividad la comparten.
+ */
+export function centavosManoDeObra({ hours, hourlyRate }) {
+  return Math.round((aCentavos(hours) * aCentavos(hourlyRate)) / 100);
+}
+
+/**
  * Suma las filas de trabajo de una orden y devuelve los subtotales y el
  * total como cadenas de 2 decimales. Función pura (probada en unit).
  *
@@ -38,8 +47,7 @@ export function sumarTotales({ servicios = [], manoDeObra = [], refacciones = []
 
   let manoDeObraCents = 0;
   for (const fila of manoDeObra) {
-    // horas × tarifa, todo en centavos (redondeo al entero más cercano).
-    manoDeObraCents += Math.round((aCentavos(fila.hours) * aCentavos(fila.hourlyRate)) / 100);
+    manoDeObraCents += centavosManoDeObra(fila);
   }
 
   let refaccionesCents = 0;

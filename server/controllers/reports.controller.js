@@ -21,3 +21,21 @@ export async function getIngresos(req, res, next) {
     next(error);
   }
 }
+
+export async function getServicios(req, res, next) {
+  try {
+    const { from, to } = leerConsulta(req);
+    ok(res, await servicio.servicios({ from, to }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getProductividad(req, res, next) {
+  try {
+    const { from, to } = leerConsulta(req);
+    ok(res, await servicio.productividad({ from, to }));
+  } catch (error) {
+    next(error);
+  }
+}

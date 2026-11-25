@@ -8,3 +8,10 @@ import { authorize } from "../middlewares/authorize.js";
 export const rutasReports = Router();
 
 rutasReports.get("/income", authenticate, authorize("ADMIN"), controlador.getIngresos);
+rutasReports.get("/services", authenticate, authorize("ADMIN"), controlador.getServicios);
+rutasReports.get(
+  "/productivity",
+  authenticate,
+  authorize("ADMIN"),
+  controlador.getProductividad,
+);

@@ -28,7 +28,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final proveedor = context.read<ReportsProvider>();
       _desde.text = proveedor.desde;
       _hasta.text = proveedor.hasta;
-      proveedor.cargarIngresos();
     });
   }
 
@@ -70,14 +69,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final proveedor = context.watch<ReportsProvider>();
 
     return DefaultTabController(
-      length: 1,
+      length: 3,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: const Text('Reportes'),
           bottom: const TabBar(
             isScrollable: true,
-            tabs: [Tab(text: 'Ingresos')],
+            tabs: [
+              Tab(text: 'Ingresos'),
+              Tab(text: 'Servicios'),
+              Tab(text: 'Productividad'),
+            ],
           ),
         ),
         body: Padding(
@@ -88,7 +91,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               _selectorPeriodo(proveedor),
               const SizedBox(height: AppSpacing.md),
               const Expanded(
-                child: TabBarView(children: [PestanaIngresos()]),
+                child: TabBarView(
+                  children: [
+                    PestanaIngresos(),
+                    PestanaServicios(),
+                    PestanaProductividad(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -197,7 +206,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 }
 
 /// Estados comunes de una pestaña de reporte: carga, error, vacío y contenido.
-class CuerpoReporte extends StatelessWidget {
+/// Consulta su reporte al mostrarse por primera vez.
+class CuerpoReporte extends StatefulWidget {
   const CuerpoReporte({
     super.key,
     required this.nombre,
@@ -208,6 +218,28 @@ class CuerpoReporte extends StatelessWidget {
   final String nombre;
   final String mensajeVacio;
   final Widget Function(ReportResult resultado) contenido;
+
+  @override
+  State<CuerpoReporte> createState() => _CuerpoReporteState();
+}
+
+class _CuerpoReporteState extends State<CuerpoReporte> {
+  String get nombre => widget.nombre;
+  String get mensajeVacio => widget.mensajeVacio;
+  Widget Function(ReportResult) get contenido => widget.contenido;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final proveedor = context.read<ReportsProvider>();
+      if (proveedor.resultados[nombre] == null &&
+          proveedor.cargando[nombre] != true) {
+        proveedor.cargar(nombre);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -329,4 +361,148 @@ class PestanaIngresos extends StatelessWidget {
       },
     );
   }
+}
+
+/// Pestaña «Servicios»: servicios más frecuentes del periodo (US5, FR-010).
+class PestanaServicios extends StatelessWidget {
+  const PestanaServicios({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CuerpoReporte(
+      nombre: 'services',
+      mensajeVacio: 'No hay servicios en órdenes terminadas en este periodo.',
+      contenido: (resultado) => SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _resumen(
+              etiqueta: 'Servicios realizados',
+              valor: '${resultado.totals['count'] ?? 0}',
+              clave: const Key('total-servicios'),
+              detalle: 'Importe: \$${resultado.importe('amount')}',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Card(
+              color: AppColors.surface,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  key: const Key('tabla-servicios'),
+                  columns: const [
+                    DataColumn(label: Text('Tipo de servicio')),
+                    DataColumn(label: Text('Cantidad'), numeric: true),
+                    DataColumn(label: Text('Importe'), numeric: true),
+                  ],
+                  rows: [
+                    for (final fila in resultado.rows)
+                      DataRow(cells: [
+                        DataCell(Text('${fila['serviceType']}')),
+                        DataCell(Text('${fila['count']}')),
+                        DataCell(Text('\$${fila['amount']}')),
+                      ]),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pestaña «Productividad»: órdenes terminadas y mano de obra por mecánico
+/// (US5, FR-010), con la nota de fechas aproximadas (D-19).
+class PestanaProductividad extends StatelessWidget {
+  const PestanaProductividad({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CuerpoReporte(
+      nombre: 'productivity',
+      mensajeVacio: 'No hay órdenes terminadas en este periodo.',
+      contenido: (resultado) {
+        final aproximadas =
+            (resultado.extras['approximateDates'] as num?)?.toInt() ?? 0;
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _resumen(
+                etiqueta: 'Órdenes terminadas',
+                valor: '${resultado.totals['ordersFinished'] ?? 0}',
+                clave: const Key('total-ordenes'),
+                detalle: 'Mano de obra: \$${resultado.importe('laborAmount')}',
+              ),
+              if (aproximadas > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Text(
+                    '$aproximadas ${aproximadas == 1 ? 'orden tiene' : 'órdenes tienen'} una fecha de '
+                    'terminación aproximada (anterior a este sprint): su periodo puede no ser exacto.',
+                    key: const Key('nota-fechas-aproximadas'),
+                    style: const TextStyle(color: AppColors.warning),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                color: AppColors.surface,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    key: const Key('tabla-productividad'),
+                    columns: const [
+                      DataColumn(label: Text('Mecánico')),
+                      DataColumn(label: Text('Órdenes terminadas'), numeric: true),
+                      DataColumn(label: Text('Mano de obra'), numeric: true),
+                    ],
+                    rows: [
+                      for (final fila in resultado.rows)
+                        DataRow(cells: [
+                          DataCell(Text('${fila['mechanicName']}')),
+                          DataCell(Text('${fila['ordersFinished']}')),
+                          DataCell(Text('\$${fila['laborAmount']}')),
+                        ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Tarjeta de resumen compartida por las pestañas de reporte.
+Widget _resumen({
+  required String etiqueta,
+  required String valor,
+  required Key clave,
+  required String detalle,
+}) {
+  return Card(
+    color: AppColors.surface,
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(etiqueta, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            valor,
+            key: clave,
+            style: const TextStyle(
+              fontSize: AppFontSizes.title,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+          Text(detalle),
+        ],
+      ),
+    ),
+  );
 }

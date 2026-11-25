@@ -109,3 +109,85 @@ describe("Contrato de GET /api/reports/income", () => {
     expect(prohibido.body.error.code).toBe("FORBIDDEN");
   });
 });
+
+describe("Contrato de GET /api/reports/services", () => {
+  test("rows {serviceTypeId, serviceType, count, amount} y totals {count, amount}", async () => {
+    const respuesta = await request(app)
+      .get("/api/reports/services?from=2026-11-01&to=2026-11-30")
+      .set(headersAdmin);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.ok).toBe(true);
+    const { data } = respuesta.body;
+    expect(Object.keys(data).sort()).toEqual(["from", "rows", "to", "totals", "truncated"]);
+    expect(Object.keys(data.totals).sort()).toEqual(["amount", "count"]);
+    expect(data.totals.amount).toMatch(/^\d+\.\d{2}$/);
+    expect(Array.isArray(data.rows)).toBe(true);
+  });
+});
+
+describe("Contrato de GET /api/reports/productivity", () => {
+  test("rows {mechanicId, mechanicName, ordersFinished, laborAmount}, totals y approximateDates", async () => {
+    const respuesta = await request(app)
+      .get("/api/reports/productivity?from=2026-11-01&to=2026-11-30")
+      .set(headersAdmin);
+
+    expect(respuesta.status).toBe(200);
+    const { data } = respuesta.body;
+    expect(Object.keys(data).sort()).toEqual(
+      ["approximateDates", "from", "rows", "to", "totals", "truncated"],
+    );
+    expect(Object.keys(data.totals).sort()).toEqual(["laborAmount", "ordersFinished"]);
+    expect(Number.isInteger(data.approximateDates)).toBe(true);
+    expect(data.totals.laborAmount).toMatch(/^\d+\.\d{2}$/);
+  });
+
+  test("con datos la fila trae los cuatro campos del contrato", async () => {
+    const mecanico = await tokenPara({ username: "mecanico-rp", role: "MECHANIC", name: "Mecánico" });
+    const cliente = await clientes.crear({ name: "Cliente rp", phone: "5577778888", email: "rp@correo.mx" });
+    const vehiculo = await vehiculos.crear({
+      clientId: cliente.id,
+      brand: "Nissan",
+      model: "Versa",
+      year: 2020,
+      licensePlate: "RP00001",
+      vin: null,
+      currentMileage: 1000,
+    });
+    const alta = await request(app)
+      .post("/api/service-orders")
+      .set(headersRecepcion)
+      .send({
+        clientId: cliente.id,
+        vehicleId: vehiculo.id,
+        mechanicId: mecanico.usuario.id,
+        entryMileage: 2000,
+        reportedProblem: "Productividad",
+      });
+    const id = alta.body.data.order.id;
+    await request(app)
+      .post(`/api/service-orders/${id}/labor`)
+      .set(conToken(mecanico.token))
+      .send({ concept: "Mano de obra", hours: 2, hourlyRate: 300 });
+    for (const status of ["DIAGNOSIS", "IN_REPAIR", "FINISHED"]) {
+      await request(app)
+        .patch(`/api/service-orders/${id}/status`)
+        .set(conToken(mecanico.token))
+        .send({ status });
+    }
+    await poolPrueba.query("UPDATE service_orders SET finished_at = '2026-11-10 10:00:00' WHERE id = ?", [id]);
+
+    const respuesta = await request(app)
+      .get("/api/reports/productivity?from=2026-11-01&to=2026-11-30")
+      .set(headersAdmin);
+
+    expect(respuesta.body.data.rows).toEqual([
+      {
+        mechanicId: mecanico.usuario.id,
+        mechanicName: "Mecánico",
+        ordersFinished: 1,
+        laborAmount: "600.00",
+      },
+    ]);
+  });
+});
