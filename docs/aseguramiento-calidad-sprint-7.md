@@ -88,6 +88,8 @@ Se llena al cierre (T132) con los 26 criterios CA-1 a CA-26.
 |:--:|---|---|---|---|---|---|
 | H-01 | La línea base del backend arrancó en rojo (46 suites): el checksum de `015_notifications.sql` no coincidía porque la copia de trabajo tenía fin de línea CRLF (autocrlf de Windows) y `schema_migrations` guardaba el hash de la versión LF; es la misma causa que H-01 del Sprint 6 | Media | T003 (línea base) | Resuelto | Se restauraron los bytes LF (contenido idéntico a `HEAD`) y se agregó `.gitattributes` con `database/migrations/*.sql text eol=lf` para que no se repita | `.gitattributes` |
 | H-03 | `GET /api/appointments?date=<texto>` respondía 500 porque la fecha no se validaba antes de la consulta (no era inyección: la consulta ya usaba parámetros) | Media | T082 (prueba de entradas maliciosas) | Resuelto | `list` valida el formato `YYYY-MM-DD` y responde 400 `VALIDATION_ERROR` | `server/services/appointments.service.js` |
+| H-04 | El catálogo mostraba «Usado en 1 servicios» (sin concordancia de número) | Baja | T131 (capturas) | Resuelto | Se usa el singular cuando es una sola línea, también en el aviso al desactivar | `V3-01-tipos-de-servicio.png` |
+| H-05 | Detalles de presentación: Configuración, Bitácora y Reportes repiten el título (cabecera del menú y barra propia, como el Dashboard); la bitácora muestra la clave técnica del campo (`shop.name`); la lista de aceptaciones y el encabezado del ticket muestran la fecha en formato ISO | Baja | T131 (capturas) | Abierto | Pendiente de decisión del responsable; no afecta a ningún criterio de aceptación | Capturas V1, V5 y V6 |
 | H-02 | Hallazgos bajos del análisis sin corregir: G2 (FR-029 y la versión de términos en los seeds), A1 (usuario de `settings.updated_by` al sembrar), N1 (nombres de pruebas del plan frente a las tareas) y D1 (requisitos repetidos) | Baja | G-07 | Aceptado | Se resuelven sobre la marcha durante la implementación | — |
 
 ## 8. Línea base de regresión
@@ -154,4 +156,47 @@ Se eligen cinco requisitos del Sprint 7 entre los que más pueden fallar (bloque
 
 # Anexo de evidencias
 
-Se llena al cierre con la corrida automática, la comprobación por API de V1 a V13 (T130) y las capturas del recorrido manual (T131) en `docs/evidencias/sprint-7/`.
+## Recorrido con capturas de la interfaz (T131), 2026-11-25
+
+A petición del responsable, el recorrido lo ejecutó el agente con un guion
+(`client/tool/capturas.dart`) que corre la aplicación real contra el backend en
+ejecución sobre la base de pruebas `motorix_test` recién sembrada, pulsa y
+escribe en sus pantallas y guarda la imagen de la propia aplicación. No es un
+recorrido manual hecho por una persona: la revisión visual de las 25 capturas la
+hizo el agente y queda pendiente la del responsable. El escenario V8 adelanta en
+la base la última actividad 31 minutos en lugar de esperar; el resto del flujo
+(respuesta `401 SESSION_IDLE` y aviso) es el real. V7, V12 y V13 no tienen
+pantalla propia y se comprobaron por API.
+
+| Escenario | Qué muestra | Captura | Resultado |
+|---|---|---|---|
+| V5 | Pantalla de aceptación tras iniciar sesión | [`V5-01-terminos-aceptacion-admin.png`](evidencias/sprint-7/V5-01-terminos-aceptacion-admin.png) | Aprobado |
+| V5 | Entrada al sistema tras aceptar | [`V5-02-inicio-tras-aceptar.png`](evidencias/sprint-7/V5-02-inicio-tras-aceptar.png) | Aprobado |
+| V5 | Sección de términos: versión vigente, aceptaciones y pendientes | [`V5-03-terminos-en-configuracion.png`](evidencias/sprint-7/V5-03-terminos-en-configuracion.png) | Aprobado |
+| V1 | Ticket emitido antes del cambio («Taller Motorix») | [`V1-01-ticket-anterior.png`](evidencias/sprint-7/V1-01-ticket-anterior.png) | Aprobado |
+| V1 | Datos del taller en Configuración | [`V1-02-configuracion-taller.png`](evidencias/sprint-7/V1-02-configuracion-taller.png) | Aprobado |
+| V1 | Datos del taller guardados («Taller Evidencia») | [`V1-03-taller-guardado.png`](evidencias/sprint-7/V1-03-taller-guardado.png) | Aprobado |
+| V2 | Márgenes de «Próximo» | [`V2-01-margenes-de-proximo.png`](evidencias/sprint-7/V2-01-margenes-de-proximo.png) | Aprobado |
+| V2 | Lista de mantenimientos con margen propio (45 días) y del taller | [`V2-02-lista-de-mantenimientos.png`](evidencias/sprint-7/V2-02-lista-de-mantenimientos.png) | Aprobado |
+| V3 | Catálogo de tipos de servicio | [`V3-01-tipos-de-servicio.png`](evidencias/sprint-7/V3-01-tipos-de-servicio.png) | Aprobado |
+| V3 | Nombre repetido rechazado | [`V3-02-nombre-repetido.png`](evidencias/sprint-7/V3-02-nombre-repetido.png) | Aprobado |
+| V3 | Confirmación «Cambios sin guardar» | [`V3-03-cambios-sin-guardar.png`](evidencias/sprint-7/V3-03-cambios-sin-guardar.png) | Aprobado |
+| V4 | Ticket nuevo con los datos nuevos del taller | [`V4-01-ticket-nuevo-con-datos-del-taller.png`](evidencias/sprint-7/V4-01-ticket-nuevo-con-datos-del-taller.png) | Aprobado |
+| V4 | Ticket con «Próximo servicio» | [`V4-02-ticket-proximo-servicio.png`](evidencias/sprint-7/V4-02-ticket-proximo-servicio.png) | Aprobado |
+| V4 | Selector de tipo en el servicio de la orden | [`V4-03-selector-de-tipo-de-servicio.png`](evidencias/sprint-7/V4-03-selector-de-tipo-de-servicio.png) | Aprobado |
+| V4 | Propuesta precargada en el mantenimiento | [`V4-04-propuesta-de-mantenimiento.png`](evidencias/sprint-7/V4-04-propuesta-de-mantenimiento.png) | Aprobado |
+| V9 | Reporte de ingresos | [`V9-01-ingresos.png`](evidencias/sprint-7/V9-01-ingresos.png) | Aprobado |
+| V9 | Reporte de servicios | [`V9-02-servicios.png`](evidencias/sprint-7/V9-02-servicios.png) | Aprobado |
+| V9 | Reporte de productividad | [`V9-03-productividad.png`](evidencias/sprint-7/V9-03-productividad.png) | Aprobado |
+| V9 | Reporte de margen con una línea sin costo | [`V9-04-margen-de-refacciones.png`](evidencias/sprint-7/V9-04-margen-de-refacciones.png) | Aprobado |
+| V9 | Reporte de rotación | [`V9-05-rotacion.png`](evidencias/sprint-7/V9-05-rotacion.png) | Aprobado |
+| V10 | Mensaje con la ruta del CSV exportado | [`V10-01-exportacion-csv.png`](evidencias/sprint-7/V10-01-exportacion-csv.png) | Aprobado |
+| V6 | Bitácora con configuración modificada e inicio fallido | [`V6-01-bitacora.png`](evidencias/sprint-7/V6-01-bitacora.png) | Aprobado |
+| V11 | Menú de recepción sin Configuración, Bitácora ni Reportes | [`V11-01-menu-recepcion.png`](evidencias/sprint-7/V11-01-menu-recepcion.png) | Aprobado |
+| V11 | Menú del mecánico | [`V11-02-menu-mecanico.png`](evidencias/sprint-7/V11-02-menu-mecanico.png) | Aprobado |
+| V8 | Aviso de sesión cerrada por inactividad | [`V8-01-sesion-cerrada-por-inactividad.png`](evidencias/sprint-7/V8-01-sesion-cerrada-por-inactividad.png) | Aprobado |
+
+## Verificación por API de V1 a V13 (T130)
+
+50 de 50 comprobaciones aprobadas contra el servidor en ejecución:
+[`evidencias/sprint-7/verificacion-api-v1-v13.md`](evidencias/sprint-7/verificacion-api-v1-v13.md).

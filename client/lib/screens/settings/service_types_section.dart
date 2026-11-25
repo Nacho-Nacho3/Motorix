@@ -37,9 +37,11 @@ class _ServiceTypesSectionState extends State<ServiceTypesSection> {
   Future<void> _alternarEstado(ServiceType tipo) async {
     final proveedor = context.read<ServiceTypesProvider>();
     if (tipo.active) {
-      final usado = tipo.usedInServices > 0
-          ? ' Las ${tipo.usedInServices} líneas de servicio que ya lo usan conservan su nombre.'
-          : '';
+      final usado = switch (tipo.usedInServices) {
+        0 => '',
+        1 => ' La línea de servicio que ya lo usa conserva su nombre.',
+        final n => ' Las $n líneas de servicio que ya lo usan conservan su nombre.',
+      };
       final confirmado = await mostrarConfirmacion(
         context,
         titulo: 'Desactivar tipo de servicio',
@@ -134,7 +136,7 @@ class _ServiceTypesSectionState extends State<ServiceTypesSection> {
             contentPadding: EdgeInsets.zero,
             title: Text(tipo.name),
             subtitle: Text(
-              '${tipo.etiquetaIntervalos}${tipo.usedInServices > 0 ? ' · Usado en ${tipo.usedInServices} servicios' : ''}',
+              '${tipo.etiquetaIntervalos}${tipo.usedInServices > 0 ? ' · Usado en ${tipo.usedInServices} ${tipo.usedInServices == 1 ? 'servicio' : 'servicios'}' : ''}',
             ),
             leading: Icon(
               tipo.active ? Icons.check_circle_outline : Icons.pause_circle_outline,
