@@ -5,11 +5,24 @@ import '../services/api_client.dart';
 
 /// Sesión de la aplicación: login, token Bearer y usuario actual.
 class SessionProvider extends ChangeNotifier {
-  SessionProvider(this.api);
+  SessionProvider(this.api) {
+    // Sprint 7 (US9, CA-19): un 403 TERMS_NOT_ACCEPTED en cualquier llamada
+    // muestra la pantalla de aceptación sin cerrar la sesión.
+    api.alTerminosNoAceptados = () {
+      if (usuario != null && termsAccepted) {
+        termsAccepted = false;
+        notifyListeners();
+      }
+    };
+  }
 
   final ApiClient api;
 
   User? usuario;
+
+  /// Si el usuario aceptó la versión vigente de los términos (CA-16). Falso
+  /// muestra la pantalla de aceptación en lugar del shell.
+  bool termsAccepted = true;
   bool cargando = false;
   String? error;
   DateTime? expiraEn;
@@ -39,6 +52,7 @@ class SessionProvider extends ChangeNotifier {
 
       api.token = datos['token'] as String?;
       usuario = User.fromJson(datos['user'] as Map<String, dynamic>);
+      termsAccepted = datos['termsAccepted'] as bool? ?? true;
       final segundos = (datos['expiresIn'] as num?)?.toInt() ?? 28800;
       expiraEn = DateTime.now().add(Duration(seconds: segundos));
       // D-03: la campana se recarga en el mismo viaje del inicio de sesión.
@@ -58,7 +72,15 @@ class SessionProvider extends ChangeNotifier {
     usuario = null;
     expiraEn = null;
     error = null;
+    termsAccepted = true;
     notifyListeners();
+  }
+
+  /// US9: el usuario aceptó la versión vigente; entra al shell.
+  void marcarTerminosAceptados() {
+    termsAccepted = true;
+    notifyListeners();
+    alIniciarSesion?.call();
   }
 
   /// Cambia la contraseña del usuario de la sesión.

@@ -34,6 +34,12 @@ class ApiClient {
 
   final String baseUrl;
   String? token;
+
+  /// Sprint 7 (US9, CA-19): se invoca cuando cualquier llamada responde
+  /// `403 TERMS_NOT_ACCEPTED` (p. ej. se publicó una versión nueva a mitad de la
+  /// sesión). La sesión la usa para mostrar la pantalla de aceptación sin
+  /// cerrarse.
+  void Function()? alTerminosNoAceptados;
   static const Duration _tiempoEspera = Duration(seconds: 15);
 
   Map<String, String> _encabezados({bool incluirJson = true}) {
@@ -136,6 +142,41 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T074 (Sprint 7, US9): términos y aviso de privacidad
+  /// (contracts/terms.md). `vigente` y `aceptar` están exentos del bloqueo.
+  Future<Map<String, dynamic>> obtenerTerminosVigentes() async {
+    final datos = await get('/terms/current');
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  Future<Map<String, dynamic>> aceptarTerminos(int version) async {
+    final datos = await post('/terms/accept', {'version': version});
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  Future<Map<String, dynamic>> publicarTerminos(
+    Map<String, dynamic> cuerpo,
+  ) async {
+    final datos = await post('/terms', cuerpo);
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  Future<Map<String, dynamic>> listarAceptacionesDeTerminos({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final datos = await get(
+      '/terms/acceptances',
+      query: {'page': '$page', 'pageSize': '$pageSize'},
+    );
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
+  /// Aviso de cierre de sesión (ruta exenta del bloqueo por términos).
+  Future<void> cerrarSesionApi() async {
+    await post('/auth/logout', <String, dynamic>{});
+  }
+
   /// T062 (Sprint 7, US8): propuesta de fecha y kilometraje del próximo
   /// mantenimiento a partir de la última orden terminada del vehículo; `null`
   /// cuando no hay propuesta (contracts/changes-to-existing.md).
@@ -196,6 +237,10 @@ class ApiClient {
     final error = cuerpo != null && cuerpo['ok'] == false
         ? cuerpo['error'] as Map<String, dynamic>?
         : null;
+
+    if (respuesta.statusCode == 403 && error?['code'] == 'TERMS_NOT_ACCEPTED') {
+      alTerminosNoAceptados?.call();
+    }
 
     return Future.error(
       ApiError(

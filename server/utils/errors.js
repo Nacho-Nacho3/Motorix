@@ -29,6 +29,18 @@ export const errores = {
     new AppError(403, "ACCOUNT_DISABLED", "La cuenta está desactivada. Contacta al administrador."),
   notFound: (code, message) => new AppError(404, code, message),
   conflict: (code, message) => new AppError(409, code, message),
+  termsNotAccepted: () =>
+    new AppError(
+      403,
+      "TERMS_NOT_ACCEPTED",
+      "Debes aceptar los términos y condiciones y el aviso de privacidad para continuar.",
+    ),
+  termsUnchanged: () =>
+    new AppError(
+      400,
+      "TERMS_UNCHANGED",
+      "Modifica al menos uno de los textos: no se puede publicar una versión vacía o idéntica a la vigente.",
+    ),
   serviceTypeNameTaken: () =>
     new AppError(
       409,

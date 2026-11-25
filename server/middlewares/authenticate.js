@@ -1,9 +1,13 @@
 import { verificarToken } from "../config/jwt.js";
 import { buscarUsuarioPorId } from "../models/user.model.js";
+import { tieneAceptacionVigente } from "../models/terms.model.js";
 import { errores } from "../utils/errors.js";
 
 // T012: verifica el token Y revalida rol y estado activo en CADA petición (R-03).
-export async function authenticate(req, _res, next) {
+// Sprint 7 (CA-19): además exige la aceptación vigente de los términos, salvo en
+// las cuatro rutas exentas que usan `authenticateSinTerminos`.
+function crearAuthenticate({ exigirTerminos }) {
+  return async function authenticate(req, _res, next) {
   try {
     const encabezado = req.headers.authorization || "";
     const [esquema, token] = encabezado.split(" ");
@@ -34,8 +38,17 @@ export async function authenticate(req, _res, next) {
       email: usuario.email,
       role: usuario.role,
     };
+
+    // Después de la cuenta activa: un usuario desactivado conserva su error propio.
+    if (exigirTerminos && !(await tieneAceptacionVigente(usuario.id))) {
+      throw errores.termsNotAccepted();
+    }
     return next();
   } catch (error) {
     return next(error);
   }
+  };
 }
+
+export const authenticate = crearAuthenticate({ exigirTerminos: true });
+export const authenticateSinTerminos = crearAuthenticate({ exigirTerminos: false });

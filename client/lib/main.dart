@@ -13,11 +13,13 @@ import 'providers/service_orders_provider.dart';
 import 'providers/service_types_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/session_provider.dart';
+import 'providers/terms_provider.dart';
 import 'providers/ui_provider.dart';
 import 'providers/users_provider.dart';
 import 'providers/vehicle_history_provider.dart';
 import 'providers/vehicles_provider.dart';
 import 'screens/login/login_screen.dart';
+import 'screens/terms/terms_acceptance_screen.dart';
 import 'services/api_client.dart';
 import 'utils/app_theme.dart';
 import 'widgets/app_shell.dart';
@@ -72,6 +74,10 @@ class MotorixApp extends StatelessWidget {
         ChangeNotifierProvider<DashboardProvider>(
           create: (context) => DashboardProvider(context.read<ApiClient>()),
         ),
+        // T074 (Sprint 7, US9): términos y aviso de privacidad.
+        ChangeNotifierProvider<TermsProvider>(
+          create: (context) => TermsProvider(context.read<ApiClient>()),
+        ),
         // T051 (Sprint 7, US3): catálogo de tipos de servicio.
         ChangeNotifierProvider<ServiceTypesProvider>(
           create: (context) => ServiceTypesProvider(context.read<ApiClient>()),
@@ -101,15 +107,15 @@ class MotorixApp extends StatelessWidget {
         title: 'Motorix',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
-        home: const _Raiz(),
+        home: const RaizApp(),
       ),
     );
   }
 }
 
 /// Guard de autenticación: decide entre login y el shell.
-class _Raiz extends StatelessWidget {
-  const _Raiz();
+class RaizApp extends StatelessWidget {
+  const RaizApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +134,13 @@ class _Raiz extends StatelessWidget {
       duration: AppDurations.navigation,
       transitionBuilder: (hijo, animacion) =>
           transicionPantalla(animacion, hijo),
-      child: sesion.autenticado ? const AppShell() : const LoginScreen(),
+      // Sprint 7 (US9, CA-16, CA-19): sin aceptación vigente, la pantalla de
+      // términos va en lugar del shell, sin cerrar la sesión.
+      child: !sesion.autenticado
+          ? const LoginScreen()
+          : sesion.termsAccepted
+              ? const AppShell()
+              : const TermsAcceptanceScreen(),
     );
   }
 }

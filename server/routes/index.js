@@ -15,6 +15,7 @@ import { rutasNotifications } from "./notifications.routes.js";
 import { rutasClientNotices } from "./client_notices.routes.js";
 import { rutasSettings } from "./settings.routes.js";
 import { rutasServiceTypes } from "./service_types.routes.js";
+import { rutasTerms } from "./terms.routes.js";
 
 // T013: registro central de rutas. Cada historia añade su router aquí.
 export const rutas = Router();
@@ -35,3 +36,4 @@ rutas.use("/notifications", rutasNotifications); // T015: centro de avisos (Spri
 rutas.use("/client-notices", rutasClientNotices); // T055: clientes por avisar (Sprint 6, US7)
 rutas.use("/settings", rutasSettings); // T026: configuración del taller (Sprint 7, US1)
 rutas.use("/service-types", rutasServiceTypes); // T049: catálogo de tipos de servicio (Sprint 7, US3)
+rutas.use("/terms", rutasTerms); // T072: términos y aviso de privacidad (Sprint 7, US9)

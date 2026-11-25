@@ -4,6 +4,7 @@ import { firmarToken } from "../config/jwt.js";
 import * as usuarios from "../models/user.model.js";
 import { AppError, errores } from "../utils/errors.js";
 import { MENSAJE_POLITICA, requisitoFaltantePassword } from "../validators/auth.js";
+import { aceptoVigente } from "./terms.service.js";
 
 function aPublico(usuario) {
   return {
@@ -49,6 +50,8 @@ export async function login({ identifier, password }) {
     token: firmarToken(usuario),
     expiresIn: 8 * 60 * 60, // 8 horas (R-03)
     user: aPublico(usuario),
+    // Sprint 7 (CA-16): falso obliga al cliente a mostrar la aceptación.
+    termsAccepted: await aceptoVigente(usuario.id),
   };
 }
 
@@ -56,7 +59,7 @@ export async function obtenerSesion(usuarioId) {
   const usuario = await usuarios.buscarUsuarioPorId(usuarioId);
   if (!usuario) throw errores.unauthorized("Tu sesión no es válida o ha expirado.");
   if (!usuario.active) throw errores.accountDisabled();
-  return { user: aPublico(usuario) };
+  return { user: aPublico(usuario), termsAccepted: await aceptoVigente(usuario.id) };
 }
 
 export async function cambiarPassword(usuarioId, { currentPassword, newPassword }) {

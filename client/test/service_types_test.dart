@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/service_type.dart';
 import 'package:motorix_client/providers/service_types_provider.dart';
+import 'package:motorix_client/providers/terms_provider.dart';
 import 'package:motorix_client/providers/settings_provider.dart';
 import 'package:motorix_client/screens/settings/service_type_form_screen.dart';
 import 'package:motorix_client/screens/settings/settings_screen.dart';
@@ -94,6 +95,9 @@ Widget _pantalla(_ApiFalsa api) => MultiProvider(
         ChangeNotifierProvider<SettingsProvider>(create: (_) => SettingsProvider(api)),
         ChangeNotifierProvider<ServiceTypesProvider>(
           create: (_) => ServiceTypesProvider(api),
+        ),
+        ChangeNotifierProvider<TermsProvider>(
+          create: (_) => TermsProvider(api),
         ),
       ],
       child: MaterialApp(

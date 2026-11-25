@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:motorix_client/models/user.dart';
 import 'package:motorix_client/providers/notifications_provider.dart';
 import 'package:motorix_client/providers/service_types_provider.dart';
+import 'package:motorix_client/providers/terms_provider.dart';
 import 'package:motorix_client/providers/session_provider.dart';
 import 'package:motorix_client/providers/settings_provider.dart';
 import 'package:motorix_client/providers/ui_provider.dart';
@@ -102,6 +103,9 @@ Widget _pantalla(_ApiFalsa api) => MultiProvider(
         ),
         ChangeNotifierProvider<ServiceTypesProvider>(
           create: (_) => ServiceTypesProvider(api),
+        ),
+        ChangeNotifierProvider<TermsProvider>(
+          create: (_) => TermsProvider(api),
         ),
       ],
       child: MaterialApp(
@@ -236,6 +240,9 @@ void main() {
             ChangeNotifierProvider<ServiceTypesProvider>(
               create: (_) => ServiceTypesProvider(api),
             ),
+            ChangeNotifierProvider<TermsProvider>(
+              create: (_) => TermsProvider(api),
+            ),
           ],
           child: MaterialApp(
             theme: ThemeData(useMaterial3: true),
@@ -290,6 +297,9 @@ void main() {
             ),
             ChangeNotifierProvider<ServiceTypesProvider>(
               create: (_) => ServiceTypesProvider(api),
+            ),
+            ChangeNotifierProvider<TermsProvider>(
+              create: (_) => TermsProvider(api),
             ),
           ],
           child: MaterialApp(
