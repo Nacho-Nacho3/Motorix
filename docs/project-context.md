@@ -5,7 +5,7 @@
 > **Nombre formal del proyecto:** Sistema de Gestión para Taller
 > Mecánico\
 > **Nombre provisional del software:** Motorix\
-> **Estado:** Planeación del MVP\
+> **Estado:** MVP (sprints 1 a 4) y sprints 5 y 6 entregados; sprint 7 en planeación\
 > **Tipo:** Proyecto académico de Ingeniería en Sistemas Computacionales
 
 ------------------------------------------------------------------------
@@ -936,6 +936,9 @@ database/
 | 2 | `appointments`, `service_orders` y tablas de servicios realizados y mano de obra por orden |
 | 3 | `parts`, `inventory_movements`, `maintenance` y tabla de refacciones utilizadas por orden |
 | 4 | `payments`, `tickets` |
+| 5 | Sin tablas nuevas: `order_parts` guarda el precio de venta de cada línea y `parts` agrega categoría, marca y precios (migración 014) |
+| 6 | `notification_reads`, `client_notices` (migración 015) |
+| 7 | Por definir al especificar el sprint |
 
 Los nombres y campos definitivos se validan al especificar cada sprint.
 El script de seeds no debe contener contraseñas en texto plano: el
@@ -1076,6 +1079,110 @@ Orden terminada
 → generar ticket
 → consultar indicadores en dashboard
 ```
+
+------------------------------------------------------------------------
+
+## Sprint 5 --- Precios de refacciones y cobro completo
+
+Sprint posterior al MVP. Insumo: `docs/sprints/sprint-5-precios-refacciones-cobro.md`;
+especificación en `specs/005-precios-refacciones-cobro/`.
+
+### Objetivo
+
+Que el total de la orden, el pago y el ticket incluyan las refacciones
+utilizadas, sin alterar lo ya emitido.
+
+### Historias
+
+-   Como administrador puedo registrar la categoría, la marca y los
+    precios de compra y de venta de una refacción.
+-   Como recepcionista quiero que el total de la orden incluya las
+    refacciones utilizadas.
+-   Como recepcionista quiero que el pago y el ticket reflejen el nuevo
+    total.
+-   Como administrador quiero que un cambio de precio no altere órdenes
+    abiertas ni pagos y tickets ya emitidos.
+-   Como mecánico puedo seguir usando refacciones en una orden sin ver
+    los precios de compra.
+
+### Resultado esperado
+
+``` text
+Refacción con precio de venta
+→ usarla en la orden (se guarda el precio de la línea)
+→ total = servicios + mano de obra + refacciones
+→ pago y ticket con ese total
+→ un cambio de precio posterior no modifica lo ya emitido
+```
+
+------------------------------------------------------------------------
+
+## Sprint 6 --- Notificaciones internas
+
+Sprint posterior al MVP, entregado el 2026-11-24. Insumo:
+`docs/sprints/sprint-6-notificaciones-internas.md`; especificación en
+`specs/006-notificaciones-internas/`; calidad en
+`docs/aseguramiento-calidad-sprint-6.md`. El comportamiento entregado
+está en la sección 6.12.
+
+### Objetivo
+
+Que el personal vea desde el encabezado lo que requiere atención
+(mantenimientos, citas del día, stock y órdenes detenidas) y que
+recepción sepa a qué clientes avisar, sin enviar mensajes desde el
+sistema.
+
+### Historias
+
+-   Como administrador veo en el encabezado cuántos avisos pendientes
+    tengo.
+-   Como recepcionista veo los mantenimientos próximos y vencidos y las
+    citas del día.
+-   Como administrador veo las refacciones con stock bajo o agotado.
+-   Como administrador o recepcionista veo las órdenes detenidas.
+-   Como mecánico veo solo los avisos de mis órdenes asignadas.
+-   Como usuario marco un aviso como leído y abro el módulo relacionado.
+-   Como recepcionista consulto la lista de clientes por avisar y marco
+    cada uno como avisado.
+
+### Resultado esperado
+
+``` text
+Campana con contador por rol
+→ panel agrupado por tipo de aviso
+→ marcar leído (solo para el usuario)
+→ abrir el módulo relacionado
+→ clientes por avisar → «Ya lo hablé» (registro idempotente)
+```
+
+------------------------------------------------------------------------
+
+## Sprint 7 --- Reportes, configuración, términos y seguridad
+
+Sprint posterior al MVP, **en planeación** (borrador sin `/speckit.specify`).
+Insumo: `docs/sprints/sprint-7-reportes-configuracion.md`; propuesta de
+origen: `docs/sprints/propuesta-sprints-post-mvp.md`.
+
+### Objetivo
+
+Que el administrador configure los datos del taller y los márgenes de
+mantenimiento, mantenga un catálogo de tipos de servicio con intervalos y
+consulte y exporte reportes; y que la información quede protegida con
+términos y condiciones, bitácora, política de contraseñas y cierre de
+sesión por inactividad.
+
+### Alcance
+
+-   Configuración del taller (datos del ticket y márgenes de «Próximo»).
+-   Catálogo de tipos de servicio con intervalo en días y kilómetros, y
+    el ticket con el próximo servicio.
+-   Reportes de ingresos, servicios frecuentes, productividad por
+    mecánico, rotación de inventario y costeo, con exportación.
+-   Términos y condiciones al ingresar, bitácora, política de
+    contraseñas y cierre por inactividad.
+
+Si el tiempo no alcanza, se divide en dos entregas: configuración,
+términos y seguridad primero, y reportes después.
 
 ------------------------------------------------------------------------
 

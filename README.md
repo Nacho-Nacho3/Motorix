@@ -7,6 +7,9 @@ de servicio. Este repositorio contiene:
 - **Sprint 1** (base de clientes y vehículos) según `specs/001-base-clientes-vehiculos/`.
 - **Sprint 2** (citas y órdenes de servicio) según `specs/002-citas-ordenes-servicio/`.
 - **Sprint 3** (historial, mantenimiento e inventario) según `specs/003-historial-mantenimiento-inventario/`.
+- **Sprint 4** (pagos, tickets y panel de control) según `specs/004-pagos-tickets-dashboard/`.
+- **Sprint 5** (precios de refacciones y cobro completo) según `specs/005-precios-refacciones-cobro/`.
+- **Sprint 6** (notificaciones internas) según `specs/006-notificaciones-internas/`.
 
 ## Stack
 
@@ -64,10 +67,31 @@ motorix/
 | Ticket de servicio | `tickets/ticket_screen.dart` — comprobante PDF en memoria con «Imprimir» (nada almacenado); botón «Generar/Ver ticket» en el detalle | `POST/GET /api/service-orders/{id}/ticket` — folio `TCK-{id:06d}` derivado y `order_id` ÚNICO (idempotente: repetir devuelve el mismo) |
 | Panel de control | `dashboard/dashboard_screen.dart` — 8 tarjetas de indicadores y las secciones «Últimas órdenes», «Próximas citas», «Mantenimientos» y «Alertas de inventario», con botón «Actualizar» | `GET /api/dashboard` (solo ADMIN) — resumen y detalle calculados en la misma consulta (RN-10) |
 
+### Sprint 5 — precios de refacciones y cobro completo
+
+| Módulo | Pantallas | Backend |
+|--------|-----------|---------|
+| Precios de refacciones | `inventory/` — categoría, marca y precios de compra y de venta en el formulario; la advertencia de venta menor a compra | `/api/parts` — el precio de compra solo lo ve el ADMIN; el mecánico usa `GET /api/parts/lookup`, sin precios |
+| Total y cobro | `orders/order_detail_screen.dart` y `payments/` — el total suma servicios, mano de obra y refacciones | Cada línea de la orden guarda su precio de venta; un cambio de precio no altera órdenes abiertas ni pagos y tickets emitidos |
+| Corrección administrativa | `orders/order_detail_screen.dart` — corrección del precio de una línea de refacción | `PATCH /api/service-orders/{id}/parts/{partRowId}/price` |
+
+### Sprint 6 — notificaciones internas
+
+| Módulo | Pantallas | Backend |
+|--------|-----------|---------|
+| Centro de avisos | campana con contador en el encabezado (`widgets/app_shell.dart`) y panel agrupado en `notifications/notifications_panel.dart`: mantenimientos, citas de hoy, stock y órdenes detenidas | `GET /api/notifications` (calculado en cada consulta, sin caché) y `POST /api/notifications/read` (lectura por usuario) |
+| Clientes por avisar | `clients/client_notice_screen.dart` — sección «Por avisar» (ADMIN y recepción) con «Ya lo hablé» y nota opcional | `GET/POST /api/client-notices` — el registro es idempotente: primera vez 201, repetir 200 |
+
+Los avisos se filtran por rol en el backend: el administrador recibe todos
+los grupos, recepción todos menos stock y el mecánico solo las órdenes
+detenidas de sus órdenes. El sistema **no envía mensajes** a los clientes.
+
 Las rutas, permisos por rol y códigos de error de cada endpoint están en
 `specs/002-citas-ordenes-servicio/contracts/`,
-`specs/003-historial-mantenimiento-inventario/contracts/` y
-`specs/004-pagos-tickets-dashboard/contracts/`.
+`specs/003-historial-mantenimiento-inventario/contracts/`,
+`specs/004-pagos-tickets-dashboard/contracts/`,
+`specs/005-precios-refacciones-cobro/contracts/` y
+`specs/006-notificaciones-internas/contracts/`.
 
 ## Requisitos
 
@@ -155,6 +179,9 @@ Las pruebas del backend usan **siempre** `motorix_test` con el usuario dedicado
 - `specs/001-base-clientes-vehiculos/` — especificación del Sprint 1: `spec.md`, `plan.md`, `tasks.md`, `contracts/`, `quickstart.md`.
 - `specs/002-citas-ordenes-servicio/` — especificación del Sprint 2: `spec.md`, `plan.md`, `tasks.md`, `contracts/`, `quickstart.md`.
 - `specs/003-historial-mantenimiento-inventario/` — especificación del Sprint 3: `spec.md`, `plan.md`, `tasks.md`, `contracts/`, `quickstart.md`.
+- `specs/004-pagos-tickets-dashboard/`, `specs/005-precios-refacciones-cobro/` y `specs/006-notificaciones-internas/` — especificación de los sprints 4, 5 y 6 con la misma estructura.
+- `docs/sprints/` — insumo de cada sprint y la propuesta de los posteriores al MVP.
+- `docs/aseguramiento-calidad-sprint-5.md` y `docs/aseguramiento-calidad-sprint-6.md` — documentos de calidad de los sprints 5 y 6.
 - `database/README.md` — esquema, migraciones y scripts de entorno.
 
 ## Seguridad
