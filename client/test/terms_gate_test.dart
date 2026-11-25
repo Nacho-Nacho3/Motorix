@@ -25,6 +25,7 @@ class _ApiFalsa extends ApiClient {
 
   final bool termsAccepted;
   int versionVigente = 1;
+  bool textoLargo = false;
   int aceptaciones = 0;
   int cierres = 0;
   final List<int> aceptadas = [];
@@ -33,7 +34,8 @@ class _ApiFalsa extends ApiClient {
 
   Map<String, dynamic> _vigente() => {
         'version': versionVigente,
-        'termsText': 'TÉRMINOS v$versionVigente: uso permitido del sistema.',
+        'termsText': 'TÉRMINOS v$versionVigente: uso permitido del sistema.'
+            '${textoLargo ? '\n\nUna cláusula más.' * 60 : ''}',
         'privacyText': 'AVISO DE PRIVACIDAD v$versionVigente.',
         'publishedAt': '2026-11-25T10:00:00',
         'accepted': aceptadas.contains(versionVigente),
@@ -162,6 +164,33 @@ void main() {
       expect(find.byType(AppShell), findsOneWidget);
       expect(find.byType(TermsAcceptanceScreen), findsNothing);
     });
+
+    testWidgets('en escritorio se pueden desplazar los textos sin errores', (tester) async {
+      // Una ventana baja obliga a desplazar; en escritorio la barra necesita un
+      // controlador propio (no usa el PrimaryScrollController).
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 420);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _ApiFalsa()..textoLargo = true;
+      final sesion = SessionProvider(api);
+      await tester.pumpWidget(_app(api, sesion));
+      await _iniciarSesion(tester, sesion);
+
+      // Se arrastra por el margen del recuadro para que el texto seleccionable
+      // no capture el gesto y la lista se desplace de verdad.
+      final area = find.ancestor(
+        of: find.byKey(const Key('texto-terminos')),
+        matching: find.byType(SingleChildScrollView),
+      );
+      await tester.dragFrom(
+        tester.getTopLeft(area.first) + const Offset(6, 60),
+        const Offset(0, -50),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
 
     testWidgets('«Acepto» cierra la pantalla y entra al shell', (tester) async {
       tester.view.devicePixelRatio = 1;

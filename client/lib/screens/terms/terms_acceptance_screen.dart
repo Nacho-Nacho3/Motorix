@@ -19,6 +19,16 @@ class TermsAcceptanceScreen extends StatefulWidget {
 }
 
 class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
+  /// Compartido por la barra y la lista: en escritorio una lista no usa el
+  /// PrimaryScrollController y la barra fallaría sin un controlador propio.
+  final _desplazamiento = ScrollController();
+
+  @override
+  void dispose() {
+    _desplazamiento.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -103,7 +113,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
                     side: const BorderSide(color: AppColors.outline),
                   ),
                   child: Scrollbar(
+                    controller: _desplazamiento,
                     child: SingleChildScrollView(
+                      controller: _desplazamiento,
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
