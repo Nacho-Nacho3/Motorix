@@ -76,7 +76,7 @@ Como cliente, quiero que mi ticket indique cuándo toca mi próximo servicio par
 **Escenarios de aceptación**:
 
 1. **Dado** una orden con un servicio cuyo tipo tiene intervalo, **Cuando** se registra el próximo mantenimiento, **Entonces** la fecha y el kilometraje se proponen a partir del intervalo y el usuario puede corregirlos antes de guardar.
-2. **Dado** una orden con próximo mantenimiento registrado, **Cuando** se genera el ticket, **Entonces** muestra la línea «Próximo servicio» con la fecha, el kilometraje o ambos.
+2. **Dado** una orden con un servicio cuyo tipo tiene intervalo, **Cuando** se genera el ticket, **Entonces** muestra la línea «Próximo servicio» con la fecha, el kilometraje o ambos, calculados a partir de los intervalos de los tipos de la orden.
 3. **Dado** una orden sin tipo de servicio con intervalo, **Cuando** se genera el ticket, **Entonces** no muestra la línea de próximo servicio.
 4. **Dado** un ticket emitido antes de este sprint, **Cuando** se vuelve a abrir, **Entonces** no cambia.
 
@@ -223,7 +223,7 @@ Como administrador, quiero exportar cada reporte para compartirlo o archivarlo.
 - **FR-005**: El administrador DEBE poder crear, editar y desactivar tipos de servicio con nombre único y un intervalo en días, en kilómetros o en ambos; NO se puede borrar un tipo ya usado en órdenes (CA-4, RN-12).
 - **FR-006**: El servicio de una orden DEBE poder enlazarse opcionalmente a un tipo de servicio activo; las líneas anteriores sin tipo DEBEN seguir siendo válidas (CA-4, D-04).
 - **FR-007**: Al registrar el próximo mantenimiento de una orden con un tipo de servicio que tiene intervalo, el sistema DEBE proponer la fecha y el kilometraje y el usuario DEBE poder corregirlos (CA-5, RN-11).
-- **FR-008**: El ticket nuevo DEBE mostrar «Próximo servicio» (fecha, kilometraje o ambos) cuando la orden tiene un próximo mantenimiento derivado de un tipo con intervalo, y NO mostrarlo cuando no lo tiene; los tickets emitidos NO cambian (CA-14).
+- **FR-008**: El ticket nuevo DEBE mostrar «Próximo servicio» (fecha, kilometraje o ambos) cuando la orden tiene un servicio con un tipo que tiene intervalo, y NO mostrarlo cuando no lo tiene; el valor se calcula y se guarda una sola vez al emitir el ticket y los tickets emitidos NO cambian (CA-14).
 - **FR-009**: Configuración y catálogo DEBEN ser exclusivos del administrador para modificarse, validado en el backend (CA-10, RN-5, RN-15); recepción y mecánico solo eligen tipos activos al registrar servicios.
 
 **Reportes (US4, US5, US6, US7)**
