@@ -32,9 +32,9 @@ description: "Lista de tareas del sprint 7: reportes, configuración, términos 
 
 **Propósito**: punto de partida verificable del sprint
 
-- [ ] T001 Confirmar la rama `007-reportes-configuracion` creada desde `main` el 2026-11-24 (sin squash ni force-push durante todo el sprint) y que `git status` solo muestra los archivos sueltos ajenos al sprint (`motorix-fases-pmi.md`, `Tabla-calidad-motorix.md`)
-- [ ] T002 [P] Crear `docs/aseguramiento-calidad-sprint-7.md` a partir de `docs/aseguramiento-calidad/plantilla-aseguramiento-calidad.md` (datos generales, objetivo y alcance, criterios de entrada y de salida, puertas G-01 a G-07 con la decisión de omitir `/speckit.analyze` si el responsable la mantiene), con las secciones de línea base, regresión y anexo de evidencias vacías para llenarlas al cierre
-- [ ] T003 Verificar que la rama arranca con la línea base verde: `cd server && npm.cmd test` y `npm.cmd run lint`, y en `client/` `flutter test` y `flutter analyze`; anotar conteos y fecha en la sección de línea base de `docs/aseguramiento-calidad-sprint-7.md` (referencia del cierre del Sprint 6: 56 suites y 479 pruebas de backend; 145 de Flutter; 1 advertencia de lint previa en `server/tests/integration/order-parts.test.js`)
+- [X] T001 Confirmar la rama `007-reportes-configuracion` creada desde `main` el 2026-11-24 (sin squash ni force-push durante todo el sprint) y que `git status` solo muestra los archivos sueltos ajenos al sprint (`motorix-fases-pmi.md`, `Tabla-calidad-motorix.md`)
+- [X] T002 [P] Crear `docs/aseguramiento-calidad-sprint-7.md` a partir de `docs/aseguramiento-calidad/plantilla-aseguramiento-calidad.md` (datos generales, objetivo y alcance, criterios de entrada y de salida, puertas G-01 a G-07 con la decisión de omitir `/speckit.analyze` si el responsable la mantiene), con las secciones de línea base, regresión y anexo de evidencias vacías para llenarlas al cierre
+- [X] T003 Verificar que la rama arranca con la línea base verde: `cd server && npm.cmd test` y `npm.cmd run lint`, y en `client/` `flutter test` y `flutter analyze`; anotar conteos y fecha en la sección de línea base de `docs/aseguramiento-calidad-sprint-7.md` (referencia del cierre del Sprint 6: 56 suites y 479 pruebas de backend; 145 de Flutter; 1 advertencia de lint previa en `server/tests/integration/order-parts.test.js`)
 
 ---
 

@@ -1,0 +1,125 @@
+# Aseguramiento de la calidad - Sprint 7: Reportes, configuración, términos y seguridad
+
+Este documento es el registro de calidad del Sprint 7 de Motorix. Reúne los criterios de entrada y de salida, las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 6 y el control de calidad final, con sus evidencias.
+
+**Estado: en curso (inicio 2026-11-24).** Se llena durante el sprint y se completa al cierre (T132), según [`docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`](aseguramiento-calidad/guia-aseguramiento-calidad.md).
+
+## 0. Datos del documento
+
+| Campo | Valor |
+|---|---|
+| Sprint | 7 - Reportes, configuración, términos y seguridad |
+| Insumo | [`docs/sprints/sprint-7-reportes-configuracion.md`](sprints/sprint-7-reportes-configuracion.md) |
+| Especificación | [`specs/007-reportes-configuracion/spec.md`](../specs/007-reportes-configuracion/spec.md) (commits `04fe96c` specify y `c2f9a0c` clarify) |
+| Plan y tareas | `plan.md` (commit `1a547ac`), `tasks.md` (commit `e1cd554`, correcciones del análisis en `dea8f78`), 132 tareas en 13 fases |
+| Rama | `007-reportes-configuracion` desde `main` (sin squash ni force-push durante todo el sprint) |
+| Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
+| Fecha de inicio | 2026-11-24 |
+| Fecha de cierre | Pendiente (se llena al cierre) |
+| Estado general | En curso |
+
+## 1. Objetivo y alcance
+
+**Objetivo.** Asegurar que el Sprint 7 salga con calidad: que los requisitos estén completos, sean medibles y no se contradigan, que las pruebas estén planeadas antes del código y que el cambio no rompa lo construido en los sprints 1 a 6.
+
+**Dentro del alcance:** configuración del taller y de los márgenes de mantenimiento; catálogo de tipos de servicio; reportes de ingresos, servicios, productividad, costo y margen de refacciones y rotación de inventario, con exportación CSV; términos y condiciones con aceptación versionada; bitácora de acciones sensibles; política de contraseñas; cierre por inactividad; verificación de que la API no expone datos reservados.
+
+**Fuera de alcance:** lo que la sección «Fuera de alcance» del spec lista.
+
+## 2. Criterios de entrada y de salida
+
+Estado real al 2026-11-25. `[x]` solo cuando de verdad se cumplió.
+
+**Criterios de entrada (para comenzar la implementación):**
+
+- [x] La constitución 1.2.0 ya cubre el sprint 7 (alcance de 7 sprints); no hay enmienda nueva.
+- [x] Rama `007-reportes-configuracion` creada desde `main` (2026-11-24), sin squash ni force-push.
+- [x] Checklist de requisitos en verde: [`checklists/requirements.md`](../specs/007-reportes-configuracion/checklists/requirements.md) 16/16.
+- [x] Fases de Spec Kit completadas: specify (`04fe96c`), clarify (`c2f9a0c`), plan (`1a547ac`), tasks (`e1cd554`) y analyze (corregido en `dea8f78`).
+- [x] Línea base de regresión medida y registrada (sección 8) — T003, 2026-11-25.
+
+**Criterios de salida (para cerrar el sprint):**
+
+- [ ] Los 26 criterios de aceptación del insumo están Aprobados con evidencia (sección 6).
+- [ ] Todas las pruebas de los sprints 1 a 6 siguen pasando (sección 8).
+- [ ] No hay defectos críticos ni altos abiertos (sección 7).
+- [ ] La matriz de calidad final está completa, con evidencia (sección 9).
+- [ ] Reporte, análisis y matriz no se contradicen (sección 10).
+
+## 3. Puertas de calidad
+
+Estado al 2026-11-25.
+
+| ID | Puerta | Estado | Evidencia |
+|:--:|---|---|---|
+| G-01 | Insumo del sprint revisado contra el código | Realizada | Las suposiciones del insumo que no coincidían con el código (por ejemplo, que `finished_at` no existía en la orden) quedaron corregidas en [`research.md`](../specs/007-reportes-configuracion/research.md) y en la decisión D-19 del spec |
+| G-02 | Especificación (`/speckit.specify`) | Realizada | [`spec.md`](../specs/007-reportes-configuracion/spec.md), commit `04fe96c`: 10 historias, 32 requisitos y 15 criterios de éxito |
+| G-03 | Aclaraciones (`/speckit.clarify`) | Realizada | Sesión del 2026-11-24 en `spec.md`, commit `c2f9a0c`; 0 marcadores `[NEEDS CLARIFICATION]` |
+| G-04 | Lista de calidad de requisitos (`/speckit.checklist`) | Realizada | [`checklists/requirements.md`](../specs/007-reportes-configuracion/checklists/requirements.md): 16 de 16 marcados |
+| G-05 | Plan (`/speckit.plan`) | Realizada | [`plan.md`](../specs/007-reportes-configuracion/plan.md), commit `1a547ac`, con `research.md`, `data-model.md`, `contracts/` y `quickstart.md` |
+| G-06 | Tareas (`/speckit.tasks`) | Realizada | [`tasks.md`](../specs/007-reportes-configuracion/tasks.md), commit `e1cd554`: 132 tareas en 13 fases |
+| G-07 | Consistencia (`/speckit.analyze`) | Realizada | Análisis del 2026-11-24: 0 críticos, 1 alto, 3 medios y 4 bajos; el alto y los medios se corrigieron en `dea8f78`; los 4 bajos (G2, A1, N1, D1) quedaron sin corregir (sección 7) |
+| G-08 | Pruebas planeadas y línea base | Realizada | Línea base del 2026-11-25 (sección 8); las pruebas se escriben antes de cada implementación y deben fallar primero |
+
+## 4. Decisiones de aclaración
+
+La sesión de `/speckit.clarify` del 2026-11-24 resolvió D-16, D-10 (parcial), D-01, D-07 y D-05; D-19 se agregó al detectar que la orden no tenía fecha de terminación. Las demás decisiones del insumo quedaron con un valor por omisión documentado en [`spec.md`](../specs/007-reportes-configuracion/spec.md) y [`research.md`](../specs/007-reportes-configuracion/research.md). Se completa la tabla al cierre.
+
+## 5. Riesgos y mitigaciones
+
+Se llenan conforme se implementa (ver `plan.md` R-01 a R-04 y `research.md`).
+
+| ID | Riesgo | Impacto | Mitigación | Prueba que lo cubre | Estado |
+|:--:|---|---|---|---|---|
+| R-01 | El bloqueo por términos rompe las suites autenticadas existentes | Alto: regresión masiva | El helper de pruebas registra la aceptación de la versión vigente (T017) | Regresión T019 y T077 | Abierto |
+| R-02 | La migración 016 altera datos existentes | Medio | Cambios aditivos con rellenos documentados y sin migración inversa | T011 | Abierto |
+
+## 6. Trazabilidad
+
+Se llena al cierre (T132) con los 26 criterios CA-1 a CA-26.
+
+| CA | Criterio de aceptación (resumen) | Requisito (FR) | Tarea | Prueba | Resultado | Evidencia |
+|:--:|---|---|---|---|---|---|
+| — | Pendiente de llenar al cierre | — | — | — | — | — |
+
+## 7. Hallazgos y defectos
+
+| ID | Descripción | Severidad | Origen | Estado | Resolución | Evidencia |
+|:--:|---|---|---|---|---|---|
+| H-01 | La línea base del backend arrancó en rojo (46 suites): el checksum de `015_notifications.sql` no coincidía porque la copia de trabajo tenía fin de línea CRLF (autocrlf de Windows) y `schema_migrations` guardaba el hash de la versión LF; es la misma causa que H-01 del Sprint 6 | Media | T003 (línea base) | Resuelto | Se restauraron los bytes LF (contenido idéntico a `HEAD`) y se agregó `.gitattributes` con `database/migrations/*.sql text eol=lf` para que no se repita | `.gitattributes` |
+| H-02 | Hallazgos bajos del análisis sin corregir: G2 (FR-029 y la versión de términos en los seeds), A1 (usuario de `settings.updated_by` al sembrar), N1 (nombres de pruebas del plan frente a las tareas) y D1 (requisitos repetidos) | Baja | G-07 | Aceptado | Se resuelven sobre la marcha durante la implementación | — |
+
+## 8. Línea base de regresión
+
+**Línea base (antes de escribir código del sprint), medida el 2026-11-25 sobre el commit `dea8f78` de la rama `007-reportes-configuracion`:**
+
+| Comando | Resultado |
+|---|---|
+| `cd server && npm.cmd test` | 56 suites y **479 pruebas**, todas en verde (tras resolver H-01) |
+| `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa en `tests/integration/order-parts.test.js` (`orden` sin usar) |
+| `cd client && flutter test` | **145 pruebas**, todas en verde |
+| `cd client && flutter analyze` | sin observaciones |
+
+**Regresión de cierre:** pendiente (se mide al cierre).
+
+## 9. Control de calidad final
+
+Se eligen cinco requisitos del Sprint 7 entre los que más pueden fallar (bloqueo por términos, bitácora sin datos reservados, márgenes por taller, exportación CSV, cálculo de margen). Se llena al cierre (T132).
+
+| ID | Requisito | Criterio de Aceptación | Prueba ejecutada | Resultado | Evidencia / defecto |
+|:--:|---|---|---|---|---|
+| RF-01 | Pendiente | | | | |
+
+## 10. Cierre
+
+| Campo | Valor |
+|---|---|
+| Criterios de salida cumplidos | Pendiente |
+| Defectos abiertos | Pendiente |
+| Observaciones | Pendiente |
+| Aprobado por | Pendiente |
+| Fecha | Pendiente |
+
+# Anexo de evidencias
+
+Se llena al cierre con la corrida automática, la comprobación por API de V1 a V13 (T130) y las capturas del recorrido manual (T131) en `docs/evidencias/sprint-7/`.
