@@ -3,6 +3,8 @@ import * as vehiculos from "../models/vehicle.model.js";
 import { errores } from "../utils/errors.js";
 import { calcularEstadoMantenimiento } from "../utils/maintenance-state.js";
 import { obtenerConfiguracion, resolverMargenes } from "./settings.service.js";
+import { pool } from "../config/db.js";
+import { calcularProximoServicio } from "../utils/next-service.js";
 
 // T025: servicio de mantenimientos (US2, FR-003, FR-004, FR-007, RN-11/12).
 
@@ -128,4 +130,62 @@ export async function listarMantenimientos({ state } = {}) {
   );
 
   return { maintenances: mantenimientos, total: mantenimientos.length };
+}
+
+/**
+ * Propuesta de mantenimiento (Sprint 7, US8, CA-5, research P-5): a partir de
+ * la última orden terminada o entregada del vehículo que tenga servicios con un
+ * tipo con intervalo. La fecha parte de su fecha de terminación y el
+ * kilometraje, de su kilometraje de entrada. El usuario puede corregirla.
+ */
+export async function proponerMantenimiento(vehicleId) {
+  const vehiculo = await vehiculos.buscarPorId(vehicleId);
+  if (!vehiculo) {
+    throw errores.notFound("VEHICLE_NOT_FOUND", "Vehículo no encontrado.");
+  }
+
+  const [ordenes] = await pool.query(
+    `SELECT o.id, o.entry_mileage AS entryMileage,
+            COALESCE(o.finished_at, o.updated_at) AS terminada
+       FROM service_orders o
+      WHERE o.vehicle_id = ?
+        AND o.status IN ('FINISHED', 'DELIVERED')
+        AND EXISTS (
+          SELECT 1 FROM order_services os
+            JOIN service_types st ON st.id = os.service_type_id
+           WHERE os.order_id = o.id
+             AND (st.interval_days IS NOT NULL OR st.interval_km IS NOT NULL))
+      ORDER BY COALESCE(o.finished_at, o.updated_at) DESC, o.id DESC
+      LIMIT 1`,
+    [vehicleId],
+  );
+  if (ordenes.length === 0) return { suggestion: null };
+
+  const orden = ordenes[0];
+  const [tipos] = await pool.query(
+    `SELECT DISTINCT st.name, st.interval_days AS intervalDays, st.interval_km AS intervalKm
+       FROM order_services os
+       JOIN service_types st ON st.id = os.service_type_id
+      WHERE os.order_id = ?
+        AND (st.interval_days IS NOT NULL OR st.interval_km IS NOT NULL)
+      ORDER BY st.name`,
+    [orden.id],
+  );
+  const proximo = calcularProximoServicio({
+    tipos: tipos.map((tipo) => ({
+      intervalDays: tipo.intervalDays === null ? null : Number(tipo.intervalDays),
+      intervalKm: tipo.intervalKm === null ? null : Number(tipo.intervalKm),
+    })),
+    fechaBase: String(orden.terminada).slice(0, 10),
+    kilometrajeBase: Number(orden.entryMileage),
+  });
+
+  return {
+    suggestion: {
+      nextDueDate: proximo.date,
+      nextDueMileage: proximo.mileage,
+      basedOnOrderId: Number(orden.id),
+      serviceTypes: tipos.map((tipo) => tipo.name),
+    },
+  };
 }

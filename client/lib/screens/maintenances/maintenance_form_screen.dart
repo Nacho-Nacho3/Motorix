@@ -24,6 +24,9 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
   late final TextEditingController _kmCtrl;
   late final TextEditingController _warnDiasCtrl;
   late final TextEditingController _warnKmCtrl;
+
+  /// Sprint 7 (US8): nota de la propuesta precargada; null si no hay.
+  String? _notaPropuesta;
   late final TextEditingController _recomCtrl;
   Vehicle? _vehiculo;
   bool _guardando = false;
@@ -85,6 +88,23 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
     );
     if (dia == null || !mounted) return;
     setState(() => _fechaCtrl.text = _formatearFecha(dia));
+  }
+
+  /// US8 (CA-5): al elegir el vehículo se consulta la propuesta y se precargan
+  /// fecha y kilometraje solo si siguen vacíos; siempre se pueden corregir.
+  Future<void> _cargarPropuesta(int vehicleId) async {
+    final propuesta =
+        await context.read<MaintenancesProvider>().proponer(vehicleId);
+    if (!mounted || propuesta == null || _vehiculo?.id != vehicleId) return;
+    setState(() {
+      if (_fechaCtrl.text.trim().isEmpty && propuesta.nextDueDate != null) {
+        _fechaCtrl.text = propuesta.nextDueDate!;
+      }
+      if (_kmCtrl.text.trim().isEmpty && propuesta.nextDueMileage != null) {
+        _kmCtrl.text = propuesta.nextDueMileage.toString();
+      }
+      _notaPropuesta = propuesta.nota;
+    });
   }
 
   Future<void> _guardar() async {
@@ -202,9 +222,25 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                           validator: (vehiculo) => vehiculo == null
                               ? 'Selecciona un vehículo.'
                               : null,
-                          onChanged: (vehiculo) =>
-                              setState(() => _vehiculo = vehiculo),
+                          onChanged: (vehiculo) {
+                            setState(() {
+                              _vehiculo = vehiculo;
+                              _notaPropuesta = null;
+                            });
+                            if (vehiculo != null) _cargarPropuesta(vehiculo.id);
+                          },
                         ),
+                        if (_notaPropuesta != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            _notaPropuesta!,
+                            key: const Key('nota-propuesta'),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: AppFontSizes.small,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.lg),
                         TextFormField(
                           controller: _fechaCtrl,

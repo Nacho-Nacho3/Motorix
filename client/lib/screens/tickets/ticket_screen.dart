@@ -187,6 +187,14 @@ class _TicketScreenState extends State<TicketScreen> {
               _fila('Total', '\$${ticket.totals.total}', destacado: true),
             ]),
 
+            // Sprint 7 (CA-14): solo cuando el backend lo calculó al emitir.
+            if (ticket.nextService != null &&
+                ticket.nextService!.lineas.isNotEmpty)
+              _seccion('Próximo servicio', [
+                for (final linea in ticket.nextService!.lineas)
+                  _fila(linea.key, linea.value),
+              ]),
+
             _seccion('Pago', [
               if (pago == null)
                 const Text(
@@ -405,6 +413,12 @@ class _TicketScreenState extends State<TicketScreen> {
           ],
         ),
       ),
+      if (ticket.nextService != null &&
+          ticket.nextService!.lineas.isNotEmpty) ...[
+        titulo('Próximo servicio'),
+        for (final proximo in ticket.nextService!.lineas)
+          linea(proximo.key, proximo.value),
+      ],
       titulo('Pago'),
       pago == null
           ? pw.Text('Sin pago')

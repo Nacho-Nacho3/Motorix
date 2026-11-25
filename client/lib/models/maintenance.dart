@@ -82,3 +82,36 @@ class Maintenance {
         _ => state.isEmpty ? 'Normal' : state,
       };
 }
+
+/// Propuesta de próximo mantenimiento (Sprint 7, US8, CA-5): fecha y/o
+/// kilometraje calculados desde la última orden terminada del vehículo con
+/// tipos de servicio con intervalo. Siempre editable.
+class PropuestaMantenimiento {
+  const PropuestaMantenimiento({
+    this.nextDueDate,
+    this.nextDueMileage,
+    required this.basedOnOrderId,
+    this.serviceTypes = const [],
+  });
+
+  final String? nextDueDate;
+  final int? nextDueMileage;
+  final int basedOnOrderId;
+  final List<String> serviceTypes;
+
+  factory PropuestaMantenimiento.fromJson(Map<String, dynamic> json) =>
+      PropuestaMantenimiento(
+        nextDueDate: json['nextDueDate'] as String?,
+        nextDueMileage: (json['nextDueMileage'] as num?)?.toInt(),
+        basedOnOrderId: (json['basedOnOrderId'] as num?)?.toInt() ?? 0,
+        serviceTypes: [
+          for (final tipo in (json['serviceTypes'] as List? ?? const []))
+            tipo.toString(),
+        ],
+      );
+
+  /// Nota para el formulario: «Propuesto desde el servicio Cambio de aceite».
+  String get nota => serviceTypes.isEmpty
+      ? 'Propuesto desde la última orden terminada'
+      : 'Propuesto desde el servicio ${serviceTypes.join(', ')}';
+}

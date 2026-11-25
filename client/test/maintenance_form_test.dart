@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:motorix_client/models/vehicle.dart';
 import 'package:motorix_client/providers/maintenances_provider.dart';
 import 'package:motorix_client/providers/vehicles_provider.dart';
 import 'package:motorix_client/screens/maintenances/maintenance_form_screen.dart';
@@ -10,6 +11,11 @@ import 'package:motorix_client/utils/app_route.dart';
 
 /// ApiClient falso para el formulario de mantenimientos (vehículos + alta).
 class _ApiMantenimientosFalsa extends ApiClient {
+  _ApiMantenimientosFalsa({this.propuesta});
+
+  /// Propuesta de `GET /maintenances/suggestion`; null = `suggestion: null`.
+  final Map<String, dynamic>? propuesta;
+  int consultasDePropuesta = 0;
   int posteos = 0;
   Map<String, dynamic>? ultimoCuerpo;
 
@@ -29,6 +35,10 @@ class _ApiMantenimientosFalsa extends ApiClient {
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     if (path.startsWith('/vehicles')) {
       return {'vehicles': [_vehiculo], 'total': 1};
+    }
+    if (path == '/maintenances/suggestion') {
+      consultasDePropuesta += 1;
+      return {'suggestion': propuesta};
     }
     if (path.startsWith('/maintenances')) {
       return {'maintenances': <Map<String, dynamic>>[], 'total': 0};
@@ -157,6 +167,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Vacío: usa el valor del taller'), findsNWidgets(2));
+  });
+
+  testWidgets('al elegir el vehículo precarga la propuesta y permite corregirla (US8, CA-5)',
+      (tester) async {
+    final api = _ApiMantenimientosFalsa(propuesta: {
+      'nextDueDate': '2027-05-24',
+      'nextDueMileage': 85000,
+      'basedOnOrderId': 41,
+      'serviceTypes': ['Cambio de aceite'],
+    });
+    await tester.pumpWidget(_formulario(api));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField<Vehicle>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Toyota Corolla ABC1234').last);
+    await tester.pumpAndSettle();
+
+    expect(api.consultasDePropuesta, 1);
+    expect(find.widgetWithText(TextFormField, '2027-05-24'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '85000'), findsOneWidget);
+    expect(find.text('Propuesto desde el servicio Cambio de aceite'), findsOneWidget);
+
+    // Siempre editable: el usuario corrige el kilometraje propuesto.
+    final km = find.widgetWithText(TextFormField, '85000');
+    await tester.ensureVisible(km);
+    await tester.enterText(km, '86000');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '86000'), findsOneWidget);
+  });
+
+  testWidgets('sin propuesta el formulario queda vacío y sin nota', (tester) async {
+    final api = _ApiMantenimientosFalsa();
+    await tester.pumpWidget(_formulario(api));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField<Vehicle>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Toyota Corolla ABC1234').last);
+    await tester.pumpAndSettle();
+
+    expect(api.consultasDePropuesta, 1);
+    expect(find.byKey(const Key('nota-propuesta')), findsNothing);
+    expect(find.widgetWithText(TextFormField, '2027-05-24'), findsNothing);
   });
 
   testWidgets('abre el selector de fecha nativo del sistema', (tester) async {

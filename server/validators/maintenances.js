@@ -57,3 +57,14 @@ export const maintenanceCreateSchema = z
     { errorMap: mensajeClavesExtra },
   )
   .strict();
+
+/**
+ * Consulta de GET /api/maintenances/suggestion (Sprint 7, US8): `vehicleId`
+ * obligatorio, entero positivo. `req.query` es de solo lectura en Express 5,
+ * por eso se valida en el controlador sin reasignarlo.
+ */
+export const maintenanceSuggestionQuerySchema = z.object({
+  vehicleId: z
+    .string({ required_error: "Indica el vehículo para proponer el mantenimiento." })
+    .regex(/^[1-9]\d*$/, "El identificador del vehículo debe ser un número entero positivo."),
+});

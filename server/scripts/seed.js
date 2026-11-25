@@ -312,6 +312,12 @@ export async function crearOrdenesDeEjemplo() {
     });
     await ordenes.actualizar(orden.id, {
       status: ejemplo.status,
+      // Sprint 7 (D-19): las órdenes de ejemplo ya terminadas llevan fecha de
+      // terminación real, para que entren en los reportes y en la propuesta.
+      finishedAt:
+        ejemplo.status === "FINISHED" || ejemplo.status === "DELIVERED"
+          ? new Date()
+          : undefined,
       diagnosis: ejemplo.diagnosis,
       observations: ejemplo.observations,
       recommendations: ejemplo.recommendations,

@@ -20,6 +20,7 @@ class Ticket {
     required this.parts,
     required this.totals,
     this.payment,
+    this.nextService,
   });
 
   final int id;
@@ -40,6 +41,10 @@ class Ticket {
 
   /// Pago `PAID` de la orden; `null` → la interfaz muestra «Sin pago».
   final TicketPago? payment;
+
+  /// Sprint 7 (CA-14): próximo servicio calculado al emitir; `null` cuando la
+  /// orden no tuvo tipos de servicio con intervalo.
+  final TicketProximoServicio? nextService;
 
   factory Ticket.fromJson(Map<String, dynamic> json) => Ticket(
         id: (json['id'] as num).toInt(),
@@ -68,7 +73,54 @@ class Ticket {
             : TicketPago.fromJson(
                 (json['payment'] as Map).cast<String, dynamic>(),
               ),
+        nextService: json['nextService'] == null
+            ? null
+            : TicketProximoServicio.fromJson(
+                (json['nextService'] as Map).cast<String, dynamic>(),
+              ),
       );
+}
+
+/// Próximo servicio del ticket (Sprint 7, US8): fecha y/o kilometraje.
+class TicketProximoServicio {
+  const TicketProximoServicio({this.date, this.mileage});
+
+  /// `YYYY-MM-DD`.
+  final String? date;
+  final int? mileage;
+
+  factory TicketProximoServicio.fromJson(Map<String, dynamic> json) =>
+      TicketProximoServicio(
+        date: json['date'] as String?,
+        mileage: (json['mileage'] as num?)?.toInt(),
+      );
+
+  /// Fecha en formato `dd/mm/aaaa`; `null` si no hay.
+  String? get etiquetaFecha {
+    final texto = date;
+    if (texto == null || texto.length < 10) return texto;
+    return '${texto.substring(8, 10)}/${texto.substring(5, 7)}/${texto.substring(0, 4)}';
+  }
+
+  /// Kilometraje con separador de miles, p. ej. «85,000 km».
+  String? get etiquetaKilometraje {
+    final km = mileage;
+    if (km == null) return null;
+    final texto = km.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < texto.length; i++) {
+      if (i > 0 && (texto.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(texto[i]);
+    }
+    return '$buffer km';
+  }
+
+  /// Líneas «Fecha» y «Kilometraje» para la pantalla y el PDF: solo las que existen.
+  List<MapEntry<String, String>> get lineas => [
+        if (etiquetaFecha != null) MapEntry('Fecha', etiquetaFecha!),
+        if (etiquetaKilometraje != null)
+          MapEntry('Kilometraje', etiquetaKilometraje!),
+      ];
 }
 
 class TicketTaller {

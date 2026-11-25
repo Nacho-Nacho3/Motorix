@@ -10,7 +10,8 @@ const CAMPOS =
   "t.id, t.order_id AS orderId, t.issued_by AS issuedBy, " +
   "u.name AS issuedByName, t.created_at AS createdAt, " +
   "t.workshop_name AS workshopName, t.workshop_address AS workshopAddress, " +
-  "t.workshop_phone AS workshopPhone";
+  "t.workshop_phone AS workshopPhone, " +
+  "t.next_service_date AS nextServiceDate, t.next_service_mileage AS nextServiceMileage";
 
 /** Normaliza la fila al objeto base del ticket (sin contenido calculado). */
 export function aTicket(fila) {
@@ -25,6 +26,13 @@ export function aTicket(fila) {
     workshopName: fila.workshopName,
     workshopAddress: fila.workshopAddress ?? null,
     workshopPhone: fila.workshopPhone ?? null,
+    // Sprint 7 (CA-14): próximo servicio calculado al emitir; null en los
+    // tickets anteriores o sin tipos con intervalo.
+    nextServiceDate: fila.nextServiceDate ?? null,
+    nextServiceMileage:
+      fila.nextServiceMileage === null || fila.nextServiceMileage === undefined
+        ? null
+        : Number(fila.nextServiceMileage),
   };
 }
 
@@ -49,7 +57,15 @@ export async function buscarPorOrden(orderId, conexion = pool) {
  * @returns {Promise<{id: number, creado: boolean}>}
  */
 export async function crear(
-  { orderId, issuedBy, workshopName, workshopAddress = null, workshopPhone = null },
+  {
+    orderId,
+    issuedBy,
+    workshopName,
+    workshopAddress = null,
+    workshopPhone = null,
+    nextServiceDate = null,
+    nextServiceMileage = null,
+  },
   conexion = pool,
 ) {
   const existente = await buscarPorOrden(orderId, conexion);
@@ -58,9 +74,18 @@ export async function crear(
   try {
     const [resultado] = await conexion.query(
       `INSERT INTO tickets
-         (order_id, issued_by, workshop_name, workshop_address, workshop_phone)
-       VALUES (?, ?, ?, ?, ?)`,
-      [orderId, issuedBy, workshopName, workshopAddress, workshopPhone],
+         (order_id, issued_by, workshop_name, workshop_address, workshop_phone,
+          next_service_date, next_service_mileage)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orderId,
+        issuedBy,
+        workshopName,
+        workshopAddress,
+        workshopPhone,
+        nextServiceDate,
+        nextServiceMileage,
+      ],
     );
     return { id: Number(resultado.insertId), creado: true };
   } catch (error) {

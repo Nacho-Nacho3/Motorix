@@ -17,6 +17,14 @@ rutasMaintenances.get(
   controlador.listMaintenances,
 );
 
+// Sprint 7 (US8): propuesta de fecha y kilometraje; solo quien puede dar de alta.
+rutasMaintenances.get(
+  "/suggestion",
+  authenticate,
+  authorize("ADMIN", "MECHANIC"),
+  controlador.suggestMaintenance,
+);
+
 rutasMaintenances.post(
   "/",
   authenticate,

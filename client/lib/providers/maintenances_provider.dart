@@ -103,6 +103,18 @@ class MaintenancesProvider extends ChangeNotifier {
     }
   }
 
+  /// Sprint 7 (US8, CA-5): propuesta de fecha y kilometraje para el vehículo;
+  /// `null` si no hay o si la consulta falla (el formulario sigue manual).
+  Future<PropuestaMantenimiento?> proponer(int vehicleId) async {
+    try {
+      final datos =
+          await ApiClient.conRed(() => api.proponerMantenimiento(vehicleId));
+      return datos == null ? null : PropuestaMantenimiento.fromJson(datos);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Reintenta la carga tras un error.
   Future<void> reintentar() => cargar();
 }

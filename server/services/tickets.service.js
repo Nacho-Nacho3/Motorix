@@ -3,6 +3,7 @@ import { errores } from "../utils/errors.js";
 import * as ticketsModel from "../models/ticket.model.js";
 import { sumarTotales } from "./order-total.service.js";
 import { obtenerConfiguracion } from "./settings.service.js";
+import { calcularProximoServicio } from "../utils/next-service.js";
 
 // T035: generación y lectura del ticket (US3, CA-4/CA-5, FR-009 a FR-011,
 // R-05, RN-10). El contenido NUNCA se almacena: cada lectura se recalcula
@@ -25,7 +26,7 @@ export function folioDeTicket(id) {
 /** Orden mínima para verificar existencia y estado; `null` si no existe. */
 async function buscarOrdenBasica(orderId) {
   const [filas] = await pool.query(
-    "SELECT id, status FROM service_orders WHERE id = ? LIMIT 1",
+    "SELECT id, status, entry_mileage AS entryMileage FROM service_orders WHERE id = ? LIMIT 1",
     [orderId],
   );
   return filas[0] ?? null;
@@ -161,7 +162,39 @@ async function armarTicket(filaTicket) {
     parts: trabajo.parts,
     totals: sumarTotales(trabajo.filas),
     payment: pago,
+    // Sprint 7 (CA-14): guardado al emitir; null si no hubo tipos con intervalo.
+    nextService:
+      filaTicket.nextServiceDate || filaTicket.nextServiceMileage !== null
+        ? { date: filaTicket.nextServiceDate, mileage: filaTicket.nextServiceMileage }
+        : null,
   };
+}
+
+/** Fecha local de hoy `YYYY-MM-DD`. */
+function hoyLocal() {
+  const ahora = new Date();
+  const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+  const dia = String(ahora.getDate()).padStart(2, "0");
+  return `${ahora.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
+ * Tipos con intervalo de las líneas de servicio de la orden (US8). Incluye los
+ * tipos desactivados después: lo que cuenta es lo que se hizo en la orden.
+ */
+async function tiposConIntervalo(orderId) {
+  const [filas] = await pool.query(
+    `SELECT DISTINCT st.interval_days AS intervalDays, st.interval_km AS intervalKm
+       FROM order_services os
+       JOIN service_types st ON st.id = os.service_type_id
+      WHERE os.order_id = ?
+        AND (st.interval_days IS NOT NULL OR st.interval_km IS NOT NULL)`,
+    [orderId],
+  );
+  return filas.map((fila) => ({
+    intervalDays: fila.intervalDays === null ? null : Number(fila.intervalDays),
+    intervalKm: fila.intervalKm === null ? null : Number(fila.intervalKm),
+  }));
 }
 
 /**
@@ -178,12 +211,20 @@ export async function generarTicket(orderId, usuario) {
   }
 
   const { shop } = await obtenerConfiguracion();
+  // El próximo servicio se calcula una sola vez, al emitir (CA-14, P-5).
+  const proximo = calcularProximoServicio({
+    tipos: await tiposConIntervalo(orderId),
+    fechaBase: hoyLocal(),
+    kilometrajeBase: orden.entryMileage,
+  });
   const { creado } = await ticketsModel.crear({
     orderId,
     issuedBy: usuario.id,
     workshopName: shop.name,
     workshopAddress: shop.address,
     workshopPhone: shop.phone,
+    nextServiceDate: proximo.date,
+    nextServiceMileage: proximo.mileage,
   });
   const fila = await ticketsModel.buscarPorOrden(orderId);
   return { ticket: await armarTicket(fila), creado };

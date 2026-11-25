@@ -136,6 +136,18 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T062 (Sprint 7, US8): propuesta de fecha y kilometraje del próximo
+  /// mantenimiento a partir de la última orden terminada del vehículo; `null`
+  /// cuando no hay propuesta (contracts/changes-to-existing.md).
+  Future<Map<String, dynamic>?> proponerMantenimiento(int vehicleId) async {
+    final datos = await get(
+      '/maintenances/suggestion',
+      query: {'vehicleId': '$vehicleId'},
+    );
+    final sugerencia = (datos as Map)['suggestion'];
+    return sugerencia == null ? null : Map<String, dynamic>.from(sugerencia as Map);
+  }
+
   /// T051 (Sprint 7, US3): catálogo de tipos de servicio
   /// (contracts/service-types.md). El listado es solo ADMIN.
   Future<List<dynamic>> listarTiposDeServicio() async {
