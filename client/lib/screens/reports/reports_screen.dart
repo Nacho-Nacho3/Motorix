@@ -69,7 +69,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final proveedor = context.watch<ReportsProvider>();
 
     return DefaultTabController(
-      length: 3,
+      length: 5,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -80,6 +80,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Tab(text: 'Ingresos'),
               Tab(text: 'Servicios'),
               Tab(text: 'Productividad'),
+              Tab(text: 'Margen de refacciones'),
+              Tab(text: 'Rotación'),
             ],
           ),
         ),
@@ -96,6 +98,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     PestanaIngresos(),
                     PestanaServicios(),
                     PestanaProductividad(),
+                    PestanaMargen(),
+                    PestanaRotacion(),
                   ],
                 ),
               ),
@@ -505,4 +509,138 @@ Widget _resumen({
       ),
     ),
   );
+}
+
+/// Pestaña «Margen de refacciones»: ventas, costo y margen por refacción con el
+/// costo congelado de cada línea (US6, FR-010, D-05). Las líneas sin costo
+/// registrado se muestran aparte y no entran al margen.
+class PestanaMargen extends StatelessWidget {
+  const PestanaMargen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CuerpoReporte(
+      nombre: 'parts-margin',
+      mensajeVacio: 'No hay refacciones vendidas en órdenes terminadas en este periodo.',
+      contenido: (resultado) {
+        final sinCosto = (resultado.totals['unitsWithoutCost'] as num?)?.toInt() ?? 0;
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _resumen(
+                etiqueta: 'Margen de refacciones',
+                valor: '\$${resultado.importe('marginAmount')}',
+                clave: const Key('total-margen'),
+                detalle:
+                    'Ventas: \$${resultado.importe('salesAmount')} · Costo: \$${resultado.importe('costAmount')}',
+              ),
+              if (sinCosto > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Text(
+                    '$sinCosto ${sinCosto == 1 ? 'unidad' : 'unidades'} sin costo registrado '
+                    '(ventas por \$${resultado.importe('salesWithoutCost')}): no entran al margen.',
+                    key: const Key('nota-sin-costo'),
+                    style: const TextStyle(color: AppColors.warning),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                color: AppColors.surface,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    key: const Key('tabla-margen'),
+                    columns: const [
+                      DataColumn(label: Text('Código')),
+                      DataColumn(label: Text('Refacción')),
+                      DataColumn(label: Text('Unidades'), numeric: true),
+                      DataColumn(label: Text('Ventas'), numeric: true),
+                      DataColumn(label: Text('Costo'), numeric: true),
+                      DataColumn(label: Text('Margen'), numeric: true),
+                      DataColumn(label: Text('Sin costo')),
+                    ],
+                    rows: [
+                      for (final fila in resultado.rows)
+                        DataRow(cells: [
+                          DataCell(Text('${fila['partCode']}')),
+                          DataCell(Text('${fila['name']}')),
+                          DataCell(Text('${fila['units']}')),
+                          DataCell(Text('\$${fila['salesAmount']}')),
+                          DataCell(Text('\$${fila['costAmount']}')),
+                          DataCell(Text('\$${fila['marginAmount']}')),
+                          DataCell(
+                            (fila['unitsWithoutCost'] as num? ?? 0) > 0
+                                ? Text(
+                                    'Sin costo registrado: ${fila['unitsWithoutCost']} u. · \$${fila['salesWithoutCost']}',
+                                    style: const TextStyle(color: AppColors.warning),
+                                  )
+                                : const Text('—'),
+                          ),
+                        ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Pestaña «Rotación»: unidades salidas entre la existencia promedio del
+/// periodo (US6, D-08). Sin existencia promedio la rotación es «sin existencia».
+class PestanaRotacion extends StatelessWidget {
+  const PestanaRotacion({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CuerpoReporte(
+      nombre: 'inventory-rotation',
+      mensajeVacio: 'No hay existencias ni movimientos de inventario en este periodo.',
+      contenido: (resultado) => SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _resumen(
+              etiqueta: 'Unidades salidas',
+              valor: '${resultado.totals['unitsOut'] ?? 0}',
+              clave: const Key('total-salidas'),
+              detalle: 'Rotación = unidades salidas ÷ existencia promedio del periodo',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Card(
+              color: AppColors.surface,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  key: const Key('tabla-rotacion'),
+                  columns: const [
+                    DataColumn(label: Text('Código')),
+                    DataColumn(label: Text('Refacción')),
+                    DataColumn(label: Text('Unidades salidas'), numeric: true),
+                    DataColumn(label: Text('Existencia promedio'), numeric: true),
+                    DataColumn(label: Text('Rotación'), numeric: true),
+                  ],
+                  rows: [
+                    for (final fila in resultado.rows)
+                      DataRow(cells: [
+                        DataCell(Text('${fila['partCode']}')),
+                        DataCell(Text('${fila['name']}')),
+                        DataCell(Text('${fila['unitsOut']}')),
+                        DataCell(Text('${fila['averageStock']}')),
+                        DataCell(Text(fila['rotation'] == null ? 'Sin existencia' : '${fila['rotation']}')),
+                      ]),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

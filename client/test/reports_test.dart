@@ -18,11 +18,12 @@ import 'package:motorix_client/widgets/states_view.dart';
 // tabla y totales; estados de carga, vacío y error; sección solo para ADMIN.
 
 class _ApiFalsa extends ApiClient {
-  _ApiFalsa({this.vacio = false, this.falla = false, this.aproximadas = 0});
+  _ApiFalsa({this.vacio = false, this.falla = false, this.aproximadas = 0, this.sinCosto = 4});
 
   final bool vacio;
   final bool falla;
   final int aproximadas;
+  final int sinCosto;
   final List<Map<String, String>> consultas = [];
   final List<String> rutas = [];
 
@@ -61,6 +62,81 @@ class _ApiFalsa extends ApiClient {
               ],
         'totals': {'ordersFinished': vacio ? 0 : 9, 'laborAmount': vacio ? '0.00' : '4150.00'},
         'approximateDates': aproximadas,
+        'truncated': false,
+      };
+    }
+    if (path == '/reports/parts-margin') {
+      if (falla) {
+        throw ApiError(status: 500, code: 'INTERNAL_ERROR', message: 'No se pudo calcular el reporte.');
+      }
+      return {
+        'from': query?['from'],
+        'to': query?['to'],
+        'rows': vacio
+            ? <dynamic>[]
+            : [
+                {
+                  'partId': 2,
+                  'partCode': 'FIL-002',
+                  'name': 'Filtro de aceite',
+                  'units': 6,
+                  'salesAmount': '900.00',
+                  'costAmount': '360.00',
+                  'marginAmount': '540.00',
+                  'unitsWithoutCost': 0,
+                  'salesWithoutCost': '0.00',
+                },
+                {
+                  'partId': 7,
+                  'partCode': 'ADT-007',
+                  'name': 'Aditivo para radiador',
+                  'units': 4,
+                  'salesAmount': '720.00',
+                  'costAmount': '0.00',
+                  'marginAmount': '0.00',
+                  'unitsWithoutCost': 4,
+                  'salesWithoutCost': '720.00',
+                },
+              ],
+        'totals': {
+          'units': vacio ? 0 : 10,
+          'salesAmount': vacio ? '0.00' : '1620.00',
+          'costAmount': vacio ? '0.00' : '360.00',
+          'marginAmount': vacio ? '0.00' : '540.00',
+          'unitsWithoutCost': vacio ? 0 : sinCosto,
+          'salesWithoutCost': vacio ? '0.00' : '720.00',
+        },
+        'truncated': false,
+      };
+    }
+    if (path == '/reports/inventory-rotation') {
+      if (falla) {
+        throw ApiError(status: 500, code: 'INTERNAL_ERROR', message: 'No se pudo calcular el reporte.');
+      }
+      return {
+        'from': query?['from'],
+        'to': query?['to'],
+        'rows': vacio
+            ? <dynamic>[]
+            : [
+                {
+                  'partId': 2,
+                  'partCode': 'FIL-002',
+                  'name': 'Filtro de aceite',
+                  'unitsOut': 6,
+                  'averageStock': '8.50',
+                  'rotation': '0.71',
+                },
+                {
+                  'partId': 9,
+                  'partCode': 'AGO-009',
+                  'name': 'Pieza agotada',
+                  'unitsOut': 0,
+                  'averageStock': '0.00',
+                  'rotation': null,
+                },
+              ],
+        'totals': {'unitsOut': vacio ? 0 : 6},
         'truncated': false,
       };
     }
@@ -339,6 +415,89 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(api.rutas.where((r) => r == '/reports/productivity').length, greaterThan(antes));
+    });
+  });
+
+  group('Pestaña de margen de refacciones', () {
+    testWidgets('muestra ventas, costo y margen y marca las líneas sin costo registrado', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Margen de refacciones'));
+      await tester.pumpAndSettle();
+
+      expect(api.rutas, contains('/reports/parts-margin'));
+      expect(find.byKey(const Key('total-margen')), findsOneWidget);
+      expect(find.text('\$540.00'), findsWidgets);
+      expect(find.text('Ventas: \$1620.00 · Costo: \$360.00'), findsOneWidget);
+      expect(find.text('Filtro de aceite'), findsOneWidget);
+      expect(find.textContaining('Sin costo registrado: 4 u. · \$720.00'), findsOneWidget);
+      expect(find.byKey(const Key('nota-sin-costo')), findsOneWidget);
+      expect(find.textContaining('4 unidades sin costo registrado'), findsOneWidget);
+    });
+
+    testWidgets('sin líneas sin costo no muestra la nota', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(sinCosto: 0)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Margen de refacciones'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('nota-sin-costo')), findsNothing);
+    });
+
+    testWidgets('sin datos muestra el estado vacío', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(vacio: true)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Margen de refacciones'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No hay refacciones vendidas en órdenes terminadas en este periodo.'), findsOneWidget);
+    });
+  });
+
+  group('Pestaña de rotación', () {
+    testWidgets('muestra la rotación y «Sin existencia» cuando no hay promedio', (tester) async {
+      await _grande(tester);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Rotación'));
+      await tester.pumpAndSettle();
+
+      expect(api.rutas, contains('/reports/inventory-rotation'));
+      expect(find.byKey(const Key('total-salidas')), findsOneWidget);
+      expect(find.text('0.71'), findsOneWidget);
+      expect(find.text('8.50'), findsOneWidget);
+      expect(find.text('Sin existencia'), findsOneWidget);
+    });
+
+    testWidgets('si falla muestra el error y sin datos el vacío', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(falla: true)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Rotación'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No se pudo calcular el reporte.'), findsWidgets);
+    });
+
+    testWidgets('sin movimientos muestra el estado vacío', (tester) async {
+      await _grande(tester);
+      await tester.pumpWidget(_pantalla(_ApiFalsa(vacio: true)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Rotación'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No hay existencias ni movimientos de inventario en este periodo.'), findsOneWidget);
     });
   });
 

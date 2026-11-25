@@ -278,7 +278,7 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
       // El precio se lee en la MISMA conexión (transacción) que inserta la
       // fila: instantánea consistente del precio vigente (D-01/D-03).
       const [filasParte] = await conexion.query(
-        "SELECT id, stock_current, sale_price AS salePrice FROM parts WHERE id = ? FOR UPDATE",
+        "SELECT id, stock_current, sale_price AS salePrice, purchase_price AS purchasePrice FROM parts WHERE id = ? FOR UPDATE",
         [partId],
       );
       if (filasParte.length === 0) throw errores.partNotFound();
@@ -292,6 +292,8 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
           partId,
           quantity,
           unitPrice: filasParte[0].salePrice,
+          // Sprint 7 (D-05): costo congelado; sin precio de compra → sin costo.
+          unitCost: Number(filasParte[0].purchasePrice) > 0 ? filasParte[0].purchasePrice : null,
           createdBy: usuario.id,
         },
         conexion,

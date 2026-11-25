@@ -106,3 +106,69 @@ export async function ordenesConFechaAproximada({ from, to }) {
   );
   return Number(fila.total);
 }
+
+/**
+ * Líneas de refacción de órdenes terminadas del rango, por refacción. Todo en
+ * centavos enteros: cada línea aporta `cantidad × precio` (ventas) y, solo si
+ * tiene `unit_cost`, `cantidad × costo`. Las líneas sin costo se separan para
+ * que no inflen el margen (D-05).
+ */
+export async function margenRefacciones({ from, to }) {
+  const [filas] = await pool.query(
+    `SELECT p.id AS parteId, p.part_code AS codigo, p.name AS nombre,
+            CAST(SUM(op.quantity) AS SIGNED) AS unidades,
+            CAST(SUM(op.quantity * ROUND(op.unit_price * 100)) AS SIGNED) AS ventas,
+            CAST(SUM(CASE WHEN op.unit_cost IS NULL THEN 0
+                          ELSE op.quantity * ROUND(op.unit_cost * 100) END) AS SIGNED) AS costo,
+            CAST(SUM(CASE WHEN op.unit_cost IS NULL THEN op.quantity ELSE 0 END) AS SIGNED) AS unidadesSinCosto,
+            CAST(SUM(CASE WHEN op.unit_cost IS NULL
+                          THEN op.quantity * ROUND(op.unit_price * 100) ELSE 0 END) AS SIGNED) AS ventasSinCosto
+       FROM order_parts op
+       JOIN service_orders o ON o.id = op.order_id
+       JOIN parts p ON p.id = op.part_id
+      WHERE ${COND_TERMINADA}
+      GROUP BY p.id, p.part_code, p.name`,
+    rango({ from, to }),
+  );
+  return filas.map((fila) => ({
+    partId: Number(fila.parteId),
+    partCode: fila.codigo,
+    name: fila.nombre,
+    units: Number(fila.unidades),
+    salesCents: Number(fila.ventas),
+    costCents: Number(fila.costo),
+    unitsWithoutCost: Number(fila.unidadesSinCosto),
+    salesWithoutCostCents: Number(fila.ventasSinCosto),
+  }));
+}
+
+/**
+ * Movimientos de inventario por refacción: los del periodo y los posteriores a
+ * su fin, junto con el saldo actual, para reconstruir la existencia (D-08).
+ */
+export async function movimientosPorRefaccion({ from, to }) {
+  const [partes] = await pool.query(
+    "SELECT id, part_code AS codigo, name AS nombre, stock_current AS saldo FROM parts",
+  );
+  const [movimientos] = await pool.query(
+    `SELECT part_id AS parteId, movement_type AS tipo, quantity AS cantidad,
+            (created_at >= DATE_ADD(?, INTERVAL 1 DAY)) AS posterior
+       FROM inventory_movements
+      WHERE created_at >= ?`,
+    [`${to} 00:00:00`, `${from} 00:00:00`],
+  );
+  return {
+    partes: partes.map((parte) => ({
+      id: Number(parte.id),
+      partCode: parte.codigo,
+      name: parte.nombre,
+      stock: Number(parte.saldo),
+    })),
+    movimientos: movimientos.map((m) => ({
+      partId: Number(m.parteId),
+      type: m.tipo,
+      quantity: Number(m.cantidad),
+      posterior: Boolean(Number(m.posterior)),
+    })),
+  };
+}

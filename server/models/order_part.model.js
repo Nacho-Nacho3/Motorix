@@ -36,13 +36,15 @@ export function aOrderPart(fila) {
  * participar en la transacción de la alta (R-05). Devuelve el id de la fila.
  */
 export async function crear(
-  { orderId, partId, quantity, unitPrice, createdBy },
+  { orderId, partId, quantity, unitPrice, unitCost = null, createdBy },
   conexion = pool,
 ) {
+  // Sprint 7 (D-05, P-8): `unit_cost` congela el precio de compra al agregar la
+  // línea; `NULL` = sin costo registrado. Nunca sale en las respuestas de la API.
   const [resultado] = await conexion.query(
-    `INSERT INTO order_parts (order_id, part_id, quantity, unit_price, created_by)
-     VALUES (?, ?, ?, ?, ?)`,
-    [orderId, partId, quantity, unitPrice ?? 0, createdBy],
+    `INSERT INTO order_parts (order_id, part_id, quantity, unit_price, unit_cost, created_by)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [orderId, partId, quantity, unitPrice ?? 0, unitCost, createdBy],
   );
   return resultado.insertId;
 }

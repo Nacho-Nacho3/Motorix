@@ -872,6 +872,94 @@ export async function ajustarTerminacionesDeEjemplo() {
   return { ajustadas };
 }
 
+/**
+ * Sprint 7 (US6, T118, CA-12): líneas de refacción con costo congelado en la
+ * orden histórica de ejemplo, **una línea sin costo registrado** (caso D-05) y
+ * sus salidas de inventario, para que Margen y Rotación muestren información.
+ * Cuelgan de la orden entregada propia para no alterar el cobro ni el ticket de
+ * las órdenes de demostración. Idempotente: si la orden ya tiene líneas, no hace
+ * nada.
+ */
+export async function crearMargenYRotacionDeEjemplo(adminId) {
+  const [ordenes] = await pool.query(
+    "SELECT id, COALESCE(finished_at, NOW()) AS fecha FROM service_orders WHERE reported_problem = ? LIMIT 1",
+    [MARCADOR_HISTORICO],
+  );
+  if (ordenes.length === 0) return { lineas: 0, omitidas: 0 };
+  const orden = ordenes[0];
+
+  const [previas] = await pool.query(
+    "SELECT COUNT(*) AS total FROM order_parts WHERE order_id = ?",
+    [orden.id],
+  );
+  if (Number(previas[0].total) > 0) return { lineas: 0, omitidas: Number(previas[0].total) };
+
+  // Refacción sin precio de compra: su costo queda como «sin registrar» (D-05).
+  if (!(await buscarPartePorCodigo("ADT-007"))) {
+    await inventario.createPart(
+      {
+        partCode: "ADT-007",
+        name: "Aditivo para radiador",
+        category: "Fluidos",
+        brand: "Prestone",
+        stockCurrent: 12,
+        stockMin: 3,
+        purchasePrice: "0.00",
+        salePrice: "180.00",
+      },
+      adminId,
+    );
+  }
+
+  const [mecanicos] = await pool.query(
+    "SELECT id FROM users WHERE role = 'MECHANIC' AND active = 1 ORDER BY id LIMIT 1",
+  );
+  const creadoPor = mecanicos[0]?.id ?? adminId;
+  const lineas = [
+    ["FIL-002", 3],
+    ["BOM-006", 1],
+    ["LLT-005", 2],
+    ["ADT-007", 4],
+  ];
+
+  let creadas = 0;
+  for (const [codigo, cantidad] of lineas) {
+    const [partes] = await pool.query(
+      "SELECT id, stock_current AS stock, sale_price AS venta, purchase_price AS compra FROM parts WHERE part_code = ?",
+      [codigo],
+    );
+    if (partes.length === 0) continue;
+    const parte = partes[0];
+    const salida = Math.min(cantidad, Number(parte.stock));
+    if (salida <= 0) continue;
+
+    await pool.query(
+      `INSERT INTO order_parts (order_id, part_id, quantity, unit_price, unit_cost, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orden.id,
+        parte.id,
+        salida,
+        parte.venta,
+        Number(parte.compra) > 0 ? parte.compra : null,
+        creadoPor,
+        orden.fecha,
+      ],
+    );
+    await pool.query(
+      `INSERT INTO inventory_movements (part_id, movement_type, quantity, order_id, created_by, created_at)
+       VALUES (?, 'OUT', ?, ?, ?, ?)`,
+      [parte.id, salida, orden.id, creadoPor, orden.fecha],
+    );
+    await pool.query("UPDATE parts SET stock_current = stock_current - ? WHERE id = ?", [
+      salida,
+      parte.id,
+    ]);
+    creadas += 1;
+  }
+  return { lineas: creadas, omitidas: 0 };
+}
+
 export async function ejecutarSeed() {
   const cuentas = await crearCuentasIniciales();
   const clientes = await crearClientesDeEjemplo();
@@ -902,6 +990,10 @@ export async function ejecutarSeed() {
   // Sprint 7 (US5, T108): fechas de terminación reales en las órdenes de ejemplo
   // (solo si siguen ausentes o aproximadas, D-19: idempotente).
   const terminaciones = await ajustarTerminacionesDeEjemplo();
+  // Sprint 7 (US6, T118): líneas con costo, una sin costo y salidas de inventario.
+  const margen = admin
+    ? await crearMargenYRotacionDeEjemplo(admin)
+    : { lineas: 0, omitidas: 0 };
   // Después del uso de refacciones: el ticket de ejemplo ya la incluye (CA-4).
   const pagoYTicket = admin
     ? await crearPagoYTicketDeEjemplo({ id: admin, role: "ADMIN" })
@@ -938,6 +1030,7 @@ export async function ejecutarSeed() {
     tiposDeServicio,
     ingresos,
     terminaciones,
+    margen,
     pagoYTicket,
     escenariosDePrecios,
     escenariosNotificaciones,
@@ -997,6 +1090,10 @@ if (esEjecucionDirecta) {
   );
   console.log(
     `  - Fechas de terminación ajustadas: ${resumen.terminaciones.ajustadas}`,
+  );
+  console.log(
+    `  - Margen y rotación de ejemplo: ${resumen.margen.lineas} líneas creadas, ` +
+      `${resumen.margen.omitidas} ya existentes`,
   );
   console.log(
     `  - Cobro y ticket: ${resumen.pagoYTicket.pago ? "pago PAID registrado" : "pago ya existente u orden sin terminar"}, ` +

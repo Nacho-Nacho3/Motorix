@@ -39,3 +39,21 @@ export async function getProductividad(req, res, next) {
     next(error);
   }
 }
+
+export async function getMargenRefacciones(req, res, next) {
+  try {
+    const { from, to } = leerConsulta(req);
+    ok(res, await servicio.margenRefacciones({ from, to }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getRotacionInventario(req, res, next) {
+  try {
+    const { from, to } = leerConsulta(req);
+    ok(res, await servicio.rotacionInventario({ from, to }));
+  } catch (error) {
+    next(error);
+  }
+}

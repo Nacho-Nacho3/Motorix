@@ -191,3 +191,127 @@ describe("Contrato de GET /api/reports/productivity", () => {
     ]);
   });
 });
+
+describe("Contrato de GET /api/reports/parts-margin", () => {
+  async function conUnaLinea() {
+    const mecanico = await tokenPara({ username: "mecanico-mg", role: "MECHANIC", name: "Mecánico" });
+    const cliente = await clientes.crear({ name: "Cliente mg", phone: "5599990000", email: "mg@correo.mx" });
+    const vehiculo = await vehiculos.crear({
+      clientId: cliente.id,
+      brand: "Nissan",
+      model: "Versa",
+      year: 2020,
+      licensePlate: "MG00001",
+      vin: null,
+      currentMileage: 1000,
+    });
+    const alta = await request(app)
+      .post("/api/service-orders")
+      .set(headersRecepcion)
+      .send({
+        clientId: cliente.id,
+        vehicleId: vehiculo.id,
+        mechanicId: mecanico.usuario.id,
+        entryMileage: 2000,
+        reportedProblem: "Margen",
+      });
+    const id = alta.body.data.order.id;
+    const parte = await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "MG-001",
+        name: "Filtro",
+        category: "Motor",
+        stockCurrent: 10,
+        stockMin: 1,
+        purchasePrice: "60.00",
+        salePrice: "150.00",
+      });
+    await request(app)
+      .post(`/api/service-orders/${id}/parts`)
+      .set(conToken(mecanico.token))
+      .send({ partId: parte.body.data.part.id, quantity: 2 });
+    for (const status of ["DIAGNOSIS", "IN_REPAIR", "FINISHED"]) {
+      await request(app)
+        .patch(`/api/service-orders/${id}/status`)
+        .set(conToken(mecanico.token))
+        .send({ status });
+    }
+    await poolPrueba.query("UPDATE service_orders SET finished_at = '2026-11-10 10:00:00' WHERE id = ?", [id]);
+  }
+
+  test("rows con los nueve campos del contrato y totals sin los de identificación", async () => {
+    await conUnaLinea();
+
+    const respuesta = await request(app)
+      .get("/api/reports/parts-margin?from=2026-11-01&to=2026-11-30")
+      .set(headersAdmin);
+
+    expect(respuesta.status).toBe(200);
+    const { data } = respuesta.body;
+    expect(Object.keys(data).sort()).toEqual(["from", "rows", "to", "totals", "truncated"]);
+    expect(data.rows[0]).toEqual({
+      partId: expect.any(Number),
+      partCode: "MG-001",
+      name: "Filtro",
+      units: 2,
+      salesAmount: "300.00",
+      costAmount: "120.00",
+      marginAmount: "180.00",
+      unitsWithoutCost: 0,
+      salesWithoutCost: "0.00",
+    });
+    expect(Object.keys(data.totals).sort()).toEqual([
+      "costAmount",
+      "marginAmount",
+      "salesAmount",
+      "salesWithoutCost",
+      "units",
+      "unitsWithoutCost",
+    ]);
+  });
+});
+
+describe("Contrato de GET /api/reports/inventory-rotation", () => {
+  test("rows {partId, partCode, name, unitsOut, averageStock, rotation} y totals {unitsOut}", async () => {
+    await request(app)
+      .post("/api/parts")
+      .set(headersAdmin)
+      .send({
+        partCode: "RT-001",
+        name: "Pieza",
+        category: "Motor",
+        stockCurrent: 10,
+        stockMin: 1,
+        purchasePrice: "10.00",
+        salePrice: "20.00",
+      });
+
+    const respuesta = await request(app).get("/api/reports/inventory-rotation").set(headersAdmin);
+
+    expect(respuesta.status).toBe(200);
+    const { data } = respuesta.body;
+    expect(Object.keys(data).sort()).toEqual(["from", "rows", "to", "totals", "truncated"]);
+    expect(Object.keys(data.totals)).toEqual(["unitsOut"]);
+    expect(data.rows[0]).toEqual({
+      partId: expect.any(Number),
+      partCode: "RT-001",
+      name: "Pieza",
+      unitsOut: 0,
+      averageStock: expect.stringMatching(/^\d+\.\d{2}$/),
+      rotation: expect.stringMatching(/^\d+\.\d{2}$/),
+    });
+  });
+});
+
+describe("Los reportes de costo son solo para ADMIN (CA-8)", () => {
+  test("recepción recibe 403 FORBIDDEN en margen y rotación", async () => {
+    for (const nombre of ["parts-margin", "inventory-rotation"]) {
+      const respuesta = await request(app).get(`/api/reports/${nombre}`).set(headersRecepcion);
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body.error.code).toBe("FORBIDDEN");
+    }
+  });
+});
+

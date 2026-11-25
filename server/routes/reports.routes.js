@@ -15,3 +15,15 @@ rutasReports.get(
   authorize("ADMIN"),
   controlador.getProductividad,
 );
+rutasReports.get(
+  "/parts-margin",
+  authenticate,
+  authorize("ADMIN"),
+  controlador.getMargenRefacciones,
+);
+rutasReports.get(
+  "/inventory-rotation",
+  authenticate,
+  authorize("ADMIN"),
+  controlador.getRotacionInventario,
+);

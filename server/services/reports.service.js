@@ -1,4 +1,5 @@
 import * as modelo from "../models/report.model.js";
+import { calcularRotacion } from "../utils/inventory-rotation.js";
 import { aCadena, centavosManoDeObra } from "./order-total.service.js";
 
 // T098: reportes calculados en cada consulta (Sprint 7, research P-9, RN-10). Los
@@ -133,6 +134,109 @@ export async function productividad({ from, to }) {
       laborAmount: aCadena(filas.reduce((suma, fila) => suma + fila.cents, 0)),
     },
     approximateDates: aproximadas,
+    truncated: filas.length > MAX_FILAS,
+  };
+}
+
+/**
+ * Costo y margen de refacciones por refacción (D-05). Ventas = cantidad × precio
+ * guardado en la línea; costo = cantidad × costo congelado solo en líneas con
+ * costo; margen = ventas con costo − costo. Las líneas sin costo no entran al
+ * margen: sus unidades y ventas salen aparte.
+ */
+export async function margenRefacciones({ from, to }) {
+  const grupos = await modelo.margenRefacciones({ from, to });
+
+  const fila = (grupo) => {
+    const ventasConCosto = grupo.salesCents - grupo.salesWithoutCostCents;
+    return {
+      partId: grupo.partId,
+      partCode: grupo.partCode,
+      name: grupo.name,
+      units: grupo.units,
+      salesAmount: aCadena(grupo.salesCents),
+      costAmount: aCadena(grupo.costCents),
+      marginAmount: aCadena(ventasConCosto - grupo.costCents),
+      unitsWithoutCost: grupo.unitsWithoutCost,
+      salesWithoutCost: aCadena(grupo.salesWithoutCostCents),
+    };
+  };
+
+  const ordenados = [...grupos].sort(
+    (a, b) => b.salesCents - a.salesCents || a.partCode.localeCompare(b.partCode, "es"),
+  );
+  const total = grupos.reduce(
+    (suma, g) => ({
+      partId: 0,
+      partCode: "",
+      name: "",
+      units: suma.units + g.units,
+      salesCents: suma.salesCents + g.salesCents,
+      costCents: suma.costCents + g.costCents,
+      unitsWithoutCost: suma.unitsWithoutCost + g.unitsWithoutCost,
+      salesWithoutCostCents: suma.salesWithoutCostCents + g.salesWithoutCostCents,
+    }),
+    { units: 0, salesCents: 0, costCents: 0, unitsWithoutCost: 0, salesWithoutCostCents: 0 },
+  );
+  const { partId, partCode, name, ...totales } = fila({
+    partId: 0,
+    partCode: "",
+    name: "",
+    ...total,
+  });
+
+  return {
+    from,
+    to,
+    rows: ordenados.slice(0, MAX_FILAS).map(fila),
+    totals: totales,
+    truncated: ordenados.length > MAX_FILAS,
+  };
+}
+
+/**
+ * Rotación de inventario por refacción: unidades salidas del periodo entre la
+ * existencia promedio, reconstruida con los movimientos (D-08). No se listan las
+ * refacciones sin existencia ni movimientos en el periodo.
+ */
+export async function rotacionInventario({ from, to }) {
+  const { partes, movimientos } = await modelo.movimientosPorRefaccion({ from, to });
+
+  const porParte = new Map();
+  for (const m of movimientos) {
+    const actual = porParte.get(m.partId) ?? { periodo: [], posteriores: [] };
+    (m.posterior ? actual.posteriores : actual.periodo).push({ type: m.type, quantity: m.quantity });
+    porParte.set(m.partId, actual);
+  }
+
+  const filas = [];
+  for (const parte of partes) {
+    const { periodo = [], posteriores = [] } = porParte.get(parte.id) ?? {};
+    const rotacion = calcularRotacion({
+      stockActual: parte.stock,
+      movimientosPeriodo: periodo,
+      movimientosPosteriores: posteriores,
+    });
+    // Sin existencia y sin movimientos en el periodo no hay nada que informar.
+    if (periodo.length === 0 && Number(rotacion.averageStock) === 0) continue;
+    filas.push({
+      partId: parte.id,
+      partCode: parte.partCode,
+      name: parte.name,
+      unitsOut: rotacion.unitsOut,
+      averageStock: rotacion.averageStock,
+      rotation: rotacion.rotation,
+    });
+  }
+
+  filas.sort(
+    (a, b) => b.unitsOut - a.unitsOut || a.partCode.localeCompare(b.partCode, "es"),
+  );
+  return {
+    from,
+    to,
+    rows: filas.slice(0, MAX_FILAS),
+    totals: { unitsOut: filas.reduce((suma, f) => suma + f.unitsOut, 0) },
     truncated: filas.length > MAX_FILAS,
   };
 }
