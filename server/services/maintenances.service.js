@@ -2,6 +2,7 @@ import * as modelo from "../models/maintenance.model.js";
 import * as vehiculos from "../models/vehicle.model.js";
 import { errores } from "../utils/errors.js";
 import { calcularEstadoMantenimiento } from "../utils/maintenance-state.js";
+import { obtenerConfiguracion, resolverMargenes } from "./settings.service.js";
 
 // T025: servicio de mantenimientos (US2, FR-003, FR-004, FR-007, RN-11/12).
 
@@ -16,14 +17,24 @@ function compararFechas(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+/**
+ * Márgenes efectivos de una fila con `warnDays`/`warnKm` posiblemente `NULL`
+ * (Sprint 7, D-16): el propio cuando existe y el del taller cuando no.
+ * Compartido con «clientes por avisar» para que todos los módulos coincidan.
+ */
+export function margenesDeFila(fila, config) {
+  return resolverMargenes({ warn_days: fila.warnDays, warn_km: fila.warnKm }, config);
+}
+
 /** Arma la respuesta del contrato con el estado calculado en el backend. */
-function armaMantenimiento(fila) {
+function armaMantenimiento(fila, config) {
+  const { warnDays, warnKm } = margenesDeFila(fila, config);
   const { state, daysRemaining, mileageRemaining } =
     calcularEstadoMantenimiento({
       nextDueDate: fila.nextDueDate,
       nextDueMileage: fila.nextDueMileage,
-      warnDays: fila.warnDays,
-      warnKm: fila.warnKm,
+      warnDays,
+      warnKm,
       kilometrajeActual: fila.currentMileage,
     });
 
@@ -34,8 +45,11 @@ function armaMantenimiento(fila) {
     clientName: fila.clientName,
     nextDueDate: fila.nextDueDate,
     nextDueMileage: fila.nextDueMileage,
-    warnDays: fila.warnDays,
-    warnKm: fila.warnKm,
+    warnDays,
+    warnKm,
+    // Sprint 7: true si la antelación fue capturada a mano en este registro.
+    warnDaysCustom: fila.warnDays !== null && fila.warnDays !== undefined,
+    warnKmCustom: fila.warnKm !== null && fila.warnKm !== undefined,
     recommendations: fila.recommendations,
     state,
     daysRemaining,
@@ -54,8 +68,8 @@ export async function registrarMantenimiento(payload, registradoPor) {
     vehicleId,
     nextDueDate,
     nextDueMileage,
-    warnDays = 30,
-    warnKm = 500,
+    warnDays = null,
+    warnKm = null,
     recommendations,
   } = payload;
 
@@ -80,7 +94,8 @@ export async function registrarMantenimiento(payload, registradoPor) {
     registeredBy: registradoPor,
   });
 
-  return { maintenance: armaMantenimiento(mantenimiento), esAlta };
+  const config = await obtenerConfiguracion();
+  return { maintenance: armaMantenimiento(mantenimiento, config), esAlta };
 }
 
 /**
@@ -88,8 +103,9 @@ export async function registrarMantenimiento(payload, registradoPor) {
  * (OVERDUE → UPCOMING → NORMAL y por fecha objetivo dentro de cada estado).
  */
 export async function listarMantenimientos({ state } = {}) {
-  const filas = await modelo.listar();
-  let mantenimientos = filas.map(armaMantenimiento);
+  // La configuración se carga una sola vez por consulta (Sprint 7, D-16).
+  const [filas, config] = await Promise.all([modelo.listar(), obtenerConfiguracion()]);
+  let mantenimientos = filas.map((fila) => armaMantenimiento(fila, config));
 
   if (state != null && state !== "") {
     if (!ESTADOS.includes(state)) {

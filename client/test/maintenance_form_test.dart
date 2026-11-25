@@ -151,6 +151,14 @@ void main() {
     expect(find.text('Recomendaciones'), findsOneWidget);
   });
 
+  testWidgets('las antelaciones vacías indican que se usa el valor del taller (D-16)',
+      (tester) async {
+    await tester.pumpWidget(_formulario(_ApiMantenimientosFalsa()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vacío: usa el valor del taller'), findsNWidgets(2));
+  });
+
   testWidgets('abre el selector de fecha nativo del sistema', (tester) async {
     await tester.pumpWidget(_formulario(_ApiMantenimientosFalsa()));
     await tester.pumpAndSettle();

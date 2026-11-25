@@ -253,7 +253,8 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
                                   labelText: 'Antelación en días',
-                                  hintText: '30',
+                                  hintText: 'Usa el valor del taller',
+                                  helperText: 'Vacío: usa el valor del taller',
                                   border: OutlineInputBorder(),
                                 ),
                                 validator: (valor) => _validarEnteroNoNegativo(
@@ -269,7 +270,8 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
                                   labelText: 'Antelación en kilómetros',
-                                  hintText: '500',
+                                  hintText: 'Usa el valor del taller',
+                                  helperText: 'Vacío: usa el valor del taller',
                                   border: OutlineInputBorder(),
                                 ),
                                 validator: (valor) => _validarEnteroNoNegativo(

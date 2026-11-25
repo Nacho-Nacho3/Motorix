@@ -1,6 +1,8 @@
 import * as modelo from "../models/client_notice.model.js";
 import { errores } from "../utils/errors.js";
 import { calcularEstadoMantenimiento } from "../utils/maintenance-state.js";
+import { margenesDeFila } from "./maintenances.service.js";
+import { obtenerConfiguracion } from "./settings.service.js";
 
 // T053: servicio de clientes por avisar (Sprint 6, US7, contrato
 // client-notices.md). Solo registra lo que una persona ya habló con el
@@ -54,6 +56,7 @@ function detalleMantenimiento(fila, estado) {
  */
 export async function listarPendientes() {
   const { ordenes, citas, mantenimientos, avisados } = await modelo.pendientes();
+  const config = await obtenerConfiguracion();
   const filas = [];
 
   for (const orden of ordenes) {
@@ -78,11 +81,13 @@ export async function listarPendientes() {
 
   for (const mantenimiento of mantenimientos) {
     // Misma regla que la lista y el dashboard de mantenimientos (CA-5).
+    // Sprint 7 (D-16): márgenes propios o del taller, igual que la lista.
+    const { warnDays, warnKm } = margenesDeFila(mantenimiento, config);
     const { state } = calcularEstadoMantenimiento({
       nextDueDate: mantenimiento.nextDueDate,
       nextDueMileage: mantenimiento.nextDueMileage,
-      warnDays: mantenimiento.warnDays,
-      warnKm: mantenimiento.warnKm,
+      warnDays,
+      warnKm,
       kilometrajeActual: mantenimiento.currentMileage,
     });
     if (state !== "UPCOMING" && state !== "OVERDUE") continue;

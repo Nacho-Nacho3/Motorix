@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:motorix_client/models/maintenance.dart';
 import 'package:motorix_client/providers/maintenances_provider.dart';
 import 'package:motorix_client/services/api_client.dart';
 
@@ -94,6 +95,46 @@ void main() {
     expect(proveedor.mantenimientos.first.vehicleId, 3);
     expect(proveedor.cargando, isFalse);
     expect(proveedor.error, isNull);
+  });
+
+  test('crear sin antelación envía null para usar el valor del taller (D-16)', () async {
+    final api = _ApiMantenimientosFalsa();
+    final proveedor = MaintenancesProvider(api);
+
+    await proveedor.crear(vehicleId: 1, nextDueDate: '2026-11-24');
+
+    expect(api.ultimoCuerpo!.containsKey('warnDays'), isTrue);
+    expect(api.ultimoCuerpo!['warnDays'], isNull);
+    expect(api.ultimoCuerpo!['warnKm'], isNull);
+  });
+
+  test('crear con antelación la envía como propia', () async {
+    final api = _ApiMantenimientosFalsa();
+    final proveedor = MaintenancesProvider(api);
+
+    await proveedor.crear(
+      vehicleId: 1,
+      nextDueDate: '2026-11-24',
+      warnDays: 7,
+      warnKm: 100,
+    );
+
+    expect(api.ultimoCuerpo!['warnDays'], 7);
+    expect(api.ultimoCuerpo!['warnKm'], 100);
+  });
+
+  test('el modelo lee warnDaysCustom y warnKmCustom (Sprint 7)', () {
+    final propio = Maintenance.fromJson({
+      ..._registro,
+      'warnDaysCustom': true,
+      'warnKmCustom': false,
+    });
+    final antiguo = Maintenance.fromJson(_registro);
+
+    expect(propio.warnDaysCustom, isTrue);
+    expect(propio.warnKmCustom, isFalse);
+    expect(antiguo.warnDaysCustom, isFalse);
+    expect(antiguo.warnKmCustom, isFalse);
   });
 
   test('crear hace aparecer el registro de inmediato en la lista (SC-002)', () async {

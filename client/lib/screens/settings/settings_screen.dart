@@ -104,6 +104,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 config: config,
                 onCambios: (sucia) => _marcar('taller', sucia),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              FormularioMargenes(
+                key: ValueKey(
+                  'm|${config.maintenance.warnDays}|${config.maintenance.warnKm}',
+                ),
+                config: config,
+                onCambios: (sucia) => _marcar('margenes', sucia),
+              ),
             ],
           ),
         ),
@@ -250,7 +258,8 @@ class _FormularioTallerState extends State<FormularioTaller> {
                     ? 'El teléfono no puede superar los 30 caracteres.'
                     : null,
               ),
-              if (proveedor.errorGuardado != null) ...[
+              if (proveedor.errorGuardado != null &&
+                  proveedor.seccionGuardada == 'taller') ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   proveedor.errorGuardado!,
@@ -258,7 +267,7 @@ class _FormularioTallerState extends State<FormularioTaller> {
                   style: const TextStyle(color: AppColors.danger),
                 ),
               ],
-              if (proveedor.exito != null) ...[
+              if (proveedor.exito == 'Datos del taller guardados.') ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   proveedor.exito!,
@@ -278,6 +287,184 @@ class _FormularioTallerState extends State<FormularioTaller> {
                   const SizedBox(width: AppSpacing.sm),
                   FilledButton(
                     key: const Key('boton-guardar-taller'),
+                    onPressed: proveedor.guardando ? null : _guardar,
+                    child: Text(proveedor.guardando ? 'Guardando…' : 'Guardar'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sección «Márgenes de “Próximo”» (US2, FR-003, D-16, D-17): días y
+/// kilómetros con los que un mantenimiento pasa a «Próximo». Rige para todo
+/// mantenimiento sin antelación propia.
+class FormularioMargenes extends StatefulWidget {
+  const FormularioMargenes({
+    super.key,
+    required this.config,
+    required this.onCambios,
+  });
+
+  final AppSettings config;
+  final ValueChanged<bool> onCambios;
+
+  @override
+  State<FormularioMargenes> createState() => _FormularioMargenesState();
+}
+
+class _FormularioMargenesState extends State<FormularioMargenes> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _dias;
+  late final TextEditingController _km;
+
+  @override
+  void initState() {
+    super.initState();
+    _dias = TextEditingController(text: '${widget.config.maintenance.warnDays}');
+    _km = TextEditingController(text: '${widget.config.maintenance.warnKm}');
+    _dias.addListener(_avisarCambios);
+    _km.addListener(_avisarCambios);
+  }
+
+  @override
+  void dispose() {
+    _dias.dispose();
+    _km.dispose();
+    super.dispose();
+  }
+
+  bool get _sucia =>
+      _dias.text.trim() != '${widget.config.maintenance.warnDays}' ||
+      _km.text.trim() != '${widget.config.maintenance.warnKm}';
+
+  void _avisarCambios() {
+    context.read<SettingsProvider>().limpiarMensajes();
+    widget.onCambios(_sucia);
+  }
+
+  String? _validar(String? valor, String rotulo, int maximo) {
+    final texto = (valor ?? '').trim();
+    final numero = int.tryParse(texto);
+    if (numero == null || numero < 0) {
+      return '$rotulo debe ser un número entero mayor o igual a cero.';
+    }
+    if (numero > maximo) return '$rotulo no puede ser mayor que $maximo.';
+    return null;
+  }
+
+  void _restablecer() {
+    final respaldo = widget.config.defaultMaintenance;
+    _dias.text = '${respaldo.warnDays}';
+    _km.text = '${respaldo.warnKm}';
+  }
+
+  Future<void> _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+    final guardado = await context.read<SettingsProvider>().guardarMargenes(
+          dias: int.parse(_dias.text.trim()),
+          kilometros: int.parse(_km.text.trim()),
+        );
+    if (guardado && mounted) widget.onCambios(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final proveedor = context.watch<SettingsProvider>();
+
+    return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.panel),
+        side: const BorderSide(color: AppColors.outline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Márgenes de “Próximo”',
+                style: TextStyle(
+                  fontSize: AppFontSizes.subtitle,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              const Text(
+                'Un mantenimiento pasa a «Próximo» cuando faltan estos días o '
+                'kilómetros. Rige para todo mantenimiento sin antelación propia.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      key: const Key('campo-margen-dias'),
+                      controller: _dias,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Días de antelación',
+                        helperText: 'De 0 a 365',
+                      ),
+                      validator: (valor) =>
+                          _validar(valor, 'Los días de antelación', 365),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: TextFormField(
+                      key: const Key('campo-margen-km'),
+                      controller: _km,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Kilómetros de antelación',
+                        helperText: 'De 0 a 20,000',
+                      ),
+                      validator: (valor) =>
+                          _validar(valor, 'Los kilómetros de antelación', 20000),
+                    ),
+                  ),
+                ],
+              ),
+              if (proveedor.errorGuardado != null &&
+                  proveedor.seccionGuardada == 'margenes') ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  proveedor.errorGuardado!,
+                  key: const Key('error-guardado-margenes'),
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ],
+              if (proveedor.exito == 'Márgenes de mantenimiento guardados.') ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  proveedor.exito!,
+                  key: const Key('exito-guardado-margenes'),
+                  style: const TextStyle(color: AppColors.success),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    key: const Key('boton-restablecer-margenes'),
+                    onPressed: proveedor.guardando ? null : _restablecer,
+                    child: const Text('Restablecer'),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  FilledButton(
+                    key: const Key('boton-guardar-margenes'),
                     onPressed: proveedor.guardando ? null : _guardar,
                     child: Text(proveedor.guardando ? 'Guardando…' : 'Guardar'),
                   ),

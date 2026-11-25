@@ -10,6 +10,8 @@ class Maintenance {
     this.nextDueMileage,
     required this.warnDays,
     required this.warnKm,
+    this.warnDaysCustom = false,
+    this.warnKmCustom = false,
     this.recommendations,
     required this.state,
     this.daysRemaining,
@@ -26,6 +28,12 @@ class Maintenance {
   final int? nextDueMileage;
   final int warnDays;
   final int warnKm;
+
+  /// Sprint 7 (D-16): true si la antelación fue capturada a mano en este
+  /// registro; false si rige el valor del taller (`warnDays`/`warnKm` son los
+  /// efectivos en ambos casos).
+  final bool warnDaysCustom;
+  final bool warnKmCustom;
   final String? recommendations;
 
   /// Estado calculado en el backend: NORMAL, UPCOMING u OVERDUE (VM-06).
@@ -44,6 +52,8 @@ class Maintenance {
         nextDueMileage: (json['nextDueMileage'] as num?)?.toInt(),
         warnDays: (json['warnDays'] as num?)?.toInt() ?? 30,
         warnKm: (json['warnKm'] as num?)?.toInt() ?? 500,
+        warnDaysCustom: json['warnDaysCustom'] as bool? ?? false,
+        warnKmCustom: json['warnKmCustom'] as bool? ?? false,
         recommendations: json['recommendations'] as String?,
         state: json['state'] as String? ?? '',
         daysRemaining: (json['daysRemaining'] as num?)?.toInt(),
@@ -57,8 +67,9 @@ class Maintenance {
         'vehicleId': vehicleId,
         'nextDueDate': nextDueDate,
         'nextDueMileage': nextDueMileage,
-        'warnDays': warnDays,
-        'warnKm': warnKm,
+        // Solo viaja lo capturado a mano; null = usar el valor del taller.
+        'warnDays': warnDaysCustom ? warnDays : null,
+        'warnKm': warnKmCustom ? warnKm : null,
         if (recommendations != null && recommendations!.isNotEmpty)
           'recommendations': recommendations,
       };

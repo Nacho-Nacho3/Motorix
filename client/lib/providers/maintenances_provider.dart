@@ -89,8 +89,9 @@ class MaintenancesProvider extends ChangeNotifier {
           'vehicleId': vehicleId,
           'nextDueDate': nextDueDate,
           'nextDueMileage': nextDueMileage,
-          'warnDays': ?warnDays,
-          'warnKm': ?warnKm,
+          // Sprint 7 (D-16): vacío = null = «usar el valor del taller».
+          'warnDays': warnDays,
+          'warnKm': warnKm,
           if (recommendations != null && recommendations.isNotEmpty)
             'recommendations': recommendations,
         }),

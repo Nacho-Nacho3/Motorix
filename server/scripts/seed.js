@@ -378,6 +378,9 @@ export async function crearMantenimientosDeEjemplo(registradoPor) {
       nextDueDate: "2026-12-20",
       nextDueMileage: 101000,
       recommendations: "Cambio de correa de distribución a los 105,000 km.",
+      // Sprint 7 (D-16): único con antelación propia; los demás usan el valor
+      // del taller (NULL).
+      warnDays: 45,
     },
   ];
 
@@ -400,8 +403,8 @@ export async function crearMantenimientosDeEjemplo(registradoPor) {
       vehicleId: vehiculo.id,
       nextDueDate: objetivo.nextDueDate,
       nextDueMileage: objetivo.nextDueMileage,
-      warnDays: 30,
-      warnKm: 500,
+      warnDays: objetivo.warnDays ?? null,
+      warnKm: null,
       recommendations: objetivo.recommendations,
       registeredBy: registradoPor,
     });

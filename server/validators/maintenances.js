@@ -39,12 +39,14 @@ export const maintenanceCreateSchema = z
         .number()
         .int("La antelación en días debe ser un número entero.")
         .min(0, "La antelación en días no puede ser negativa.")
-        .optional(),
+        .optional()
+        .nullable(),
       warnKm: z
         .number()
         .int("La antelación en kilómetros debe ser un número entero.")
         .min(0, "La antelación en kilómetros no puede ser negativa.")
-        .optional(),
+        .optional()
+        .nullable(),
       recommendations: z
         .string()
         .trim()

@@ -72,6 +72,14 @@ class _ApiFalsa extends ApiClient {
         message: 'Datos inválidos. Revisa los campos indicados.',
       );
     }
+    if (datos.containsKey('maintenance')) {
+      final m = Map<String, dynamic>.from(datos['maintenance'] as Map);
+      actual = {
+        ...actual,
+        'maintenance': {'warnDays': m['warnDays'], 'warnKm': m['warnKm']},
+      };
+      return actual;
+    }
     final shop = Map<String, dynamic>.from(datos['shop'] as Map);
     actual = _config(
       nombre: shop['name'] as String,
@@ -301,6 +309,69 @@ void main() {
 
       expect(find.text('Cambios sin guardar'), findsNothing);
       expect(find.byType(SettingsScreen), findsNothing);
+    });
+  });
+
+  group('Sección «Márgenes» (US2, FR-003)', () {
+    testWidgets('muestra los márgenes vigentes y valida los rangos', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1200, 1600);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, '30'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, '500'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('campo-margen-dias')), '400');
+      await tester.enterText(find.byKey(const Key('campo-margen-km')), 'abc');
+      await tester.tap(find.byKey(const Key('boton-guardar-margenes')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Los días de antelación no puede ser mayor que 365.'),
+          findsOneWidget);
+      expect(
+        find.text('Los kilómetros de antelación debe ser un número entero mayor o igual a cero.'),
+        findsOneWidget,
+      );
+      expect(api.envios, isEmpty);
+    });
+
+    testWidgets('guarda los márgenes y muestra el mensaje de éxito', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1200, 1600);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _ApiFalsa();
+      await tester.pumpWidget(_pantalla(api));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('campo-margen-dias')), '45');
+      await tester.enterText(find.byKey(const Key('campo-margen-km')), '800');
+      await tester.tap(find.byKey(const Key('boton-guardar-margenes')));
+      await tester.pumpAndSettle();
+
+      expect(api.envios, hasLength(1));
+      expect(api.envios.single['maintenance'], {'warnDays': 45, 'warnKm': 800});
+      expect(find.text('Márgenes de mantenimiento guardados.'), findsOneWidget);
+    });
+
+    testWidgets('«Restablecer» vuelve a 30 días y 500 km', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1200, 1600);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_pantalla(_ApiFalsa()));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('campo-margen-dias')), '99');
+
+      await tester.tap(find.byKey(const Key('boton-restablecer-margenes')));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, '30'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, '99'), findsNothing);
     });
   });
 

@@ -24,6 +24,10 @@ class SettingsProvider extends ChangeNotifier {
   /// Mensaje de éxito del último guardado.
   String? exito;
 
+  /// Sección del último guardado ('taller' o 'margenes'): cada formulario
+  /// muestra solo su propio error.
+  String? seccionGuardada;
+
   Future<void> cargar() async {
     cargando = true;
     error = null;
@@ -52,10 +56,22 @@ class SettingsProvider extends ChangeNotifier {
         'address': direccion.trim(),
         'phone': telefono.trim(),
       },
-    }, 'Datos del taller guardados.');
+    }, 'Datos del taller guardados.', 'taller');
   }
 
-  Future<bool> _guardar(Map<String, dynamic> cuerpo, String mensaje) async {
+  /// Guarda los márgenes de «Próximo» del mantenimiento (US2, FR-003).
+  Future<bool> guardarMargenes({required int dias, required int kilometros}) {
+    return _guardar({
+      'maintenance': {'warnDays': dias, 'warnKm': kilometros},
+    }, 'Márgenes de mantenimiento guardados.', 'margenes');
+  }
+
+  Future<bool> _guardar(
+    Map<String, dynamic> cuerpo,
+    String mensaje,
+    String seccion,
+  ) async {
+    seccionGuardada = seccion;
     guardando = true;
     errorGuardado = null;
     exito = null;
