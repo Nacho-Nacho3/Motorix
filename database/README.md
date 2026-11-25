@@ -10,7 +10,8 @@ Esquema de MySQL **local** para el MVP. Motor InnoDB, codificación `utf8mb4`.
   `007_create_order_labor.sql`, `008_create_maintenance.sql`,
   `009_create_parts.sql`, `010_create_inventory_movements.sql`,
   `011_create_order_parts.sql`, `012_create_payments.sql`,
-  `013_create_tickets.sql`, `014_order_parts_price.sql`, …). Los cambios de esquema
+  `013_create_tickets.sql`, `014_order_parts_price.sql`, `015_notifications.sql`,
+  `016_settings_reports_security.sql`, …). Los cambios de esquema
   se agregan como **nuevos** scripts; NUNCA se editan scripts de sprints ya
   aplicados.
 - `scripts/` — utilidades de entorno:
@@ -51,7 +52,7 @@ Las pruebas (`npm test`) usan siempre `motorix_test`, nunca la base principal.
 
 Los scripts se numeran en orden de aplicación y se ejecutan en ese orden
 (migraciones 004–007 del Sprint 2, 008–011 del Sprint 3, 012–013 del
-Sprint 4, 014 del Sprint 5 y 015 del Sprint 6 dependen de las tablas de los
+Sprint 4, 014 del Sprint 5, 015 del Sprint 6 y 016 del Sprint 7 dependen de las tablas de los
 sprints anteriores):
 
 | Script | Tabla | Depende de |
@@ -71,6 +72,7 @@ sprints anteriores):
 | `013_create_tickets.sql` | `tickets` | `service_orders`, `users` |
 | `014_order_parts_price.sql` | `order_parts` (columnas nuevas), `parts` (CHECK) | `order_parts`, `parts`, `users` |
 | `015_notifications.sql` | `notification_reads`, `client_notices` | `users`, `clients` |
+| `016_settings_reports_security.sql` | `settings`, `service_types`, `terms_versions`, `terms_acceptances`, `audit_log` (nuevas) y 12 columnas en `maintenance`, `order_services`, `order_parts`, `service_orders`, `tickets` y `users` | `users` y las tablas modificadas |
 
 La `014_order_parts_price.sql` (Sprint 5) agrega a `order_parts` la columna
 `unit_price`, con el precio de venta **guardado al agregar la refacción a la
@@ -88,5 +90,32 @@ aviso leído, con `UNIQUE (user_id, notification_key)` y `user_id` en
 cliente con `UNIQUE (client_id, notice_type, source_id)` para garantizar
 «una vez por hecho», D-07, y `notified_by`/`notified_at` de quién y cuándo).
 Los avisos en sí NO se almacenan: se calculan en cada consulta (RN-10).
+
+La `016_settings_reports_security.sql` (Sprint 7) es aditiva y sin migración
+inversa. Crea cinco tablas: `settings` (pares clave-valor del taller; nace
+vacía y, si falta una clave, rige el valor de respaldo del código),
+`service_types` (catálogo con intervalo en días o kilómetros; se desactiva, no
+se borra), `terms_versions` (términos y aviso de privacidad versionados; la
+migración inserta la versión 1 con una plantilla en español, de forma
+idempotente), `terms_acceptances` (constancia de aceptación con
+`UNIQUE (user_id, terms_version_id)`) y `audit_log` (bitácora de solo
+inserción). Agrega 12 columnas:
+
+- `maintenance.warn_days` y `maintenance.warn_km` pasan a admitir `NULL`, que
+  significa «usar el valor del taller» (D-16); los valores capturados a mano se
+  conservan.
+- `order_services.service_type_id` (enlace opcional al catálogo).
+- `order_parts.unit_cost` (costo congelado por línea, con CHECK de tope).
+- `service_orders.finished_at` y `finished_at_estimated` (fecha de terminación y
+  marca de que es una aproximación).
+- `tickets.workshop_name`, `workshop_address`, `workshop_phone`,
+  `next_service_date` y `next_service_mileage` (instantánea al emitir).
+- `users.last_activity_at` (cierre por inactividad).
+
+Aproximaciones de los rellenos: los mantenimientos con 30 días o 500 km (el
+valor predeterminado histórico) quedan en `NULL`; `order_parts.unit_cost` toma
+el `purchase_price` vigente solo cuando es mayor que 0 y queda en `NULL` en el
+resto («sin costo registrado»); `finished_at` de las órdenes ya `FINISHED` o
+`DELIVERED` es su `updated_at` y se marcan con `finished_at_estimated = 1`.
 
 El registro en `schema_migrations` usa el nombre del archivo como `version`.

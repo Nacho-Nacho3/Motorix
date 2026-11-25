@@ -119,14 +119,20 @@ export async function buscarPorId(id) {
   return aDetalle(filas[0]);
 }
 
-/** T066: estado interno para la máquina de estados (incluye waiting_origin). */
+/** T066: estado interno para la máquina de estados (incluye waiting_origin y,
+ *  desde el Sprint 7, finished_at para no sobrescribir la fecha de terminación). */
 export async function buscarEstado(id) {
   const [filas] = await pool.query(
-    "SELECT status, waiting_origin AS waitingOrigin FROM service_orders WHERE id = ? LIMIT 1",
+    "SELECT status, waiting_origin AS waitingOrigin, finished_at AS finishedAt " +
+      "FROM service_orders WHERE id = ? LIMIT 1",
     [id],
   );
   return filas[0]
-    ? { status: filas[0].status, waitingOrigin: filas[0].waitingOrigin }
+    ? {
+        status: filas[0].status,
+        waitingOrigin: filas[0].waitingOrigin,
+        finishedAt: filas[0].finishedAt ?? null,
+      }
     : null;
 }
 
@@ -165,6 +171,8 @@ export async function actualizar(id, campos) {
     "recommendations",
     "mileageCorrectionReason",
     "waitingOrigin",
+    "finishedAt",
+    "finishedAtEstimated",
   ];
   const columnas = {
     reportedProblem: "reported_problem",
@@ -175,6 +183,8 @@ export async function actualizar(id, campos) {
     recommendations: "recommendations",
     mileageCorrectionReason: "mileage_correction_reason",
     waitingOrigin: "waiting_origin",
+    finishedAt: "finished_at",
+    finishedAtEstimated: "finished_at_estimated",
   };
 
   const entradas = Object.entries(campos).filter(

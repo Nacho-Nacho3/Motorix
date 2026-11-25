@@ -350,8 +350,17 @@ export async function cambiarEstado(id, nuevoStatus, usuario) {
     waitingOrigin: interno.waitingOrigin,
   });
 
-  return ordenes.actualizar(id, {
+  // Sprint 7 (D-19): la fecha de terminación se escribe una sola vez, al pasar
+  // a FINISHED, y no se toca al entregar. `finished_at_estimated = 0` indica
+  // que es una fecha real y no la aproximación de la migración.
+  const campos = {
     status: transicion.status,
     waitingOrigin: transicion.waitingOrigin,
-  });
+  };
+  if (transicion.status === "FINISHED" && !interno.finishedAt) {
+    campos.finishedAt = new Date();
+    campos.finishedAtEstimated = 0;
+  }
+
+  return ordenes.actualizar(id, campos);
 }
