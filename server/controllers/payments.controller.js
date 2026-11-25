@@ -91,6 +91,7 @@ export async function cancelPayment(req, res, next) {
     const payment = await servicio.cancelarPago(
       idDeRuta(req.params.id),
       idDePago(req.params.paymentId),
+      req.user,
     );
     ok(res, { payment });
   } catch (error) {

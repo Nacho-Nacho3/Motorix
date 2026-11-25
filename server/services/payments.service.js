@@ -1,3 +1,4 @@
+import * as auditoria from "./audit.service.js";
 import { pool } from "../config/db.js";
 import { errores } from "../utils/errors.js";
 import * as pagosModel from "../models/payment.model.js";
@@ -278,11 +279,23 @@ export async function sincronizarPago(orderId, paymentId) {
  *
  * @returns {Promise<object>} el pago `CANCELLED`
  */
-export async function cancelarPago(orderId, paymentId) {
+export async function cancelarPago(orderId, paymentId, actor) {
   await exigirOrden(orderId);
   const pago = await exigirPagoDeLaOrden(orderId, paymentId);
   exigirPendienteMP(pago);
 
   await pagosModel.actualizarEstado(paymentId, "CANCELLED");
+  // Sprint 7 (CA-20): la cancelación de un pago queda en la bitácora.
+  await auditoria.registrar({
+    user: actor,
+    action: "PAYMENT_CANCELLED",
+    entityType: "PAYMENT",
+    entityId: Number(paymentId),
+    datos: {
+      orderId: Number(orderId),
+      method: pago.method,
+      amount: Number(pago.amount).toFixed(2),
+    },
+  });
   return pagosModel.buscarPorId(paymentId);
 }

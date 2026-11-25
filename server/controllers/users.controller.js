@@ -37,7 +37,7 @@ export async function get(req, res, next) {
 
 export async function create(req, res, next) {
   try {
-    const user = await servicio.create(req.body);
+    const user = await servicio.create(req.body, req.user);
     creado(res, { user });
   } catch (error) {
     next(error);
@@ -46,7 +46,7 @@ export async function create(req, res, next) {
 
 export async function update(req, res, next) {
   try {
-    const user = await servicio.update(idDeRuta(req.params.id), req.body);
+    const user = await servicio.update(idDeRuta(req.params.id), req.body, req.user);
     ok(res, { user });
   } catch (error) {
     next(error);

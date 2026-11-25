@@ -11,7 +11,7 @@ const LISTA_BLANCA = {
   SETTINGS_UPDATED: { field: "campo", from: "anterior", to: "nuevo" },
   PART_PRICE_CHANGED: { field: "campo", from: "anterior", to: "nuevo" },
   ORDER_PART_PRICE_CORRECTED: { from: "anterior", to: "nuevo", reason: "motivo" },
-  PAYMENT_CANCELLED: { method: "método", amount: "importe" },
+  PAYMENT_CANCELLED: { orderId: "orden", method: "método", amount: "importe" },
   TERMS_PUBLISHED: { version: "versión" },
 };
 

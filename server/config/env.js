@@ -42,4 +42,6 @@ export const env = {
   lockoutMinutes: 15,
   // Hash de contraseñas (R-03): bcryptjs con costo 10
   bcryptCost: 10,
+  // Sprint 7 (CA-23, P-12): minutos sin actividad antes de cerrar la sesión.
+  idleMinutes: 30,
 };

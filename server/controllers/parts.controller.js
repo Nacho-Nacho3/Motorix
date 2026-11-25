@@ -49,7 +49,7 @@ export async function createPart(req, res, next) {
 
 export async function updatePart(req, res, next) {
   try {
-    const part = await servicio.updatePart(idDeRuta(req.params.id), req.body);
+    const part = await servicio.updatePart(idDeRuta(req.params.id), req.body, req.user);
     ok(res, { part });
   } catch (error) {
     next(error);

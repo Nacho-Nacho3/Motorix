@@ -1,5 +1,10 @@
 import { verificarToken } from "../config/jwt.js";
-import { buscarUsuarioPorId } from "../models/user.model.js";
+import { env } from "../config/env.js";
+import {
+  buscarUsuarioPorId,
+  registrarActividad,
+  segundosSinActividad,
+} from "../models/user.model.js";
 import { tieneAceptacionVigente } from "../models/terms.model.js";
 import { errores } from "../utils/errors.js";
 
@@ -38,6 +43,16 @@ function crearAuthenticate({ exigirTerminos }) {
       email: usuario.email,
       role: usuario.role,
     };
+
+    // Sprint 7 (CA-23): cierre por inactividad validado en el backend. `NULL` se
+    // trata como activo; la marca se refresca como máximo una vez por minuto.
+    const inactivo = await segundosSinActividad(usuario.id);
+    if (inactivo !== null && inactivo > env.idleMinutes * 60) {
+      throw errores.sessionIdle();
+    }
+    if (inactivo === null || inactivo >= 60) {
+      await registrarActividad(usuario.id);
+    }
 
     // Después de la cuenta activa: un usuario desactivado conserva su error propio.
     if (exigirTerminos && !(await tieneAceptacionVigente(usuario.id))) {

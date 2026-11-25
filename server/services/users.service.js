@@ -3,6 +3,7 @@ import { env } from "../config/env.js";
 import * as usuarios from "../models/user.model.js";
 import { AppError, errores } from "../utils/errors.js";
 import { MENSAJE_POLITICA, requisitoFaltantePassword } from "../validators/auth.js";
+import * as auditoria from "./audit.service.js";
 
 // T061: lógica de usuarios (HU5, FR-013/FR-014/FR-015).
 // La baja no elimina registros: se desactiva con active = false.
@@ -63,7 +64,7 @@ export async function getById(id) {
   return user;
 }
 
-export async function create({ username, name, email, password, role }) {
+export async function create({ username, name, email, password, role }, actor) {
   validarPolitica(password);
 
   if (await usuarios.buscarPorUsername(username)) {
@@ -75,7 +76,15 @@ export async function create({ username, name, email, password, role }) {
 
   const passwordHash = await bcrypt.hash(password, env.bcryptCost);
   try {
-    return await usuarios.crearUsuario({ username, name, email, passwordHash, role });
+    const creado = await usuarios.crearUsuario({ username, name, email, passwordHash, role });
+    await auditoria.registrar({
+      user: actor,
+      action: "USER_CREATED",
+      entityType: "USER",
+      entityId: creado.id,
+      datos: { role: creado.role },
+    });
+    return creado;
   } catch (error) {
     if (esDuplicado(error)) {
       // Carrera entre la comprobación y la inserción: averigua cuál chocó.
@@ -88,7 +97,7 @@ export async function create({ username, name, email, password, role }) {
   }
 }
 
-export async function update(id, datos) {
+export async function update(id, datos, actor) {
   const existente = await usuarios.buscarUsuarioPorId(id);
   if (!existente) {
     throw errores.notFound("USER_NOT_FOUND", "Usuario no encontrado.");
@@ -123,7 +132,31 @@ export async function update(id, datos) {
   }
 
   try {
-    return await usuarios.actualizarUsuario(id, campos);
+    const actualizado = await usuarios.actualizarUsuario(id, campos);
+    // Sprint 7 (CA-20): solo cambios de rol, baja o reactivación, sin contraseñas.
+    if (datos.role !== undefined && datos.role !== existente.role) {
+      await auditoria.registrar({
+        user: actor,
+        action: "USER_UPDATED",
+        entityType: "USER",
+        entityId: id,
+        datos: { field: "role", from: existente.role, to: datos.role },
+      });
+    }
+    if (datos.active !== undefined && datos.active !== existente.active) {
+      await auditoria.registrar({
+        user: actor,
+        action: "USER_UPDATED",
+        entityType: "USER",
+        entityId: id,
+        datos: {
+          field: "active",
+          from: existente.active ? "activo" : "inactivo",
+          to: datos.active ? "activo" : "inactivo",
+        },
+      });
+    }
+    return actualizado;
   } catch (error) {
     if (esDuplicado(error)) {
       throw errores.conflict("DUPLICATE_EMAIL", "Ese correo ya está registrado.");

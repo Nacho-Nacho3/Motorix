@@ -2,8 +2,11 @@ import { z } from "zod";
 
 // T022: política de contraseña del MVP (RN-17 / FR-005).
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+// Sprint 7 (D-13): máximo de 64 caracteres; bcrypt solo considera los primeros
+// 72 bytes, así que una contraseña más larga no sumaría seguridad.
+export const MAX_PASSWORD = 64;
 export const MENSAJE_POLITICA =
-  "Debe tener 8 caracteres como mínimo y al menos una mayúscula, una minúscula y un número.";
+  "Debe tener entre 8 y 64 caracteres y al menos una mayúscula, una minúscula y un número.";
 
 export const loginSchema = z.object({
   identifier: z
@@ -12,7 +15,8 @@ export const loginSchema = z.object({
     .min(1, "El usuario o correo es obligatorio."),
   password: z
     .string({ required_error: "La contraseña es obligatoria." })
-    .min(1, "La contraseña es obligatoria."),
+    .min(1, "La contraseña es obligatoria.")
+    .max(128, "La contraseña no puede superar los 128 caracteres."),
 });
 
 export const changePasswordSchema = z.object({
@@ -39,6 +43,9 @@ export function requisitoFaltantePassword(password) {
     return "La contraseña es obligatoria.";
   }
   if (password.length < 8) return "Debe tener 8 caracteres como mínimo.";
+  if (password.length > MAX_PASSWORD) {
+    return "Debe tener 64 caracteres como máximo.";
+  }
   if (!/[A-Z]/.test(password)) return "Debe incluir al menos una mayúscula.";
   if (!/[a-z]/.test(password)) return "Debe incluir al menos una minúscula.";
   if (!/\d/.test(password)) return "Debe incluir al menos un número.";

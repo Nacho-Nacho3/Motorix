@@ -5,6 +5,7 @@ import '../providers/notifications_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/ui_provider.dart';
 import '../screens/appointments/appointment_list_screen.dart';
+import '../screens/audit/audit_log_screen.dart';
 import '../screens/clients/client_list_screen.dart';
 import '../screens/clients/client_notice_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
@@ -63,6 +64,9 @@ class _AppShellState extends State<AppShell> {
     // T031 (Sprint 7, US1, FR-001): configuración del taller, solo ADMIN.
     // Índice 11, al final, para no recorrer los índices existentes.
     _Seccion('Configuración', Icons.settings_outlined, roles: {'ADMIN'}),
+    // T092 (Sprint 7, US10, CA-20): bitácora de solo lectura, solo ADMIN. Índice 12;
+    // «Reportes» (US4) será el 13.
+    _Seccion('Bitácora', Icons.fact_check_outlined, roles: {'ADMIN'}),
   ];
 
   void _irASeccion(int indice) {
@@ -228,6 +232,8 @@ class _AppShellState extends State<AppShell> {
         return const ClientNoticeScreen();
       case 11:
         return const SettingsScreen();
+      case 12:
+        return const AuditLogScreen();
       default:
         return HomeScreen(irASeccion: _irASeccion);
     }

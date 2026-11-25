@@ -33,6 +33,9 @@ class AppRutas {
   /// T031 (Sprint 7, US1): configuración del taller (solo ADMIN).
   static const configuracion = '/settings';
 
+  /// T092 (Sprint 7, US10): bitácora de acciones sensibles (solo ADMIN).
+  static const bitacora = '/audit-log';
+
   /// Índice de la sección del shell para cada ruta de aviso (espejo de
   /// `_vistaSeccion` en app_shell.dart); null si la ruta es desconocida.
   static int? seccionDeRuta(String ruta) {
@@ -49,6 +52,8 @@ class AppRutas {
         return 10;
       case configuracion:
         return 11;
+      case bitacora:
+        return 12;
       default:
         return null;
     }

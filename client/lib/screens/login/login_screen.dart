@@ -76,6 +76,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (sesion.aviso != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          sesion.aviso!,
+                          key: const Key('aviso-sesion'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppColors.warning),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                       TextFormField(
                         controller: _identificadorCtrl,

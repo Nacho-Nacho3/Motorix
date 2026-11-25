@@ -40,6 +40,10 @@ class ApiClient {
   /// sesión). La sesión la usa para mostrar la pantalla de aceptación sin
   /// cerrarse.
   void Function()? alTerminosNoAceptados;
+
+  /// Sprint 7 (US10, CA-23): se invoca cuando el backend responde
+  /// `401 SESSION_IDLE`; la sesión se cierra con el aviso de inactividad.
+  void Function()? alSesionInactiva;
   static const Duration _tiempoEspera = Duration(seconds: 15);
 
   Map<String, String> _encabezados({bool incluirJson = true}) {
@@ -142,6 +146,26 @@ class ApiClient {
     return Map<String, dynamic>.from(datos as Map);
   }
 
+  /// T091 (Sprint 7, US10): consulta de la bitácora (solo ADMIN).
+  Future<Map<String, dynamic>> listarBitacora({
+    String? from,
+    String? to,
+    int? userId,
+    String? action,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final datos = await get('/audit-log', query: {
+      'page': '$page',
+      'pageSize': '$pageSize',
+      if (from != null && from.isNotEmpty) 'from': from,
+      if (to != null && to.isNotEmpty) 'to': to,
+      if (userId != null) 'userId': '$userId',
+      if (action != null && action.isNotEmpty) 'action': action,
+    });
+    return Map<String, dynamic>.from(datos as Map);
+  }
+
   /// T074 (Sprint 7, US9): términos y aviso de privacidad
   /// (contracts/terms.md). `vigente` y `aceptar` están exentos del bloqueo.
   Future<Map<String, dynamic>> obtenerTerminosVigentes() async {
@@ -240,6 +264,9 @@ class ApiClient {
 
     if (respuesta.statusCode == 403 && error?['code'] == 'TERMS_NOT_ACCEPTED') {
       alTerminosNoAceptados?.call();
+    }
+    if (respuesta.statusCode == 401 && error?['code'] == 'SESSION_IDLE') {
+      alSesionInactiva?.call();
     }
 
     return Future.error(

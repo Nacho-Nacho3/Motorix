@@ -30,6 +30,25 @@ function aUsuarioLogin(fila) {
   };
 }
 
+/**
+ * Sprint 7 (CA-23, P-12): segundos desde la última actividad según el reloj de
+ * la base (sin desfases de zona horaria); `null` si nunca se registró (se
+ * trata como activo).
+ */
+export async function segundosSinActividad(id) {
+  const [filas] = await pool.query(
+    "SELECT TIMESTAMPDIFF(SECOND, last_activity_at, NOW()) AS segundos FROM users WHERE id = ?",
+    [id],
+  );
+  const valor = filas[0]?.segundos;
+  return valor === null || valor === undefined ? null : Number(valor);
+}
+
+/** Marca la actividad del usuario con la hora actual de la base. */
+export async function registrarActividad(id) {
+  await pool.query("UPDATE users SET last_activity_at = NOW() WHERE id = ?", [id]);
+}
+
 /** Busca por username o correo según el valor (RN-16: si contiene '@' es correo). */
 export async function buscarParaLogin(identifier) {
   const esCorreo = identifier.includes("@");

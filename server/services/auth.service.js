@@ -5,6 +5,7 @@ import * as usuarios from "../models/user.model.js";
 import { AppError, errores } from "../utils/errors.js";
 import { MENSAJE_POLITICA, requisitoFaltantePassword } from "../validators/auth.js";
 import { aceptoVigente } from "./terms.service.js";
+import * as auditoria from "./audit.service.js";
 
 function aPublico(usuario) {
   return {
@@ -21,7 +22,15 @@ export async function login({ identifier, password }) {
   const usuario = await usuarios.buscarParaLogin(identifier);
 
   // Sin usuario: mismo mensaje que contraseña incorrecta (no revelar existencia).
-  if (!usuario) throw errores.invalidCredentials();
+  if (!usuario) {
+    await auditoria.registrar({
+      actor: identifier.slice(0, 100),
+      action: "LOGIN_FAILED",
+      entityType: "SESSION",
+      datos: { identifier },
+    });
+    throw errores.invalidCredentials();
+  }
 
   const ahora = new Date();
   if (usuario.lockedUntil && usuario.lockedUntil > ahora) {
@@ -38,13 +47,33 @@ export async function login({ identifier, password }) {
       env.maxLoginAttempts,
       env.lockoutMinutes,
     );
-    if (bloqueo) throw errores.locked(env.lockoutMinutes);
+    // Sprint 7 (CA-20): el intento fallido y, si lo hay, el bloqueo quedan en la bitácora.
+    await auditoria.registrar({
+      user: { id: usuario.id, username: usuario.username },
+      actor: usuario.username,
+      action: "LOGIN_FAILED",
+      entityType: "SESSION",
+      datos: { identifier },
+    });
+    if (bloqueo) {
+      await auditoria.registrar({
+        user: { id: usuario.id, username: usuario.username },
+        actor: usuario.username,
+        action: "ACCOUNT_LOCKED",
+        entityType: "USER",
+        entityId: usuario.id,
+        datos: { minutes: env.lockoutMinutes },
+      });
+      throw errores.locked(env.lockoutMinutes);
+    }
     throw errores.invalidCredentials();
   }
 
   if (!usuario.active) throw errores.accountDisabled();
 
   await usuarios.reiniciarIntentos(usuario.id);
+  // Sprint 7 (CA-23): el inicio de sesión fija la última actividad.
+  await usuarios.registrarActividad(usuario.id);
 
   return {
     token: firmarToken(usuario),

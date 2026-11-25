@@ -1,3 +1,4 @@
+import * as auditoria from "./audit.service.js";
 import { pool } from "../config/db.js";
 import * as partes from "../models/part.model.js";
 import * as movimientos from "../models/inventory_movement.model.js";
@@ -118,11 +119,29 @@ export async function listLookup({ q, low } = {}) {
 }
 
 /** Edita los campos permitidos del contrato; 404 si la refacción no existe. */
-export async function updatePart(id, payload) {
+export async function updatePart(id, payload, actor) {
   const existente = await partes.buscarPorId(id);
   if (!existente) throw errores.partNotFound();
 
-  return partes.actualizar(id, payload);
+  const actualizada = await partes.actualizar(id, payload);
+
+  // Sprint 7 (CA-20): solo cuando cambia de verdad el precio de compra o de venta.
+  const precios = [
+    ["Precio de compra", existente.purchasePrice, actualizada?.purchasePrice],
+    ["Precio de venta", existente.salePrice, actualizada?.salePrice],
+  ];
+  for (const [campo, anterior, nuevo] of precios) {
+    if (nuevo !== undefined && Number(anterior) !== Number(nuevo)) {
+      await auditoria.registrar({
+        user: actor,
+        action: "PART_PRICE_CHANGED",
+        entityType: "PART",
+        entityId: id,
+        datos: { field: campo, from: anterior, to: nuevo },
+      });
+    }
+  }
+  return actualizada;
 }
 
 /**
@@ -355,7 +374,7 @@ export async function corregirPrecioRefaccionOrden(
 
       // La fila existe y pertenece a ESTA orden (404 si no).
       const [filas] = await conexion.query(
-        "SELECT id FROM order_parts WHERE id = ? AND order_id = ? FOR UPDATE",
+        "SELECT id, unit_price AS unitPrice FROM order_parts WHERE id = ? AND order_id = ? FOR UPDATE",
         [filaId, idOrden],
       );
       if (filas.length === 0) throw errores.orderItemNotFound();
@@ -374,6 +393,18 @@ export async function corregirPrecioRefaccionOrden(
         conexion,
       );
       await conexion.commit();
+      // Sprint 7 (CA-20): corrección administrativa con precio anterior y nuevo.
+      await auditoria.registrar({
+        user: usuario,
+        action: "ORDER_PART_PRICE_CORRECTED",
+        entityType: "ORDER_PART",
+        entityId: filaId,
+        datos: {
+          from: Number(filas[0].unitPrice).toFixed(2),
+          to: Number(unitPrice).toFixed(2),
+          reason,
+        },
+      });
       return corregida;
     } catch (error) {
       await conexion.rollback();

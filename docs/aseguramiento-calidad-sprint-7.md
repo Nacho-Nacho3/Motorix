@@ -87,6 +87,7 @@ Se llena al cierre (T132) con los 26 criterios CA-1 a CA-26.
 | ID | Descripción | Severidad | Origen | Estado | Resolución | Evidencia |
 |:--:|---|---|---|---|---|---|
 | H-01 | La línea base del backend arrancó en rojo (46 suites): el checksum de `015_notifications.sql` no coincidía porque la copia de trabajo tenía fin de línea CRLF (autocrlf de Windows) y `schema_migrations` guardaba el hash de la versión LF; es la misma causa que H-01 del Sprint 6 | Media | T003 (línea base) | Resuelto | Se restauraron los bytes LF (contenido idéntico a `HEAD`) y se agregó `.gitattributes` con `database/migrations/*.sql text eol=lf` para que no se repita | `.gitattributes` |
+| H-03 | `GET /api/appointments?date=<texto>` respondía 500 porque la fecha no se validaba antes de la consulta (no era inyección: la consulta ya usaba parámetros) | Media | T082 (prueba de entradas maliciosas) | Resuelto | `list` valida el formato `YYYY-MM-DD` y responde 400 `VALIDATION_ERROR` | `server/services/appointments.service.js` |
 | H-02 | Hallazgos bajos del análisis sin corregir: G2 (FR-029 y la versión de términos en los seeds), A1 (usuario de `settings.updated_by` al sembrar), N1 (nombres de pruebas del plan frente a las tareas) y D1 (requisitos repetidos) | Baja | G-07 | Aceptado | Se resuelven sobre la marcha durante la implementación | — |
 
 ## 8. Línea base de regresión
@@ -100,7 +101,18 @@ Se llena al cierre (T132) con los 26 criterios CA-1 a CA-26.
 | `cd client && flutter test` | **145 pruebas**, todas en verde |
 | `cd client && flutter analyze` | sin observaciones |
 
-**Regresión de cierre:** pendiente (se mide al cierre).
+**Checkpoint del bloque A (US1, US2, US3, US8, US9 y US10), medido el 2026-11-25:**
+
+| Comando | Resultado | Diferencia con la línea base |
+|---|---|---|
+| `cd server && npm.cmd test` | 80 suites y **796 pruebas**, todas en verde | +24 suites y +317 pruebas |
+| `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa | sin cambio |
+| `cd client && flutter test` | **217 pruebas**, todas en verde | +72 pruebas |
+| `cd client && flutter analyze` | sin observaciones | sin cambio |
+
+Ninguna prueba de la línea base falló (SC-014: 0 regresiones). El bloqueo por términos activo no obligó a corregir ninguna suite existente.
+
+**Regresión de cierre:** pendiente (se mide al cierre, con el bloque B).
 
 ## 9. Control de calidad final
 

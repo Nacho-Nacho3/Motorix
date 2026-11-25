@@ -29,6 +29,12 @@ export const errores = {
     new AppError(403, "ACCOUNT_DISABLED", "La cuenta está desactivada. Contacta al administrador."),
   notFound: (code, message) => new AppError(404, code, message),
   conflict: (code, message) => new AppError(409, code, message),
+  sessionIdle: () =>
+    new AppError(
+      401,
+      "SESSION_IDLE",
+      "Tu sesión se cerró por inactividad. Inicia sesión de nuevo.",
+    ),
   termsNotAccepted: () =>
     new AppError(
       403,

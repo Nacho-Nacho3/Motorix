@@ -76,6 +76,14 @@ export async function list({ date, status, q, page, limit } = {}) {
     ]);
   }
 
+  // Sprint 7 (CA-25): una fecha mal formada es un error de validación, no un
+  // fallo interno de la consulta.
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(String(date).trim())) {
+    throw errores.validation([
+      { field: "date", message: "La fecha debe tener el formato YYYY-MM-DD." },
+    ]);
+  }
+
   const { appointments, total } = await citas.listar({
     date: date ? String(date).trim() : "",
     status: status ? String(status).trim() : "",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/appointments_provider.dart';
+import 'providers/audit_provider.dart';
 import 'providers/client_notices_provider.dart';
 import 'providers/clients_provider.dart';
 import 'providers/dashboard_provider.dart';
@@ -23,6 +24,7 @@ import 'screens/terms/terms_acceptance_screen.dart';
 import 'services/api_client.dart';
 import 'utils/app_theme.dart';
 import 'widgets/app_shell.dart';
+import 'widgets/inactivity_detector.dart';
 
 void main() {
   runApp(const MotorixApp());
@@ -73,6 +75,10 @@ class MotorixApp extends StatelessWidget {
         // T058: panel de control exclusivo de ADMIN (US5).
         ChangeNotifierProvider<DashboardProvider>(
           create: (context) => DashboardProvider(context.read<ApiClient>()),
+        ),
+        // T091 (Sprint 7, US10): bitácora de solo lectura.
+        ChangeNotifierProvider<AuditProvider>(
+          create: (context) => AuditProvider(context.read<ApiClient>()),
         ),
         // T074 (Sprint 7, US9): términos y aviso de privacidad.
         ChangeNotifierProvider<TermsProvider>(
@@ -138,9 +144,13 @@ class RaizApp extends StatelessWidget {
       // términos va en lugar del shell, sin cerrar la sesión.
       child: !sesion.autenticado
           ? const LoginScreen()
-          : sesion.termsAccepted
-              ? const AppShell()
-              : const TermsAcceptanceScreen(),
+          // Sprint 7 (US10, CA-23): 30 minutos sin actividad cierran la sesión.
+          : InactivityDetector(
+              alInactividad: sesion.cerrarPorInactividad,
+              child: sesion.termsAccepted
+                  ? const AppShell()
+                  : const TermsAcceptanceScreen(),
+            ),
     );
   }
 }

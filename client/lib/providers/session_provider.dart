@@ -8,6 +8,10 @@ class SessionProvider extends ChangeNotifier {
   SessionProvider(this.api) {
     // Sprint 7 (US9, CA-19): un 403 TERMS_NOT_ACCEPTED en cualquier llamada
     // muestra la pantalla de aceptación sin cerrar la sesión.
+    // Sprint 7 (US10, CA-23): un 401 SESSION_IDLE cierra la sesión con aviso.
+    api.alSesionInactiva = () {
+      if (usuario != null) cerrarPorInactividad();
+    };
     api.alTerminosNoAceptados = () {
       if (usuario != null && termsAccepted) {
         termsAccepted = false;
@@ -23,6 +27,9 @@ class SessionProvider extends ChangeNotifier {
   /// Si el usuario aceptó la versión vigente de los términos (CA-16). Falso
   /// muestra la pantalla de aceptación en lugar del shell.
   bool termsAccepted = true;
+
+  /// Aviso que muestra el login tras un cierre automático; null si no hay.
+  String? aviso;
   bool cargando = false;
   String? error;
   DateTime? expiraEn;
@@ -40,6 +47,7 @@ class SessionProvider extends ChangeNotifier {
   Future<bool> iniciarSesion(String identifier, String password) async {
     cargando = true;
     error = null;
+    aviso = null;
     notifyListeners();
 
     try {
@@ -65,6 +73,16 @@ class SessionProvider extends ChangeNotifier {
       cargando = false;
       notifyListeners();
     }
+  }
+
+  /// Mensaje del cierre por inactividad (CA-23).
+  static const mensajeInactividad = 'Tu sesión se cerró por inactividad';
+
+  /// Cierra la sesión local y deja el aviso para el login.
+  Future<void> cerrarPorInactividad() async {
+    await cerrarSesion();
+    aviso = mensajeInactividad;
+    notifyListeners();
   }
 
   Future<void> cerrarSesion() async {
@@ -107,6 +125,10 @@ class SessionProvider extends ChangeNotifier {
   /// Llamar cuando una pantalla reciba un error de la API:
   /// devuelve `true` si la sesión estaba caducada y se cerró.
   Future<bool> procesarErrorSesion(ApiError e) async {
+    if (e.status == 401 && e.code == 'SESSION_IDLE') {
+      await cerrarPorInactividad();
+      return true;
+    }
     if (e.status == 401) {
       await cerrarSesion();
       return true;

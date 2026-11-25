@@ -16,6 +16,7 @@ import { rutasClientNotices } from "./client_notices.routes.js";
 import { rutasSettings } from "./settings.routes.js";
 import { rutasServiceTypes } from "./service_types.routes.js";
 import { rutasTerms } from "./terms.routes.js";
+import { rutasAudit } from "./audit.routes.js";
 
 // T013: registro central de rutas. Cada historia añade su router aquí.
 export const rutas = Router();
@@ -37,3 +38,4 @@ rutas.use("/client-notices", rutasClientNotices); // T055: clientes por avisar (
 rutas.use("/settings", rutasSettings); // T026: configuración del taller (Sprint 7, US1)
 rutas.use("/service-types", rutasServiceTypes); // T049: catálogo de tipos de servicio (Sprint 7, US3)
 rutas.use("/terms", rutasTerms); // T072: términos y aviso de privacidad (Sprint 7, US9)
+rutas.use("/audit-log", rutasAudit); // T090: bitácora de solo lectura (Sprint 7, US10)
