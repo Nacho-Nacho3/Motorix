@@ -1,11 +1,11 @@
 # Motorix --- Contexto maestro del proyecto
 
-> **Documento de contexto para desarrollo asistido por IA (OpenCode)**
+> **Documento de contexto para desarrollo asistido por IA (OpenCode y Claude Code)**
 >
 > **Nombre formal del proyecto:** Sistema de Gestión para Taller
 > Mecánico\
 > **Nombre provisional del software:** Motorix\
-> **Estado:** MVP (sprints 1 a 4) y sprints 5 y 6 entregados; sprint 7 implementado (cierre pendiente de aprobación)\
+> **Estado:** MVP (sprints 1 a 4) y sprints 5, 6 y 7 entregados y aprobados\
 > **Tipo:** Proyecto académico de Ingeniería en Sistemas Computacionales
 
 ------------------------------------------------------------------------
@@ -1258,7 +1258,7 @@ Campana con contador por rol
 ## Sprint 7 --- Reportes, configuración, términos y seguridad
 
 Sprint posterior al MVP, entregado en la rama `007-reportes-configuracion`
-(cierre pendiente de aprobación). Insumo:
+(aprobado el 2026-11-26). Insumo:
 `docs/sprints/sprint-7-reportes-configuracion.md`; especificación en
 `specs/007-reportes-configuracion/`; calidad en
 `docs/aseguramiento-calidad-sprint-7.md`. El comportamiento entregado está en

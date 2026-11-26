@@ -1,17 +1,27 @@
-# motorix_client
+# Motorix — aplicación de escritorio
 
-A new Flutter project.
+Cliente Flutter para Windows del Sistema de Gestión para Taller Mecánico
+Motorix. La puesta en marcha completa (base de datos, backend y cliente) está
+en el [README principal](../README.md).
 
-## Getting Started
+## Estructura de `lib/`
 
-This project is a starting point for a Flutter application.
+- `models/` — datos que devuelve la API.
+- `services/` — cliente HTTP.
+- `providers/` — estado de la aplicación con `provider`.
+- `screens/` — pantallas por módulo.
+- `widgets/` y `utils/` — componentes y utilidades compartidas.
 
-A few resources to get you started if this is your first Flutter project:
+El diseño de la interfaz sigue [`docs/design-system.md`](../docs/design-system.md).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Comandos
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+flutter pub get
+flutter run -d windows   # necesita el backend en http://localhost:3000
+flutter analyze
+flutter test
+```
+
+La carpeta `tool/` contiene los guiones que generan las capturas de
+evidencia; no forman parte del producto.
