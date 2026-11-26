@@ -2,7 +2,7 @@
 
 Este documento es el registro de calidad del Sprint 7 de Motorix. Reúne los criterios de entrada y de salida, las puertas de calidad, las decisiones, los riesgos, la trazabilidad de los criterios de aceptación, los hallazgos, la regresión de los sprints 1 a 6 y el control de calidad final, con sus evidencias.
 
-**Estado: listo para aprobación (inicio 2026-11-24, completado el 2026-11-26).** Falta la aprobación del responsable (sección 10). Se llenó durante el sprint y se completó para el cierre (T132), según [`docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`](aseguramiento-calidad/guia-aseguramiento-calidad.md).
+**Estado: Aprobado. Sprint cerrado el 2026-11-26** (inicio 2026-11-24). Aprobación del responsable en la sección 10. Se llenó durante el sprint y se completó para el cierre (T132), según [`docs/aseguramiento-calidad/guia-aseguramiento-calidad.md`](aseguramiento-calidad/guia-aseguramiento-calidad.md).
 
 ## 0. Datos del documento
 
@@ -15,8 +15,8 @@ Este documento es el registro de calidad del Sprint 7 de Motorix. Reúne los cri
 | Rama | `007-reportes-configuracion` desde `main` (sin squash ni force-push durante todo el sprint) |
 | Responsable | Ignacio Joaquín Trejo (proyecto escolar: él mismo aprueba el cierre) |
 | Fecha de inicio | 2026-11-24 |
-| Fecha de cierre | Pendiente (se llena al cierre) |
-| Estado general | Listo para aprobación |
+| Fecha de cierre | 2026-11-26 |
+| Estado general | Aprobado |
 
 ## 1. Objetivo y alcance
 
@@ -214,7 +214,7 @@ Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
 | `cd server && npm.cmd test` | 91 suites y **968 pruebas**, todas en verde | +35 suites y +489 pruebas |
 | `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa | sin cambio |
 
-El cliente no cambió: se mantiene en **259 pruebas** y `flutter analyze` sin observaciones.
+Al cierre, tras corregir dos fechas sin formato (pago de la orden y ficha del cliente), el cliente queda en **261 pruebas** y `flutter analyze` sin observaciones.
 
 ## 9. Control de calidad final
 
@@ -235,8 +235,8 @@ Cinco requisitos del Sprint 7 elegidos entre los que más pueden fallar. Pruebas
 | Criterios de salida cumplidos | 5 de 5 (sección 2) |
 | Defectos abiertos | Ninguno crítico, alto ni medio. H-02 (bajo, documentación del análisis) aceptado |
 | Observaciones | El recorrido con capturas (T131) lo ejecutó el agente; los márgenes de instalación son 30 días y 500 km (D-17); la rotación solo lista refacciones con existencia o movimientos; los datos de ejemplo tienen un solo mecánico; el cambio de contraseña propia requiere haber aceptado los términos; cambiar de sección del menú no avisa de cambios sin guardar |
-| Aprobado por | Pendiente |
-| Fecha | Pendiente |
+| Aprobado por | Ignacio Joaquín Trejo |
+| Fecha | 2026-11-26 |
 
 # Anexo de evidencias
 
@@ -250,7 +250,7 @@ A petición del responsable, el recorrido lo ejecutó el agente con un guion
 ejecución sobre la base de pruebas `motorix_test` recién sembrada, pulsa y
 escribe en sus pantallas y guarda la imagen de la propia aplicación. No es un
 recorrido manual hecho por una persona: la revisión visual de las 25 capturas la
-hizo el agente y queda pendiente la del responsable. El escenario V8 adelanta en
+hizo el agente; el responsable aprobó el cierre el 2026-11-26. El escenario V8 adelanta en
 la base la última actividad 31 minutos en lugar de esperar; el resto del flujo
 (respuesta `401 SESSION_IDLE` y aviso) es el real. V7, V12 y V13 no tienen
 pantalla propia y se comprobaron por API.

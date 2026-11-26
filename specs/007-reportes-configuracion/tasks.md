@@ -344,7 +344,7 @@ description: "Lista de tareas del sprint 7: reportes, configuración, términos 
 - [X] T129 Ejecutar la regresión completa: `cd server && npm.cmd test` y `npm.cmd run lint`, y en `client/` `flutter test` y `flutter analyze`; confirmar que ninguna prueba de la línea base falla (SC-014) y anotar conteos en `docs/aseguramiento-calidad-sprint-7.md` (sección de regresión)
 - [X] T130 Verificar contra la API en ejecución los escenarios V1 a V13 de `specs/007-reportes-configuracion/quickstart.md` que se pueden comprobar sin interfaz (V1, V2, V3, V4, V5, V6, V7, V8 con la hora de última actividad ajustada, V9, V10, V11, V12 y V13), dejando limpios los datos de prueba, y registrar resultados en `docs/evidencias/sprint-7/`
 - [X] T131 (ejecutado el 2026-11-25 por el agente con `client/tool/capturas.dart` a petición del responsable; falta su revisión de las capturas) Recorrido manual de extremo a extremo siguiendo `specs/007-reportes-configuracion/quickstart.md` (los escenarios con pantalla: V1, V3, V4, V5, V6, V9, V10 y V11, más V8 para el cierre por inactividad) y dejar las capturas en `docs/evidencias/sprint-7/` (**lo hace el usuario**; el agente lo guía y registra los resultados)
-- [ ] T132 Completar `docs/aseguramiento-calidad-sprint-7.md`: trazabilidad de CA-1 a CA-26 con tareas y pruebas, decisiones D-01 a D-19, riesgos R-01 a R-08, hallazgos, línea base y regresión con conteos, anexo de evidencias y cierre con la aprobación del responsable y la fecha
+- [X] T132 Completar `docs/aseguramiento-calidad-sprint-7.md`: trazabilidad de CA-1 a CA-26 con tareas y pruebas, decisiones D-01 a D-19, riesgos R-01 a R-08, hallazgos, línea base y regresión con conteos, anexo de evidencias y cierre con la aprobación del responsable y la fecha
 
 ---
 
