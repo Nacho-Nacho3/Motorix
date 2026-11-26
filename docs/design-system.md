@@ -235,6 +235,8 @@ Pagos
 Tickets
 Usuarios
 Configuración
+Bitácora
+Reportes
 Cerrar sesión
 ```
 
@@ -242,6 +244,10 @@ Cerrar sesión
 
 - Mostrar solo los módulos implementados en el sprint actual.
 - Mostrar solo los módulos permitidos para el rol del usuario.
+- Configuración, Bitácora y Reportes (Sprint 7) son solo para el administrador.
+- El menú se puede desplazar cuando las secciones no caben en la ventana.
+- El título de la sección aparece una sola vez, en el header: la pantalla no repite una barra propia con el mismo nombre.
+- Las fechas con hora se muestran como `dd/mm/aaaa hh:mm`, nunca en formato ISO.
 - Ocultar un botón **no es seguridad**: los permisos se validan también en backend.
 
 ### Header
