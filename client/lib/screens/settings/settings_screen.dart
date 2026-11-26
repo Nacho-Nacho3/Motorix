@@ -64,16 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Configuración'),
-          actions: [
-            IconButton(
-              tooltip: 'Actualizar',
-              icon: const Icon(Icons.refresh),
-              onPressed: proveedor.cargando ? null : proveedor.cargar,
-            ),
-          ],
-        ),
         body: _cuerpo(proveedor),
       ),
     );
@@ -99,6 +89,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // El título de la sección ya está en la cabecera del menú.
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  tooltip: 'Actualizar',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: proveedor.cargando ? null : proveedor.cargar,
+                ),
+              ),
               FormularioTaller(
                 key: ValueKey(
                   '${config.shop.name}|${config.shop.address}|${config.shop.phone}',

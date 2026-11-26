@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../models/ticket.dart';
 import '../../providers/payments_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/estado_pago_chip.dart';
 import '../../widgets/states_view.dart';
 
@@ -116,7 +117,7 @@ class _TicketScreenState extends State<TicketScreen> {
             const SizedBox(height: AppSpacing.xs),
             Center(
               child: Text(
-                ticket.createdAt ?? '',
+                fechaHoraLegible(ticket.createdAt),
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
@@ -365,7 +366,7 @@ class _TicketScreenState extends State<TicketScreen> {
       pw.Center(child: pw.Text(ticket.folio)),
       pw.Center(child: pw.Text(ticket.workshop.name)),
       pw.SizedBox(height: 8),
-      pw.Text(ticket.createdAt ?? ''),
+      pw.Text(fechaHoraLegible(ticket.createdAt)),
       titulo('Cliente'),
       linea(ticket.client.name, ticket.client.phone ?? ''),
       titulo('Vehículo'),

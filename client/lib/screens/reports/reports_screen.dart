@@ -72,24 +72,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
       length: 5,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Reportes'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Ingresos'),
-              Tab(text: 'Servicios'),
-              Tab(text: 'Productividad'),
-              Tab(text: 'Margen de refacciones'),
-              Tab(text: 'Rotación'),
-            ],
-          ),
-        ),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // El título de la sección ya está en la cabecera del menú.
+              const TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: [
+                  Tab(text: 'Ingresos'),
+                  Tab(text: 'Servicios'),
+                  Tab(text: 'Productividad'),
+                  Tab(text: 'Margen de refacciones'),
+                  Tab(text: 'Rotación'),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
               _selectorPeriodo(proveedor),
               const SizedBox(height: AppSpacing.md),
               const Expanded(

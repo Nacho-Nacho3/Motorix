@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/terms.dart';
 import '../../providers/terms_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/states_view.dart';
 
@@ -226,7 +227,9 @@ class _TermsSectionState extends State<TermsSection> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.check_circle_outline, color: AppColors.success),
               title: Text(item.name),
-              subtitle: Text('${item.username} · ${item.acceptedAt ?? ''}'),
+              subtitle: Text(
+                '${item.username} · ${fechaHoraLegible(item.acceptedAt)}',
+              ),
             ),
         if (pagina.totalPaginas > 1)
           Row(

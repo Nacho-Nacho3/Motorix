@@ -75,18 +75,6 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Bitácora'),
-        actions: [
-          IconButton(
-            tooltip: 'Actualizar',
-            icon: const Icon(Icons.refresh),
-            onPressed: proveedor.cargando
-                ? null
-                : () => proveedor.cargar(page: proveedor.pagina?.page ?? 1),
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -179,6 +167,13 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
                   onPressed: proveedor.cargando ? null : _limpiar,
                   child: const Text('Limpiar'),
                 ),
+                IconButton(
+                  tooltip: 'Actualizar',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: proveedor.cargando
+                      ? null
+                      : () => proveedor.cargar(page: proveedor.pagina?.page ?? 1),
+                ),
               ],
             ),
             if (proveedor.errorFiltros != null) ...[
@@ -268,9 +263,9 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
       title: Text(entrada.etiquetaAccion),
       subtitle: Text(
         '${entrada.fechaLegible} · ${entrada.actor} · ${entrada.etiquetaEntidad}'
-        '${entrada.detail == null || entrada.detail!.isEmpty ? '' : '\n${entrada.detail}'}',
+        '${entrada.detalleLegible.isEmpty ? '' : '\n${entrada.detalleLegible}'}',
       ),
-      isThreeLine: entrada.detail != null && entrada.detail!.isNotEmpty,
+      isThreeLine: entrada.detalleLegible.isNotEmpty,
     );
   }
 }

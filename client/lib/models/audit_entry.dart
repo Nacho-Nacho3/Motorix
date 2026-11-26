@@ -1,3 +1,6 @@
+import '../utils/date_format.dart';
+import 'report_result.dart' show etiquetaMetodoDePago;
+
 /// Registro de la bitácora de acciones sensibles (Sprint 7, US10,
 /// contracts/audit-log.md). Solo lectura: nada se edita ni se borra.
 class AuditEntry {
@@ -33,11 +36,53 @@ class AuditEntry {
       );
 
   /// Fecha y hora legibles: `dd/mm/aaaa hh:mm`.
-  String get fechaLegible {
-    final texto = createdAt;
-    if (texto == null || texto.length < 16) return texto ?? '';
-    return '${texto.substring(8, 10)}/${texto.substring(5, 7)}/${texto.substring(0, 4)} ${texto.substring(11, 16)}';
+  String get fechaLegible => fechaHoraLegible(createdAt);
+
+  /// Detalle para la persona: traduce las claves técnicas del campo, los roles y
+  /// el método de pago. El registro guardado no cambia; los valores que
+  /// escribió una persona (nombres, motivos) se muestran tal cual.
+  String get detalleLegible {
+    final texto = detail;
+    if (texto == null || texto.isEmpty) return '';
+    final partes = texto.split('; ');
+    final campo = partes.first.startsWith('campo: ')
+        ? partes.first.substring('campo: '.length)
+        : null;
+
+    String traducir(String parte) {
+      final separador = parte.indexOf(': ');
+      if (separador < 0) return parte;
+      final etiqueta = parte.substring(0, separador);
+      var valor = parte.substring(separador + 2);
+      if (etiqueta == 'campo') {
+        valor = _campos[valor] ?? valor;
+      } else if (etiqueta == 'rol' ||
+          (campo == 'role' && (etiqueta == 'anterior' || etiqueta == 'nuevo'))) {
+        valor = _roles[valor] ?? valor;
+      } else if (etiqueta == 'método') {
+        valor = etiquetaMetodoDePago(valor);
+      }
+      return '$etiqueta: $valor';
+    }
+
+    return partes.map(traducir).join('; ');
   }
+
+  static const Map<String, String> _campos = {
+    'shop.name': 'Nombre del taller',
+    'shop.address': 'Dirección del taller',
+    'shop.phone': 'Teléfono del taller',
+    'maintenance.warn_days': 'Días de antelación',
+    'maintenance.warn_km': 'Kilómetros de antelación',
+    'role': 'Rol',
+    'active': 'Estado',
+  };
+
+  static const Map<String, String> _roles = {
+    'ADMIN': 'Administrador',
+    'RECEPTIONIST': 'Recepción',
+    'MECHANIC': 'Mecánico',
+  };
 
   /// Etiqueta en español de la acción (catálogo cerrado del contrato).
   String get etiquetaAccion => etiquetasDeAccion[action] ?? action;
