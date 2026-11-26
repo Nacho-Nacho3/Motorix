@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { esFechaDeCalendario, esHoraValida } from "../utils/calendar-date.js";
 
 // T010: validación de citas (VA-01, contrato appointments.md).
 // clientId y vehicleId van opcionales en el alta: la ausencia se responde
@@ -7,12 +8,20 @@ import { z } from "zod";
 export const fecha = z
   .string({ required_error: "La fecha es obligatoria." })
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD.");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD.")
+  .refine(
+    (valor) => !/^\d{4}-\d{2}-\d{2}$/.test(valor) || esFechaDeCalendario(valor),
+    "La fecha no existe en el calendario.",
+  );
 
 export const hora = z
   .string({ required_error: "La hora es obligatoria." })
   .trim()
-  .regex(/^\d{2}:\d{2}$/, "La hora debe tener el formato HH:MM.");
+  .regex(/^\d{2}:\d{2}$/, "La hora debe tener el formato HH:MM.")
+  .refine(
+    (valor) => !/^\d{2}:\d{2}$/.test(valor) || esHoraValida(valor),
+    "La hora debe estar entre 00:00 y 23:59.",
+  );
 
 export const motivo = z
   .string({ required_error: "El motivo es obligatorio." })

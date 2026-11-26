@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { esFechaDeCalendario } from "../utils/calendar-date.js";
 
 // T023: validación de mantenimientos (VM-01 a VM-06, contrato maintainments.md).
 // vehicleId y los objetivos van opcionales en el esquema: su ausencia se
@@ -27,6 +28,10 @@ export const maintenanceCreateSchema = z
         .string()
         .trim()
         .regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener el formato YYYY-MM-DD.")
+        .refine(
+          (valor) => !/^\d{4}-\d{2}-\d{2}$/.test(valor) || esFechaDeCalendario(valor),
+          "La fecha no existe en el calendario.",
+        )
         .optional()
         .nullable(),
       nextDueMileage: z
