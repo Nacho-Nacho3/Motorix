@@ -53,6 +53,26 @@ describe("Cálculo del estado del próximo mantenimiento (US2)", () => {
     expect(resultado.daysRemaining).toBe(-5);
   });
 
+  test("devuelve OVERDUE el mismo día de la fecha objetivo (D-03)", () => {
+    const resultado = calcularEstadoMantenimiento({
+      ...BASE,
+      fechaActual: "2026-11-20",
+    });
+
+    expect(resultado.state).toBe("OVERDUE");
+    expect(resultado.daysRemaining).toBe(0);
+  });
+
+  test("devuelve UPCOMING el día anterior a la fecha objetivo", () => {
+    const resultado = calcularEstadoMantenimiento({
+      ...BASE,
+      fechaActual: "2026-11-19",
+    });
+
+    expect(resultado.state).toBe("UPCOMING");
+    expect(resultado.daysRemaining).toBe(1);
+  });
+
   test("devuelve OVERDUE cuando el kilometraje alcanza el objetivo", () => {
     const resultado = calcularEstadoMantenimiento({
       ...BASE,

@@ -24,7 +24,7 @@ function hoyLocal() {
 /**
  * Calcula NORMAL/UPCOMING/OVERDUE con los días y kilómetros restantes.
  *
- * - OVERDUE: la fecha objetivo ya pasó, o el kilometraje actual alcanzó o
+ * - OVERDUE: llegó o pasó la fecha objetivo, o el kilometraje actual alcanzó o
  *   superó el objetivo (basta con que se cumpla cualquiera de los dos).
  * - UPCOMING: dentro de la antelación del registro por días o por kilometraje.
  * - NORMAL: falta más que la antelación.
@@ -59,7 +59,7 @@ export function calcularEstadoMantenimiento({
   }
 
   const vencido =
-    (daysRemaining != null && daysRemaining < 0) ||
+    (daysRemaining != null && daysRemaining <= 0) ||
     (mileageRemaining != null && mileageRemaining <= 0);
   const porVencer =
     (daysRemaining != null && daysRemaining <= warnDays) ||
