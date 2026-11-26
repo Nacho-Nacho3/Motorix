@@ -26,6 +26,9 @@ class _ApiDetalleFalsa extends ApiClient {
   int correcciones = 0;
   String? precioCorregido;
 
+  /// Si es `true`, la orden tiene un cobro en efectivo.
+  bool conPago = false;
+
   /// Consultas al lookup del selector (US5, T043).
   int lookups = 0;
 
@@ -65,6 +68,21 @@ class _ApiDetalleFalsa extends ApiClient {
             if (precioLinea != null) 'unitPrice': precioLinea,
             'createdBy': 3,
             'createdAt': '2026-11-03T10:00:00',
+          },
+        ],
+      };
+    }
+    if (conPago && path == '/service-orders/1/payments') {
+      return {
+        'total': 1,
+        'payments': [
+          {
+            'id': 7,
+            'orderId': 1,
+            'amount': '2005.00',
+            'method': 'CASH',
+            'status': 'PAID',
+            'createdAt': '2026-11-26T14:05:20',
           },
         ],
       };
@@ -224,6 +242,15 @@ void main() {
       find.text('Cambiar pastillas delanteras · 1.5 h · \$350.00/h'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('la fecha del pago se muestra legible (H-05)', (tester) async {
+    final api = _ApiDetalleFalsa()..conPago = true;
+    await tester.pumpWidget(_pantalla(api, rol: 'ADMIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('26/11/2026 14:05'), findsOneWidget);
+    expect(find.text('2026-11-26T14:05:20'), findsNothing);
   });
 
   testWidgets('el botón de eliminar servicio pide confirmación con «Confirmar»',

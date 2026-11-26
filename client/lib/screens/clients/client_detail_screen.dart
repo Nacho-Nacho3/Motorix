@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/clients_provider.dart';
 import '../../utils/app_route.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/states_view.dart';
 import 'client_form_screen.dart';
 
@@ -101,7 +102,7 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
                     _Dato(
                       icono: Icons.calendar_today_outlined,
                       texto:
-                          'Registrado el ${cliente.createdAt!.split('T').first}',
+                          'Registrado el ${fechaHoraLegible(cliente.createdAt).split(' ').first}',
                     ),
                   ],
                 ],

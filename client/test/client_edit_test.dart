@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:motorix_client/models/client.dart';
 import 'package:motorix_client/providers/clients_provider.dart';
+import 'package:motorix_client/screens/clients/client_detail_screen.dart';
 import 'package:motorix_client/screens/clients/client_form_screen.dart';
 import 'package:motorix_client/screens/clients/client_list_screen.dart';
 import 'package:motorix_client/services/api_client.dart';
@@ -87,6 +88,22 @@ Widget _pantallaConFormulario(_ApiEdicionFalsa api, Client cliente) =>
     );
 
 void main() {
+  testWidgets('la ficha muestra la fecha de registro legible (H-05)', (tester) async {
+    final api = _ApiEdicionFalsa(cliente: _clienteBase);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ClientsProvider>(
+        create: (_) => ClientsProvider(api),
+        child: MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          home: const ClienteDetailScreen(clienteId: 1),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registrado el 13/10/2026'), findsOneWidget);
+  });
+
   testWidgets('la edición precarga los datos del cliente', (tester) async {
     final api = _ApiEdicionFalsa(
       cliente: _clienteBase,

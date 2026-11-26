@@ -12,6 +12,7 @@ import '../../providers/service_types_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../utils/app_route.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/estado_orden_chip.dart';
 import '../../widgets/estado_pago_chip.dart';
@@ -343,7 +344,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  pago.createdAt ?? '',
+                  fechaHoraLegible(pago.createdAt),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
