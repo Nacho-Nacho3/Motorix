@@ -26,13 +26,16 @@ export async function listarPorOrden(orderId) {
   return filas.map(aTrabajo);
 }
 
-export async function insertar({ orderId, concept, hours, hourlyRate }) {
-  const [resultado] = await pool.query(
+export async function insertar(
+  { orderId, concept, hours, hourlyRate },
+  conexion = pool,
+) {
+  const [resultado] = await conexion.query(
     `INSERT INTO order_labor (order_id, concept, hours, hourly_rate)
      VALUES (?, ?, ?, ?)`,
     [orderId, concept, hours, hourlyRate ?? 0],
   );
-  const [filas] = await pool.query(
+  const [filas] = await conexion.query(
     `SELECT ${CAMPOS} FROM order_labor WHERE id = ?`,
     [resultado.insertId],
   );
@@ -40,8 +43,8 @@ export async function insertar({ orderId, concept, hours, hourlyRate }) {
 }
 
 /** Elimina una fila (corrección de captura); `false` si no existía. */
-export async function eliminar(orderId, laborId) {
-  const [resultado] = await pool.query(
+export async function eliminar(orderId, laborId, conexion = pool) {
+  const [resultado] = await conexion.query(
     `DELETE FROM order_labor WHERE id = ? AND order_id = ?`,
     [laborId, orderId],
   );

@@ -632,3 +632,131 @@ describe("US3 - Total con refacciones y pendiente desfasado (T019, T020)", () =>
     expect(await estadosDePagos(orden)).toEqual(["PAID", "CANCELLED"]);
   });
 });
+
+// Defecto D-04 de la auditoría del MVP: con un pago PAID el total de la orden
+// no puede cambiar, porque ya no se admite otro cobro (spec 004, FR-005).
+describe("Una orden pagada no cambia su total (D-04)", () => {
+  async function ordenPagada() {
+    const orden = await ordenTerminada();
+    expect((await registrarPago(orden, { method: "CASH" })).status).toBe(201);
+    return orden;
+  }
+
+  async function totalDe(orden) {
+    const respuesta = await request(app)
+      .get(`/api/service-orders/${orden.id}/total`)
+      .set(headersRecepcion);
+    return respuesta.body.data.total;
+  }
+
+  async function primerId(tabla, orden) {
+    const [[fila]] = await poolPrueba.query(
+      `SELECT MIN(id) AS id FROM ${tabla} WHERE order_id = ?`,
+      [orden.id],
+    );
+    return fila.id;
+  }
+
+  function esperarBloqueo(respuesta) {
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("ORDER_ALREADY_PAID");
+    expect(respuesta.body.error.message).toMatch(/pagada/);
+  }
+
+  test("ni el mecánico ni el administrador pueden agregar o quitar servicios y mano de obra", async () => {
+    const orden = await ordenPagada();
+    const antes = await totalDe(orden);
+    const base = `/api/service-orders/${orden.id}`;
+    const idServicio = await primerId("order_services", orden);
+    const idObra = await primerId("order_labor", orden);
+
+    for (const headers of [headersMecanico, headersAdmin]) {
+      esperarBloqueo(
+        await request(app).post(`${base}/services`).set(headers)
+          .send({ description: "Extra", unitPrice: 100 }),
+      );
+      esperarBloqueo(
+        await request(app).post(`${base}/labor`).set(headers)
+          .send({ concept: "Extra", hours: 1, hourlyRate: 100 }),
+      );
+      esperarBloqueo(await request(app).delete(`${base}/services/${idServicio}`).set(headers));
+      esperarBloqueo(await request(app).delete(`${base}/labor/${idObra}`).set(headers));
+    }
+
+    expect(await totalDe(orden)).toBe(antes);
+  });
+
+  test("no se pueden agregar refacciones y el stock no cambia", async () => {
+    const orden = await ordenPagada();
+    const [[parte]] = await poolPrueba.query(
+      "SELECT part_id AS id FROM order_parts WHERE order_id = ? LIMIT 1",
+      [orden.id],
+    );
+    const stock = async () => {
+      const [[fila]] = await poolPrueba.query(
+        "SELECT stock_current AS stock FROM parts WHERE id = ?",
+        [parte.id],
+      );
+      return fila.stock;
+    };
+    const antes = await stock();
+
+    esperarBloqueo(
+      await request(app)
+        .post(`/api/service-orders/${orden.id}/parts`)
+        .set(headersMecanico)
+        .send({ partId: parte.id, quantity: 1 }),
+    );
+    expect(await stock()).toBe(antes);
+  });
+
+  test("las notas del trabajo y la entrega de una orden pagada siguen permitidas", async () => {
+    const orden = await ordenPagada();
+    const base = `/api/service-orders/${orden.id}`;
+
+    const notas = await request(app).patch(`${base}/work`).set(headersMecanico)
+      .send({ recommendations: "Revisar en 6 meses" });
+    const entrega = await request(app).patch(`${base}/status`).set(headersMecanico)
+      .send({ status: "DELIVERED" });
+
+    expect(notas.status).toBe(200);
+    expect(entrega.status).toBe(200);
+  });
+
+  test("con un cobro pendiente todavía se puede corregir el trabajo", async () => {
+    const orden = await ordenTerminada();
+    await poolPrueba.query(
+      `INSERT INTO payments (order_id, amount, method, status, created_by)
+       VALUES (?, '3150.00', 'MERCADO_PAGO', 'PENDING', ?)`,
+      [orden.id, idRecepcion],
+    );
+
+    const respuesta = await request(app)
+      .post(`/api/service-orders/${orden.id}/services`)
+      .set(headersMecanico)
+      .send({ description: "Extra", unitPrice: 100 });
+
+    expect(respuesta.status).toBe(201);
+  });
+
+  test("cobrar y agregar un servicio a la vez nunca deja un total distinto de lo cobrado", async () => {
+    for (let intento = 0; intento < 5; intento += 1) {
+      const orden = await ordenTerminada();
+
+      await Promise.all([
+        registrarPago(orden, { method: "CASH" }),
+        request(app)
+          .post(`/api/service-orders/${orden.id}/services`)
+          .set(headersMecanico)
+          .send({ description: "Simultáneo", unitPrice: 100 }),
+      ]);
+
+      const [[pago]] = await poolPrueba.query(
+        "SELECT amount FROM payments WHERE order_id = ? AND status = 'PAID'",
+        [orden.id],
+      );
+      expect(pago.amount).toBe(await totalDe(orden));
+    }
+  });
+});
+

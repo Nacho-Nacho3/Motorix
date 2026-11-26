@@ -34,13 +34,16 @@ export async function listarPorOrden(orderId) {
   return filas.map(aServicio);
 }
 
-export async function insertar({ orderId, description, unitPrice, serviceTypeId }) {
-  const [resultado] = await pool.query(
+export async function insertar(
+  { orderId, description, unitPrice, serviceTypeId },
+  conexion = pool,
+) {
+  const [resultado] = await conexion.query(
     `INSERT INTO order_services (order_id, description, unit_price, service_type_id)
      VALUES (?, ?, ?, ?)`,
     [orderId, description, unitPrice ?? 0, serviceTypeId ?? null],
   );
-  const [filas] = await pool.query(
+  const [filas] = await conexion.query(
     `SELECT ${CAMPOS} ${TABLA} WHERE os.id = ?`,
     [resultado.insertId],
   );
@@ -48,8 +51,8 @@ export async function insertar({ orderId, description, unitPrice, serviceTypeId 
 }
 
 /** Elimina una fila (corrección de captura); `false` si no existía. */
-export async function eliminar(orderId, serviceId) {
-  const [resultado] = await pool.query(
+export async function eliminar(orderId, serviceId, conexion = pool) {
+  const [resultado] = await conexion.query(
     `DELETE FROM order_services WHERE id = ? AND order_id = ?`,
     [serviceId, orderId],
   );

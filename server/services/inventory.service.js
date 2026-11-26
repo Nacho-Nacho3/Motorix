@@ -1,3 +1,4 @@
+import { existePagoPagado } from "../models/payment.model.js";
 import * as auditoria from "./audit.service.js";
 import { pool } from "../config/db.js";
 import * as partes from "../models/part.model.js";
@@ -274,6 +275,8 @@ export async function agregarRefaccionOrden(idOrden, payload, usuario) {
 
       if (orden.mechanicId !== usuario.id) throw errores.forbidden();
       if (orden.status === "DELIVERED") throw errores.orderDelivered();
+      // Defecto D-04: una orden pagada no admite más refacciones.
+      if (await existePagoPagado(idOrden, conexion)) throw errores.orderPaidLocked();
 
       // El precio se lee en la MISMA conexión (transacción) que inserta la
       // fila: instantánea consistente del precio vigente (D-01/D-03).

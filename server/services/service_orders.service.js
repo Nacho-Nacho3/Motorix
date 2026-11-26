@@ -4,6 +4,8 @@ import * as manoDeObra from "../models/order_labor.model.js";
 import * as clientes from "../models/client.model.js";
 import * as vehiculos from "../models/vehicle.model.js";
 import * as usuarios from "../models/user.model.js";
+import { existePagoPagado } from "../models/payment.model.js";
+import { pool } from "../config/db.js";
 import { AppError, errores } from "../utils/errors.js";
 import { verificarTipoActivo } from "./service-types.service.js";
 
@@ -210,6 +212,30 @@ async function verificarTrabajador(id, usuario) {
   return orden;
 }
 
+/**
+ * Ejecuta un cambio que altera el total de la orden. Bloquea la misma fila que
+ * el cobro, para que ambos se serialicen, y lo rechaza si la orden ya está
+ * pagada (defecto D-04): el total no puede cambiar sin un nuevo cobro.
+ */
+async function cambiarTotal(orderId, cambio) {
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+    await conexion.query("SELECT id FROM service_orders WHERE id = ? FOR UPDATE", [orderId]);
+    if (await existePagoPagado(orderId, conexion)) {
+      throw errores.orderPaidLocked();
+    }
+    const resultado = await cambio(conexion);
+    await conexion.commit();
+    return resultado;
+  } catch (error) {
+    await conexion.rollback().catch(() => {});
+    throw error;
+  } finally {
+    conexion.release();
+  }
+}
+
 /** Registra diagnóstico, observaciones y recomendaciones (R-06, US5/US7). */
 export async function registrarTrabajo(id, datos, usuario) {
   await verificarTrabajador(id, usuario);
@@ -232,17 +258,24 @@ export async function agregarServicio(id, datos, usuario) {
   if (datos.serviceTypeId != null) {
     await verificarTipoActivo(datos.serviceTypeId);
   }
-  return servicios.insertar({
-    orderId: orden.id,
-    description: datos.description,
-    unitPrice: datos.unitPrice ?? 0,
-    serviceTypeId: datos.serviceTypeId ?? null,
-  });
+  return cambiarTotal(orden.id, (conexion) =>
+    servicios.insertar(
+      {
+        orderId: orden.id,
+        description: datos.description,
+        unitPrice: datos.unitPrice ?? 0,
+        serviceTypeId: datos.serviceTypeId ?? null,
+      },
+      conexion,
+    ),
+  );
 }
 
 export async function eliminarServicio(id, serviceId, usuario) {
-  await verificarTrabajador(id, usuario);
-  const borrado = await servicios.eliminar(id, serviceId);
+  const orden = await verificarTrabajador(id, usuario);
+  const borrado = await cambiarTotal(orden.id, (conexion) =>
+    servicios.eliminar(orden.id, serviceId, conexion),
+  );
   if (!borrado) {
     throw errores.orderItemNotFound();
   }
@@ -251,17 +284,24 @@ export async function eliminarServicio(id, serviceId, usuario) {
 
 export async function agregarManoDeObra(id, datos, usuario) {
   const orden = await verificarTrabajador(id, usuario);
-  return manoDeObra.insertar({
-    orderId: orden.id,
-    concept: datos.concept,
-    hours: datos.hours,
-    hourlyRate: datos.hourlyRate ?? 0,
-  });
+  return cambiarTotal(orden.id, (conexion) =>
+    manoDeObra.insertar(
+      {
+        orderId: orden.id,
+        concept: datos.concept,
+        hours: datos.hours,
+        hourlyRate: datos.hourlyRate ?? 0,
+      },
+      conexion,
+    ),
+  );
 }
 
 export async function eliminarManoDeObra(id, laborId, usuario) {
-  await verificarTrabajador(id, usuario);
-  const borrado = await manoDeObra.eliminar(id, laborId);
+  const orden = await verificarTrabajador(id, usuario);
+  const borrado = await cambiarTotal(orden.id, (conexion) =>
+    manoDeObra.eliminar(orden.id, laborId, conexion),
+  );
   if (!borrado) {
     throw errores.orderItemNotFound();
   }

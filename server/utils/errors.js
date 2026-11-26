@@ -117,6 +117,13 @@ export const errores = {
     ),
   orderAlreadyPaid: () =>
     new AppError(400, "ORDER_ALREADY_PAID", "La orden ya tiene un pago pagado; no se admite otro cobro."),
+  // Defecto D-04 del MVP: con un pago PAID el total ya no puede cambiar.
+  orderPaidLocked: () =>
+    new AppError(
+      400,
+      "ORDER_ALREADY_PAID",
+      "La orden ya está pagada: no se pueden cambiar sus servicios, mano de obra ni refacciones.",
+    ),
   pendingPaymentExists: () =>
     new AppError(
       409,

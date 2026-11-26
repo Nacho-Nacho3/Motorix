@@ -136,3 +136,12 @@ export async function actualizarReferencia(id, externalReference, conexion = poo
     id,
   ]);
 }
+
+/** `true` si la orden ya tiene un pago PAID (su total queda cerrado). */
+export async function existePagoPagado(orderId, conexion = pool) {
+  const [filas] = await conexion.query(
+    "SELECT id FROM payments WHERE order_id = ? AND status = 'PAID' LIMIT 1",
+    [orderId],
+  );
+  return filas.length > 0;
+}
