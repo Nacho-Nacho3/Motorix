@@ -110,6 +110,7 @@ const LECTURAS = () => [
 ];
 
 const RESERVADOS = /"(password|passwordHash|password_hash|token|hash)"\s*:/i;
+const CLAVES_COSTO = /"(purchasePrice|purchase_price|unitCost|unit_cost|costAmount)"\s*:/;
 
 describe("Sin contraseñas, hashes ni tokens (CA-24)", () => {
   for (const rol of ["ADMIN", "RECEPTIONIST", "MECHANIC"]) {
@@ -161,8 +162,6 @@ describe("Sin contraseñas, hashes ni tokens (CA-24)", () => {
 });
 
 describe("Precios reservados al rol (CA-24)", () => {
-  const CLAVES_COSTO = /"(purchasePrice|purchase_price|unitCost|unit_cost|costAmount)"\s*:/;
-
   test("ADMIN recibe el precio de compra de las refacciones", async () => {
     const respuesta = await request(app).get("/api/parts").set(tokens.ADMIN);
 
@@ -186,5 +185,98 @@ describe("Precios reservados al rol (CA-24)", () => {
       const catalogo = await request(app).get("/api/parts").set(tokens[rol]);
       expect(catalogo.status).toBe(403);
     }
+  });
+});
+
+// T132: la misma comprobación sobre las respuestas de escritura de usuarios,
+// refacciones, órdenes, pagos y tickets (CA-24: «cada endpoint»).
+describe("Respuestas de escritura (CA-24)", () => {
+  /** Llama al endpoint, exige que tenga éxito y devuelve la respuesta. */
+  async function escribir(rol, metodo, ruta, cuerpo) {
+    const peticion = request(app)[metodo](ruta).set(tokens[rol]);
+    const respuesta = await (cuerpo ? peticion.send(cuerpo) : peticion);
+    const texto = JSON.stringify(respuesta.body);
+
+    expect([ruta, respuesta.status < 300]).toEqual([ruta, true]);
+    expect(texto).not.toMatch(RESERVADOS);
+    expect(texto).not.toContain("$2a$");
+    expect(texto).not.toContain("$2b$");
+    if (rol !== "ADMIN") {
+      expect(texto).not.toMatch(CLAVES_COSTO);
+      expect(texto).not.toContain("321.45");
+    }
+    return respuesta;
+  }
+
+  test("órdenes, tickets y pagos no exponen datos reservados a recepción ni al mecánico", async () => {
+    const [[base]] = await poolPrueba.query(
+      "SELECT client_id, vehicle_id FROM service_orders WHERE id = ?",
+      [idOrden],
+    );
+    const alta = await escribir("RECEPTIONIST", "post", "/api/service-orders", {
+      clientId: base.client_id,
+      vehicleId: base.vehicle_id,
+      mechanicId: idMecanico,
+      entryMileage: 3000,
+      reportedProblem: "Segunda visita",
+    });
+    const orden = `/api/service-orders/${alta.body.data.order.id}`;
+
+    await escribir("RECEPTIONIST", "patch", orden, { reportedProblem: "Ruido" });
+    await escribir("MECHANIC", "patch", `${orden}/work`, { diagnosis: "Revisión" });
+    const conServicio = await escribir("MECHANIC", "post", `${orden}/services`, {
+      description: "Ajuste",
+      unitPrice: 50,
+    });
+    const conObra = await escribir("MECHANIC", "post", `${orden}/labor`, {
+      concept: "Mano de obra",
+      hours: 1,
+      hourlyRate: 100,
+    });
+    await escribir("MECHANIC", "post", `${orden}/parts`, { partId: idParte, quantity: 1 });
+
+    const [[servicio]] = await poolPrueba.query(
+      "SELECT MAX(id) AS id FROM order_services WHERE order_id = ?",
+      [alta.body.data.order.id],
+    );
+    const [[obra]] = await poolPrueba.query(
+      "SELECT MAX(id) AS id FROM order_labor WHERE order_id = ?",
+      [alta.body.data.order.id],
+    );
+    expect(conServicio.body.ok && conObra.body.ok).toBe(true);
+    await escribir("MECHANIC", "delete", `${orden}/services/${servicio.id}`);
+    await escribir("MECHANIC", "delete", `${orden}/labor/${obra.id}`);
+
+    for (const status of ["DIAGNOSIS", "IN_REPAIR", "FINISHED"]) {
+      await escribir("MECHANIC", "patch", `${orden}/status`, { status });
+    }
+    await escribir("RECEPTIONIST", "post", `${orden}/ticket`);
+
+    const [pendiente] = await poolPrueba.query(
+      `INSERT INTO payments (order_id, amount, method, status, created_by)
+       VALUES (?, '850.00', 'MERCADO_PAGO', 'PENDING', ?)`,
+      [alta.body.data.order.id, idMecanico],
+    );
+    await escribir("RECEPTIONIST", "post", `${orden}/payments/${pendiente.insertId}/cancel`);
+    await escribir("RECEPTIONIST", "post", `${orden}/payments`, { method: "CASH" });
+  });
+
+  test("las escrituras de refacciones y de precios del administrador no exponen datos de acceso", async () => {
+    await escribir("ADMIN", "patch", `/api/parts/${idParte}`, { salePrice: "900.00" });
+    await escribir("ADMIN", "post", `/api/parts/${idParte}/movements`, {
+      movementType: "IN",
+      quantity: 2,
+    });
+    const [[linea]] = await poolPrueba.query(
+      "SELECT id FROM order_parts WHERE order_id = ? LIMIT 1",
+      [idOrden],
+    );
+    await poolPrueba.query("DELETE FROM payments WHERE order_id = ?", [idOrden]);
+    await escribir(
+      "ADMIN",
+      "patch",
+      `/api/service-orders/${idOrden}/parts/${linea.id}/price`,
+      { unitPrice: "875.00", reason: "Precio capturado con error" },
+    );
   });
 });
