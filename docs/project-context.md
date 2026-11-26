@@ -945,6 +945,13 @@ generatedAt
 17. Las contraseñas del estándar del MVP solo aplican a las cuentas 
     iniciales y en entornos locales; al cambiarlas, deben cumplir la 
     política mínima de seguridad.
+18. Una orden con un pago pagado no admite cambios en sus servicios, mano
+    de obra ni refacciones: su total queda cerrado. Las notas del trabajo y
+    la entrega siguen permitidas.
+19. Un mantenimiento está Vencido desde el día de su fecha objetivo o al
+    alcanzar el kilometraje objetivo.
+20. Las fechas y horas deben existir en el calendario; una entrada como
+    `2026-02-31` se rechaza con un error de validación.
 
 ------------------------------------------------------------------------
 

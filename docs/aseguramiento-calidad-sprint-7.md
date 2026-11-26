@@ -147,6 +147,9 @@ Los nombres de prueba sin ruta son archivos `.test.js` de `server/tests/integrat
 | H-07 | Cuando el sistema cancelaba solo un pago pendiente porque el total de la orden cambió, la cancelación no quedaba en la bitácora (CA-20) | Media | T132 (revisión de la trazabilidad) | Resuelto (2026-11-26) | Se registra `PAYMENT_CANCELLED` con actor `sistema` y el motivo, una sola vez aunque se repita la consulta | `server/tests/integration/payments.test.js` |
 | H-08 | La prueba de no exposición de datos cubría las lecturas y el alta y edición de usuarios, no las demás escrituras que pide CA-24; al agregarlas no apareció ninguna fuga | Baja | T132 | Resuelto (2026-11-26) | Dos pruebas nuevas sobre las escrituras de órdenes, tickets, pagos y refacciones (sin la sincronización con Mercado Pago, que depende del proveedor) | `server/tests/integration/data-exposure.test.js` |
 | H-09 | `docs/design-system.md` no se había actualizado, como pide CA-15 | Baja | T132 | Resuelto (2026-11-26) | Se agregaron las secciones nuevas del menú y las reglas de título y formato de fecha | `docs/design-system.md` |
+| H-10 | Defecto D-02 de la auditoría del MVP: una fecha u hora inexistente (`2026-02-31`, `25:00`) en citas o mantenimientos pasaba la validación | Media | Auditoría del MVP; corregido antes del cierre | Resuelto (2026-11-26) | Se valida que la fecha exista y que la hora esté entre 00:00 y 23:59; responde 400 | `server/tests/integration/date-validation.test.js` |
+| H-11 | Defecto D-03 de la auditoría del MVP: el día de la fecha objetivo el mantenimiento quedaba «Próximo» y no «Vencido» | Media | Auditoría del MVP; corregido antes del cierre | Resuelto (2026-11-26) | El día objetivo cuenta como Vencido, igual que el kilometraje alcanzado | `server/tests/unit/maintenance-state.test.js` |
+| H-12 | Defecto D-04 de la auditoría del MVP: una orden ya pagada admitía servicios, mano de obra y refacciones, y su total dejaba de coincidir con lo cobrado | Alta | Auditoría del MVP; corregido antes del cierre | Resuelto (2026-11-26) | Esos cambios responden 400 `ORDER_ALREADY_PAID` y bloquean la misma fila que el cobro; las notas y la entrega siguen permitidas | `server/tests/integration/payments.test.js` |
 | H-02 | Hallazgos bajos del análisis sin corregir: G2 (FR-029 y la versión de términos en los seeds), A1 (usuario de `settings.updated_by` al sembrar), N1 (nombres de pruebas del plan frente a las tareas) y D1 (requisitos repetidos) | Baja | G-07 | Aceptado | Se resuelven sobre la marcha durante la implementación | — |
 
 ## 8. Línea base de regresión
@@ -203,6 +206,15 @@ Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
 | `cd client && flutter analyze` | sin observaciones | sin cambio |
 
 Ninguna prueba de la línea base falló (SC-014: 0 regresiones).
+
+**Regresión tras corregir los defectos del MVP (H-10 a H-12), medida el 2026-11-26:**
+
+| Comando | Resultado | Diferencia con la línea base |
+|---|---|---|
+| `cd server && npm.cmd test` | 91 suites y **968 pruebas**, todas en verde | +35 suites y +489 pruebas |
+| `cd server && npm.cmd run lint` | 0 errores y 1 advertencia previa | sin cambio |
+
+El cliente no cambió: se mantiene en **259 pruebas** y `flutter analyze` sin observaciones.
 
 ## 9. Control de calidad final
 
