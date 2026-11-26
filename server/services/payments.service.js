@@ -114,13 +114,40 @@ export function verificarReglasAltaPago({ estadoOrden, pagos = [], method, total
  * @returns {Promise<number>} Filas canceladas (0 si no había desfase)
  */
 export async function cancelarPendienteDesfasado(orderId, total, conexion = pool) {
-  const [resultado] = await conexion.query(
-    `UPDATE payments
-        SET status = 'CANCELLED'
+  const [desfasados] = await conexion.query(
+    `SELECT id, method, amount FROM payments
       WHERE order_id = ? AND status = 'PENDING' AND amount <> ?`,
     [orderId, total],
   );
-  return resultado.affectedRows;
+
+  let cancelados = 0;
+  for (const pago of desfasados) {
+    // Se cancela fila por fila: entre dos peticiones simultáneas solo la que
+    // cambia el estado lo registra en la bitácora.
+    const [resultado] = await conexion.query(
+      "UPDATE payments SET status = 'CANCELLED' WHERE id = ? AND status = 'PENDING'",
+      [pago.id],
+    );
+    if (resultado.affectedRows === 0) continue;
+    cancelados += 1;
+    // Sprint 7 (CA-20): lo cancela el sistema, no la persona que consultó.
+    await auditoria.registrar(
+      {
+        actor: "sistema",
+        action: "PAYMENT_CANCELLED",
+        entityType: "PAYMENT",
+        entityId: Number(pago.id),
+        datos: {
+          orderId: Number(orderId),
+          method: pago.method,
+          amount: Number(pago.amount).toFixed(2),
+          reason: "el total de la orden cambió",
+        },
+      },
+      conexion,
+    );
+  }
+  return cancelados;
 }
 
 /**

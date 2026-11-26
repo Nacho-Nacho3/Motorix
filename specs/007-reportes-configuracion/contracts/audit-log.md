@@ -42,7 +42,7 @@ Orden: más reciente primero.
 | `SETTINGS_UPDATED` | cambio de configuración | clave, valor anterior y nuevo |
 | `PART_PRICE_CHANGED` | cambio del precio de compra o de venta | precio anterior y nuevo |
 | `ORDER_PART_PRICE_CORRECTED` | corrección administrativa de precio de una línea | precio anterior y nuevo |
-| `PAYMENT_CANCELLED` | pago cancelado | id de la orden |
+| `PAYMENT_CANCELLED` | pago cancelado por una persona o por el sistema (pendiente cuyo importe ya no coincide con el total; actor `sistema`) | id de la orden, método, importe y, si lo cancela el sistema, motivo |
 | `TERMS_PUBLISHED` | nueva versión de términos | número de versión |
 
 **Nunca** contienen contraseñas, hashes, tokens ni datos de tarjeta (CA-21); una prueba recorre cada acción y verifica el contenido.

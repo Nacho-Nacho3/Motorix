@@ -562,6 +562,46 @@ describe("US3 - Total con refacciones y pendiente desfasado (T019, T020)", () =>
     expect(await estadosDePagos(orden)).toEqual(["CANCELLED", "PAID"]);
   });
 
+  /** Registros de pagos cancelados en la bitácora (Sprint 7, CA-20). */
+  async function cancelacionesAuditadas() {
+    const [filas] = await poolPrueba.query(
+      `SELECT user_id, actor, entity_id, detail FROM audit_log
+        WHERE action = 'PAYMENT_CANCELLED' ORDER BY id`,
+    );
+    return filas;
+  }
+
+  test("la cancelación automática del desfasado queda una sola vez en la bitácora (CA-20)", async () => {
+    await poolPrueba.query("DELETE FROM audit_log");
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3000.00");
+
+    for (const ruta of ["total", "payments", "total"]) {
+      await request(app)
+        .get(`/api/service-orders/${orden.id}/${ruta}`)
+        .set(headersRecepcion);
+    }
+
+    const registros = await cancelacionesAuditadas();
+    expect(registros).toHaveLength(1);
+    expect(registros[0].actor).toBe("sistema");
+    expect(registros[0].user_id).toBeNull();
+    expect(registros[0].detail).toBe(
+      `orden: ${orden.id}; método: MERCADO_PAGO; importe: 3000.00; ` +
+        "motivo: el total de la orden cambió",
+    );
+  });
+
+  test("el desfasado cancelado al registrar otro cobro también queda en la bitácora (CA-20)", async () => {
+    await poolPrueba.query("DELETE FROM audit_log");
+    const orden = await ordenTerminada();
+    await pagoPendiente(orden, "3000.00");
+
+    expect((await registrarPago(orden, { method: "CASH" })).status).toBe(201);
+
+    expect(await cancelacionesAuditadas()).toHaveLength(1);
+  });
+
   test("un pendiente que SÍ coincide con el total sigue bloqueando con 409 (VN-05)", async () => {
     const orden = await ordenTerminada();
     await pagoPendiente(orden, "3150.00");
