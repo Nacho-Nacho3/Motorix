@@ -33,6 +33,22 @@ orden terminada y una segunda orden terminada sin pago para demostrar el
 cobro — idempotente por orden) y `server/scripts/create-admin.js` (cuentas
 iniciales, idempotente).
 
+## Base de datos en la nube (despliegue)
+
+Los datos de conexión se guardan en `.env.produccion` (en la raíz, no se
+versiona) con las variables de `.env.example`, incluidas `DB_SSL=true`,
+`DB_TIME_ZONE=-06:00` y las contraseñas `SEED_PASSWORD_*`. Desde `server/`:
+
+```powershell
+$env:ENV_FILE = ".env.produccion"
+npm.cmd run migrate   # aplica las migraciones pendientes
+npm.cmd run seed      # datos de ejemplo (opcional)
+Remove-Item Env:ENV_FILE
+```
+
+`npm run migrate` usa la misma tabla `schema_migrations` y las mismas reglas que
+`aplicar-migraciones.ps1`. Las pruebas nunca se ejecutan contra la base remota.
+
 ## Flujo de instalación desde cero
 
 ```powershell

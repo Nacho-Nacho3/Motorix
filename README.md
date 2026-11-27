@@ -171,6 +171,18 @@ El inicio de sesión acepta **usuario o correo** en el mismo campo
 (`*@motorix.local`). El administrador también puede crearse con
 `npm run create-admin`.
 
+## Despliegue (TiDB Cloud y Render)
+
+| Pieza | Dónde |
+|-------|-------|
+| Base de datos | TiDB Cloud (compatible con MySQL), ver `database/README.md` |
+| API y versión web | Un servicio Node en Render: instalar con `cd server && npm ci --omit=dev` e iniciar con `cd server && node app.js` |
+
+Variables del servicio: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
+`DB_NAME`, `DB_SSL=true`, `DB_TIME_ZONE=-06:00`, `TZ=America/Mexico_City` y
+`JWT_SECRET`. La versión web se compila antes de subir el código con
+`bash client/tool/publicar_web.sh`.
+
 ## Pruebas
 
 ```powershell

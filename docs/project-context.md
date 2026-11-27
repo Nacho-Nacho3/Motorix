@@ -959,6 +959,20 @@ generatedAt
 
 El MVP se construirá mediante cuatro sprints.
 
+## 14.0 Despliegue de entrega (decidido el 2026-11-26)
+
+A petición del docente, la entrega se aloja con **TiDB Cloud** (base de datos
+compatible con MySQL) y **Render** (API). El docente pide usar Motorix desde el
+navegador: la misma API entrega la **versión web** de la aplicación (compilada
+con `client/tool/publicar_web.sh` en `server/public/`), pensada para el navegador
+de una computadora; en ella los reportes CSV se descargan. La aplicación de
+escritorio puede compilarse apuntando a la dirección publicada. El desarrollo y las pruebas siguen
+usando MySQL local. La conexión remota va cifrada (`DB_SSL=true`), fija la zona
+horaria del taller (`DB_TIME_ZONE=-06:00`). Para la demostración académica, el
+responsable decidió conservar las cuentas de ejemplo y sus contraseñas, que son
+públicas; un uso real exige cambiarlas. Estado: configuración preparada; publicación
+pendiente. Enmienda 2.0.0 de la constitución.
+
 ## 14.1 Base de datos del MVP (Sprints 1 a 4)
 
 Durante los cuatro sprints del MVP la base de datos **se trabaja de
@@ -1544,7 +1558,6 @@ Después continuar secuencialmente con Sprint 2, Sprint 3 y Sprint 4.
 
 Antes de asumirlas como definitivas, el equipo debe decidir:
 
--   Servicio de hosting.
 -   Proveedor/estrategia de almacenamiento para evidencias.
 -   Implementación concreta de PDF/tickets.
 -   Alcance exacto de Mercado Pago para la demostración.

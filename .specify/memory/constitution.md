@@ -43,6 +43,15 @@ Reporte de Impacto de la Sincronización
   Aprobación: registrada en la ejecución de `/speckit.implement` del Sprint 6 (2026-11-18)
   bajo el criterio de entrada T001; la ratificación formal del equipo sigue pendiente como
   en las contribuciones previas.
+- Enmienda (2026-11-26): el docente pide alojar el sistema. Se redefine el Principio III:
+  MySQL local sigue siendo el entorno de desarrollo y pruebas, y para la entrega se permite
+  desplegar la base de datos en TiDB Cloud y la API en Render. Se actualizan la introducción,
+  "Tecnologías y Dependencias" y "Decisiones Pendientes" (hosting resuelto). Cambio de versión:
+  1.2.0 → 2.0.0 (MAJOR: se redefine un principio). Incluye la versión web para
+  navegador de computadora, pedida por el docente; el escritorio sigue siendo la
+  prioridad del diseño. Aprobación: Ignacio Joaquín Trejo
+  (responsable), 2026-11-26; la ratificación formal del equipo sigue pendiente como en las
+  contribuciones previas.
 - Secciones eliminadas: ninguna
 - Pendientes: ratificación por el equipo; decisiones listadas en "Decisiones Pendientes"
 -->
@@ -90,7 +99,7 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
 - Justificación: separar capas permite que cada módulo se pruebe, cambie y revise sin
   romper los demás.
 
-### III. Stack Tecnológico y Base de Datos Local del MVP
+### III. Stack Tecnológico, Base de Datos y Despliegue
 
 - Los seeds DEBEN incluir datos de ejemplo suficientes para que la aplicación
   muestre información al arrancar. La base no puede quedar vacía tras la instalación
@@ -101,14 +110,20 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
   backend DEBE usar ES Modules (`import`/`export`). NO se usa CommonJS
   (`require`/`module.exports`). `package.json` del backend DEBE declarar
   `"type": "module"`.
-- Base de datos: MySQL, ejecutada de forma LOCAL durante todo el proyecto (los siete
-  sprints del proyecto).
+- Base de datos: MySQL, ejecutada de forma LOCAL para el desarrollo y las pruebas. El
+  despliegue de entrega usa TiDB Cloud (compatible con MySQL) para la base de datos y
+  Render para la API, que entrega además la versión web de la aplicación.
 - Autenticación: JWT con contraseñas cifradas mediante bcrypt.
 - Login: acepta usuario (`username`) o correo electrónico (`email`) en el mismo campo,
   para todos los roles.
 - NO se introducen tecnologías o dependencias grandes sin justificar su necesidad.
-- Cada integrante DEBE usar su propia instancia local de MySQL; NO se usa base de datos en
-  la nube ni hosting de base de datos dentro del MVP.
+- Cada integrante DEBE desarrollar y probar contra su propia instancia local de MySQL;
+  las pruebas automáticas NUNCA se ejecutan contra la base en la nube.
+- En el despliegue, la conexión a la base DEBE ir cifrada (`DB_SSL=true`), la API DEBE
+  publicarse con HTTPS, las credenciales viven en variables de entorno del proveedor o en
+  archivos `.env.*` no versionados. Las cuentas NO DEBEN usar las contraseñas de ejemplo,
+  salvo en la demostración académica si el responsable lo decide expresamente
+  (decidido el 2026-11-26, sabiendo que son públicas); no aplica a un uso real.
 - El esquema y los datos iniciales DEBEN definirse con scripts SQL versionados en la carpeta
   `database/` (`migrations/`, `seeds/`, `scripts/` y un `README.md`), de modo que la base
   pueda recrearse desde cero. Los cambios de esquema se agregan como nuevos scripts
@@ -198,8 +213,9 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
 
 ## Tecnologías y Dependencias
 
-- Núcleo permitido: Flutter/Dart, Node.js, Express, MySQL (local en el MVP), JWT, bcrypt,
-  Jest.
+- Núcleo permitido: Flutter/Dart, Node.js, Express, MySQL (local en desarrollo), JWT,
+  bcrypt, Jest.
+- Alojamiento: TiDB Cloud (base de datos) y Render (API), en sus planes gratuitos.
 - Sistema de módulos del backend (NO NEGOCIABLE): ES Modules (`import`/`export`), nunca
   CommonJS. `package.json` del backend DEBE declarar `"type": "module"`.
 - Frontend: Material Design 3 con tema propio (`docs/design-system.md`) y Provider para
@@ -242,7 +258,7 @@ desarrollarlo, tanto por el equipo como por el agente de IA.
 Estas decisiones aún no están tomadas; el agente puede proponer opciones, pero NO
 asumirlas como definitivas:
 
-- Servicio de hosting y proveedor de almacenamiento.
+- Proveedor de almacenamiento de archivos.
 - Implementación concreta de PDF/tickets.
 - Alcance exacto de Mercado Pago para la demostración.
 - Librería complementaria de componentes de UI en Flutter (`shadcn_ui` u otra, o ninguna).
@@ -280,4 +296,4 @@ asumirlas como definitivas:
 - El cumplimiento se revisa en cada contribución; cualquier desviación DEBE justificarse
   explícitamente o descartarse.
 
-**Versión**: 1.2.0 | **Redactada**: 2026-10-01 | **Ratificación**: pendiente del equipo | **Última enmienda**: 2026-11-18
+**Versión**: 2.0.0 | **Redactada**: 2026-10-01 | **Ratificación**: pendiente del equipo | **Última enmienda**: 2026-11-26
