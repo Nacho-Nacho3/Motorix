@@ -1,7 +1,7 @@
 // Configuración plana de ESLint para el backend (ES Modules).
 export default [
   {
-    ignores: ["node_modules/**", "coverage/**", "build/**"],
+    ignores: ["node_modules/**", "coverage/**", "build/**", "public/**"],
   },
   {
     files: ["**/*.js"],

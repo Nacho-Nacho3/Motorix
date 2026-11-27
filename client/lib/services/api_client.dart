@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 /// Error de la API según el sobre {"ok":false,"error":{...}}.
@@ -30,7 +31,35 @@ class ApiError implements Exception {
 
 /// T015: cliente HTTP base con el sobre de respuesta único y token Bearer.
 class ApiClient {
-  ApiClient({this.baseUrl = 'http://localhost:3000/api'});
+  ApiClient({String? baseUrl})
+    : baseUrl =
+          baseUrl ??
+          urlPorOmision(compilada: _urlCompilada, esWeb: kIsWeb, pagina: Uri.base);
+
+  /// Dirección de la API fijada al compilar con
+  /// `--dart-define=API_URL=https://…/api`.
+  static const String _urlCompilada = String.fromEnvironment('API_URL');
+
+  /// Sin dirección compilada, el navegador usa la API del mismo sitio que sirve
+  /// la página y el escritorio usa el backend local.
+  static String urlPorOmision({
+    required String compilada,
+    required bool esWeb,
+    required Uri pagina,
+  }) {
+    if (compilada.isNotEmpty) return compilada;
+    if (esWeb) return pagina.resolve('/api').toString();
+    return 'http://localhost:3000/api';
+  }
+
+  /// Un servidor remoto en un plan gratuito puede tardar cerca de un minuto en
+  /// despertar; al local se le sigue esperando poco.
+  static Duration esperaPara(String url) {
+    const locales = {'localhost', '127.0.0.1'};
+    return locales.contains(Uri.parse(url).host)
+        ? const Duration(seconds: 15)
+        : const Duration(seconds: 90);
+  }
 
   final String baseUrl;
   String? token;
@@ -44,7 +73,7 @@ class ApiClient {
   /// Sprint 7 (US10, CA-23): se invoca cuando el backend responde
   /// `401 SESSION_IDLE`; la sesión se cierra con el aviso de inactividad.
   void Function()? alSesionInactiva;
-  static const Duration _tiempoEspera = Duration(seconds: 15);
+  late final Duration _tiempoEspera = esperaPara(baseUrl);
 
   Map<String, String> _encabezados({bool incluirJson = true}) {
     return {

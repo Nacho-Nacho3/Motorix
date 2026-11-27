@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:motorix_client/utils/report_saver_io.dart';
 import 'package:motorix_client/models/report_result.dart';
 import 'package:motorix_client/models/user.dart';
 import 'package:motorix_client/providers/notifications_provider.dart';
@@ -535,7 +536,7 @@ void main() {
 
     test('escribe el archivo con el reporte y el periodo en el nombre', () async {
       final api = _ApiFalsa();
-      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+      final proveedor = ReportsProvider(api, ahora: _hoy, guardar: guardarEnCarpeta(() => carpeta));
 
       final ruta = await proveedor.exportar('income');
 
@@ -554,7 +555,7 @@ void main() {
 
     test('crea la carpeta si no existe y vuelve a escribir sobre el mismo archivo', () async {
       final destino = Directory('${carpeta.path}${Platform.pathSeparator}Motorix${Platform.pathSeparator}reportes');
-      final proveedor = ReportsProvider(_ApiFalsa(), ahora: _hoy, carpetaReportes: () => destino);
+      final proveedor = ReportsProvider(_ApiFalsa(), ahora: _hoy, guardar: guardarEnCarpeta(() => destino));
 
       final primera = await proveedor.exportar('services');
       final segunda = await proveedor.exportar('services');
@@ -566,7 +567,7 @@ void main() {
 
     test('el periodo del archivo es el vigente del selector', () async {
       final api = _ApiFalsa();
-      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+      final proveedor = ReportsProvider(api, ahora: _hoy, guardar: guardarEnCarpeta(() => carpeta));
       proveedor.aplicarAtajo(AtajoPeriodo.hoy);
 
       final ruta = await proveedor.exportar('productivity');
@@ -581,7 +582,7 @@ void main() {
       final proveedor = ReportsProvider(
         _ApiFalsa(),
         ahora: _hoy,
-        carpetaReportes: () => Directory(archivo.path),
+        guardar: guardarEnCarpeta(() => Directory(archivo.path)),
       );
 
       final ruta = await proveedor.exportar('income');
@@ -593,7 +594,7 @@ void main() {
 
     test('un error del backend se muestra tal cual y no escribe nada', () async {
       final api = _ApiFalsa()..fallaDescarga = true;
-      final proveedor = ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta);
+      final proveedor = ReportsProvider(api, ahora: _hoy, guardar: guardarEnCarpeta(() => carpeta));
 
       final ruta = await proveedor.exportar('income');
 
@@ -604,7 +605,7 @@ void main() {
     });
 
     test('la carpeta por omisión es Documentos\\Motorix\\reportes del usuario', () {
-      final ruta = ReportsProvider.carpetaPorOmision().path;
+      final ruta = carpetaPorOmision().path;
 
       expect(ruta, contains('Documents'));
       expect(ruta, endsWith('reportes'));
@@ -618,7 +619,7 @@ void main() {
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ReportsProvider>(
-              create: (_) => ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta),
+              create: (_) => ReportsProvider(api, ahora: _hoy, guardar: guardarEnCarpeta(() => carpeta)),
             ),
           ],
           child: MaterialApp(theme: ThemeData(useMaterial3: true), home: const ReportsScreen()),
@@ -647,7 +648,7 @@ void main() {
         MultiProvider(
           providers: [
             ChangeNotifierProvider<ReportsProvider>(
-              create: (_) => ReportsProvider(api, ahora: _hoy, carpetaReportes: () => carpeta),
+              create: (_) => ReportsProvider(api, ahora: _hoy, guardar: guardarEnCarpeta(() => carpeta)),
             ),
           ],
           child: MaterialApp(theme: ThemeData(useMaterial3: true), home: const ReportsScreen()),

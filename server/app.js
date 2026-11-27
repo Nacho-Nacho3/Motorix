@@ -15,6 +15,10 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api", rutas);
 
+// Versión web de la aplicación (si está compilada); la API conserva sus 404.
+const web = express.static(env.webDir);
+app.use((req, res, next) => (req.path.startsWith("/api") ? next() : web(req, res, next)));
+
 app.use(noEncontrado);
 app.use(errorHandler);
 

@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 
 import '../models/report_result.dart';
 import '../services/api_client.dart';
+import '../utils/report_saver.dart';
 
 /// Periodos rápidos del selector de reportes.
 enum AtajoPeriodo { hoy, semana, mes, libre }
@@ -15,24 +14,15 @@ class ReportsProvider extends ChangeNotifier {
   ReportsProvider(
     this.api, {
     DateTime Function()? ahora,
-    Directory Function()? carpetaReportes,
+    GuardarReporte? guardar,
   })  : _ahora = ahora ?? DateTime.now,
-        _carpetaReportes = carpetaReportes ?? carpetaPorOmision {
+        _guardar = guardar ?? guardarReporte {
     aplicarAtajo(AtajoPeriodo.mes, recargar: false);
   }
 
   final ApiClient api;
   final DateTime Function() _ahora;
-  final Directory Function() _carpetaReportes;
-
-  /// Carpeta de las exportaciones: `Documentos\Motorix\reportes` del usuario.
-  static Directory carpetaPorOmision() {
-    final entorno = Platform.environment;
-    final base = entorno['USERPROFILE'] ?? entorno['HOME'] ?? Directory.current.path;
-    return Directory(
-      [base, 'Documents', 'Motorix', 'reportes'].join(Platform.pathSeparator),
-    );
-  }
+  final GuardarReporte _guardar;
 
   /// Máximo de días del periodo (el backend también lo exige).
   static const int maxDias = 366;
@@ -140,10 +130,10 @@ class ReportsProvider extends ChangeNotifier {
   /// Nombre del archivo: el reporte y el periodo, como lo nombra el backend.
   String nombreArchivo(String nombre) => 'reporte-$nombre-$desde-$hasta.csv';
 
-  /// Exporta el reporte a CSV del periodo vigente y lo escribe con `dart:io` en la
-  /// carpeta de reportes del usuario (T124, FR-014). Sin dependencias nuevas.
-  /// Devuelve la ruta del archivo, o `null` si algo falló (el motivo queda en
-  /// [mensajeExportacion]).
+  /// Exporta el reporte a CSV del periodo vigente (T124, FR-014): lo guarda en
+  /// la carpeta de reportes del usuario o, en el navegador, lo descarga.
+  /// Devuelve la ruta o el nombre del archivo, o `null` si algo falló (el motivo
+  /// queda en [mensajeExportacion]).
   Future<String?> exportar(String nombre) async {
     exportando = true;
     mensajeExportacion = null;
@@ -154,21 +144,15 @@ class ReportsProvider extends ChangeNotifier {
       final contenido = await ApiClient.conRed(
         () => api.descargarReporteCsv(nombre, desde: desde, hasta: hasta),
       );
-      final carpeta = _carpetaReportes();
-      await carpeta.create(recursive: true);
-      final archivo = File(
-        '${carpeta.path}${Platform.pathSeparator}${nombreArchivo(nombre)}',
-      );
-      await archivo.writeAsString(contenido, flush: true);
-      ruta = archivo.path;
-      mensajeExportacion = 'Archivo guardado en $ruta';
+      final archivo = await _guardar(nombreArchivo(nombre), contenido);
+      ruta = archivo.ruta;
+      mensajeExportacion = archivo.mensaje;
     } on ApiError catch (e) {
       exportacionConError = true;
       mensajeExportacion = e.message;
-    } on FileSystemException catch (e) {
+    } on ErrorAlGuardar catch (e) {
       exportacionConError = true;
-      mensajeExportacion =
-          'No se pudo guardar el archivo: ${e.osError?.message.isNotEmpty == true ? e.osError!.message : e.message}.';
+      mensajeExportacion = e.mensaje;
     } catch (_) {
       exportacionConError = true;
       mensajeExportacion = 'No se pudo exportar el reporte.';

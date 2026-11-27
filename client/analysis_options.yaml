@@ -5,6 +5,7 @@ analyzer:
   exclude:
     - build/**
     - windows/**
+    - web/**
 
 linter:
   rules:
