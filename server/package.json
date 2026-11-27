@@ -8,6 +8,7 @@
     "dev": "node --watch app.js",
     "start": "node app.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "create-admin": "node scripts/create-admin.js",
     "lint": "eslint ."

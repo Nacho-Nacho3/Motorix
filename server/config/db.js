@@ -11,6 +11,13 @@ export const pool = mysql.createPool({
   dateStrings: true,
 });
 
+// En la nube la base trabaja en UTC: sin esto «hoy» cambiaría a las 18:00.
+if (env.dbTimeZone) {
+  pool.on("connection", (conexion) => {
+    conexion.query("SET time_zone = ?", [env.dbTimeZone]);
+  });
+}
+
 export async function verificarConexion() {
   const conexion = await pool.getConnection();
   try {

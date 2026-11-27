@@ -1,7 +1,7 @@
 # Secretos y configuración local (nunca se versiona)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Datos físicos de MySQL locales
 database/data/
@@ -23,7 +23,6 @@ client/android/
 client/ios/
 client/linux/
 client/macos/
-client/web/
 
 # Sistema y editores
 .DS_Store

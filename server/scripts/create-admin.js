@@ -31,6 +31,31 @@ export const CUENTAS_INICIALES = [
   },
 ];
 
+/**
+ * Las contraseñas de ejemplo son públicas (README). `SEED_PASSWORD_<USUARIO>`
+ * las sustituye, y en una base remota (`DB_SSL=true`) es obligatorio, salvo que
+ * se pida expresamente usar las de ejemplo (demostración académica) con
+ * `SEED_ALLOW_EXAMPLE_PASSWORDS=true`.
+ */
+export function contrasenaInicial(cuenta, variables = process.env) {
+  const variable = `SEED_PASSWORD_${cuenta.username.toUpperCase()}`;
+  const propia = variables[variable];
+  const remota = String(variables.DB_SSL ?? "").trim().toLowerCase() === "true";
+
+  const permitirEjemplo = variables.SEED_ALLOW_EXAMPLE_PASSWORDS === "true";
+
+  if (remota && !permitirEjemplo && (!propia || propia === cuenta.password)) {
+    throw new Error(`En una base remota define una contraseña propia en ${variable}.`);
+  }
+  if (!propia) return cuenta.password;
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/.test(propia)) {
+    throw new Error(
+      `La contraseña de ${variable} debe tener de 8 a 64 caracteres con mayúscula, minúscula y número.`,
+    );
+  }
+  return propia;
+}
+
 export async function crearCuentasIniciales() {
   const creadas = [];
   const omitidas = [];
@@ -45,7 +70,7 @@ export async function crearCuentasIniciales() {
       continue;
     }
 
-    const passwordHash = await bcrypt.hash(cuenta.password, env.bcryptCost);
+    const passwordHash = await bcrypt.hash(contrasenaInicial(cuenta), env.bcryptCost);
     await usuarios.crearUsuario({
       username: cuenta.username,
       name: cuenta.name,
